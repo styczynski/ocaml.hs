@@ -11,7 +11,7 @@ BLetPattern.    LetBinding          ::= Pattern "=" Expression ;
 PatIdent.       Pattern             ::= Ident ;
 PatConst.       Pattern             ::= Constant ;
 PatNested.      Pattern             ::= "(" Pattern ")" ;
-PatHead.        Pattern             ::= Pattern "::" Patern ;
+PatHead.        Pattern             ::= Pattern "::" Pattern ;
 PatNone.        Pattern             ::= "_" ;
 PatTuple.       Pattern             ::= Pattern "," Pattern ;
 PatVariant.     Pattern             ::= Pattern "|" Pattern ;
@@ -23,7 +23,7 @@ ESeq.           Expression          ::= SeqExpression ;
 ESeqThen.       SeqExpression       ::= Expression ";" Expression ;
 ESeqIf.         SeqExpression       ::= "if" Expression "then" Expression ;
 ESeqWhile.      SeqExpression       ::= "while" Expression "do" Expression "done" ;
-ESeqFor.        SeqExpression       ::= "for" Ident "=" Expression ForDirection Expression "do" EXpression "done"
+ESeqFor.        SeqExpression       ::= "for" Ident "=" Expression ForDirection Expression "do" Expression "done" ;
 ESeqLet.        SeqExpression       ::= Definition "in" Expression ;
 
 ForDirTo.       ForDirection        ::= "to" ;
