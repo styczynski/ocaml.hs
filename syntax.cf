@@ -1,8 +1,33 @@
 IRoot.          Implementation      ::= ImplPhrase ;
+
 IPhrase.        ImplPhrase          ::= Expression ;
+IDef.           ImplDefinition      ::= Definition ;
+
+DefLet.         Definition          ::= "let" LetBinding ;
+DefLetAnd.      Definition          ::= Definition "and" Definition ;
+
+BLetPattern.    LetBinding          ::= Pattern "=" Expression ;
+
+PatIdent.       Pattern             ::= Ident ;
+PatConst.       Pattern             ::= Constant ;
+PatNested.      Pattern             ::= "(" Pattern ")" ;
+PatHead.        Pattern             ::= Pattern "::" Patern ;
+PatNone.        Pattern             ::= "_" ;
+PatTuple.       Pattern             ::= Pattern "," Pattern ;
+PatVariant.     Pattern             ::= Pattern "|" Pattern ;
 
 ESimple.        Expression          ::= PrimaryExpression ;
 EComplex.       Expression          ::= NAryExpression ;
+ESeq.           Expression          ::= SeqExpression ;
+
+ESeqThen.       SeqExpression       ::= Expression ";" Expression ;
+ESeqIf.         SeqExpression       ::= "if" Expression "then" Expression ;
+ESeqWhile.      SeqExpression       ::= "while" Expression "do" Expression "done" ;
+ESeqFor.        SeqExpression       ::= "for" Ident "=" Expression ForDirection Expression "do" EXpression "done"
+ESeqLet.        SeqExpression       ::= Definition "in" Expression ;
+
+ForDirTo.       ForDirection        ::= "to" ;
+ForDirDownTo.   ForDirection        ::= "downto" ;
 
 ENFollow.       NAryExpression      ::= Expression Expression ;
 ENAnd.          NAryExpression      ::= Expression "&&" Expression ;
