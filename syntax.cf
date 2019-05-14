@@ -47,6 +47,6 @@ OPEqGt.         InfixOperator       ::= ">=" ;
 OPGtD.          InfixOperator       ::= ">." ;
 OPEqGtD.        InfixOperator       ::= ">=." ;
 
-OPPrefMinus     PrefixOperator      ::= "-" ;
-OPPrefMinusD    PrefixOperator      ::= "-." ;
-OPPrefNot       PrefixOperator      ::= "!" ;
+OPPrefMinus.    PrefixOperator      ::= "-" ;
+OPPrefMinusD.   PrefixOperator      ::= "-." ;
+OPPrefNot.      PrefixOperator      ::= "!" ;
