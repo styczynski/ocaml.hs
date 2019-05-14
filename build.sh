@@ -1,6 +1,7 @@
 #!/bin/bash
 
 rm -r -f -d parser &&
+stack install --only-dependencies &&
 stack exec bnfc -- -m -o parser syntax.cf &&
 sed -i -e 's/module Main where/module TestSyntax where/g' ./parser/TestSyntax.hs &&
 cd parser &&
