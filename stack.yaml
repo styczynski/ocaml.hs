@@ -39,6 +39,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - BNFC-2.8.2
+  - array-0.5.3.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

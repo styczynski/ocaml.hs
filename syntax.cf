@@ -1,0 +1,19 @@
+IRoot.          Implementation     ::= ImplPhrase ;
+IPhrase.        ImplPhrase         ::= Expression ;
+
+ESimple.        Expression         ::= PrimaryExpression ;
+EComplex.       Expression         ::= NAryExpression ;
+
+ENFollow.       NAryExpression     ::= Expression Expression ;
+ENAnd.          NAryExpression     ::= Expression "&&" Expression ;
+ENOr.           NAryExpression     ::= Expression "||" Expression ;
+
+VIdent.        PrimaryExpression  ::= Ident ;
+VVariable.     PrimaryExpression  ::= Ident ;
+VExpression.   PrimaryExpression  ::= "("  Expression ")" ;
+
+CInt.          Constant            ::= IntegerLiteral ;
+CString.       Constant            ::= StringLiteral ;
+
+LString.       StringLiteral       ::= "\"" String "\"" ;
+LInt.          IntegerLiteral      ::= Integer ;

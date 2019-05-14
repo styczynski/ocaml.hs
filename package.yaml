@@ -19,9 +19,12 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/githubuser/ocamlhs#readme>
 
+build-type: Custom
+
 dependencies:
 - base >= 4.7 && < 5
 - BNFC >= 2.8.1 && <= 2.8.2
+- array >= 0.5.3.0
 
 library:
   source-dirs: src
@@ -29,7 +32,9 @@ library:
 executables:
   ocamlhs-exe:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:
+    - app
+    - parser
     ghc-options:
     - -threaded
     - -rtsopts

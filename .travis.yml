@@ -13,7 +13,7 @@ before_install:
   - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
 script:
-  - stack --no-terminal --skip-ghc-check build
+  - ./build.sh
   - stack test :ocamlhs-test --no-terminal --coverage
   
 after_script:

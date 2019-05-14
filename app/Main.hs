@@ -1,6 +1,8 @@
 module Main where
 
 import Lib
+import qualified TestSyntax
+
 
 main :: IO ()
-main = someFunc
+main = TestSyntax.main

@@ -3,6 +3,8 @@
 .idea/
 .idea/**
 
+parser/
+
 dist
 dist-*
 cabal-dev
