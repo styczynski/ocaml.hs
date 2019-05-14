@@ -1,19 +1,52 @@
-IRoot.          Implementation     ::= ImplPhrase ;
-IPhrase.        ImplPhrase         ::= Expression ;
+IRoot.          Implementation      ::= ImplPhrase ;
+IPhrase.        ImplPhrase          ::= Expression ;
 
-ESimple.        Expression         ::= PrimaryExpression ;
-EComplex.       Expression         ::= NAryExpression ;
+ESimple.        Expression          ::= PrimaryExpression ;
+EComplex.       Expression          ::= NAryExpression ;
 
-ENFollow.       NAryExpression     ::= Expression Expression ;
-ENAnd.          NAryExpression     ::= Expression "&&" Expression ;
-ENOr.           NAryExpression     ::= Expression "||" Expression ;
+ENFollow.       NAryExpression      ::= Expression Expression ;
+ENAnd.          NAryExpression      ::= Expression "&&" Expression ;
+ENOr.           NAryExpression      ::= Expression "||" Expression ;
+ENCon.          NAryExpression      ::= Expression "." Expression ;
+ENPrefix.       NAryExpression      ::= PrefixOperator Expression ;
+ENInfix.        NAryExpression      ::= Expression InfixOperator Expression ;
 
-VIdent.        PrimaryExpression  ::= Ident ;
-VVariable.     PrimaryExpression  ::= Ident ;
-VExpression.   PrimaryExpression  ::= "("  Expression ")" ;
+VIdent.         PrimaryExpression   ::= Ident ;
+VVariable.      PrimaryExpression   ::= Ident ;
+VExpression.    PrimaryExpression   ::= "("  Expression ")" ;
 
-CInt.          Constant            ::= IntegerLiteral ;
-CString.       Constant            ::= StringLiteral ;
+CInt.           Constant            ::= IntegerLiteral ;
+CString.        Constant            ::= StringLiteral ;
 
-LString.       StringLiteral       ::= "\"" String "\"" ;
-LInt.          IntegerLiteral      ::= Integer ;
+LString.        StringLiteral       ::= "\"" String "\"" ;
+LInt.           IntegerLiteral      ::= Integer ;
+
+OPPlus.         InfixOperator       ::= "+" ;
+OPMinus.        InfixOperator       ::= "-" ;
+OPMul.          InfixOperator       ::= "*" ;
+OPDiv.          InfixOperator       ::= "/" ;
+OPMod.          InfixOperator       ::= "mod" ;
+OPPlusD.        InfixOperator       ::= "+." ;
+OPMinusD.       InfixOperator       ::= "-." ;
+OPMulD.         InfixOperator       ::= "*." ;
+OPDivD.         InfixOperator       ::= "/." ;
+OPJoin.         InfixOperator       ::= "@" ;
+OPXor.          InfixOperator       ::= "^" ;
+OPNot.          InfixOperator       ::= "!" ;
+OPDef.          InfixOperator       ::= ":=" ;
+OPEq.           InfixOperator       ::= "=" ;
+OPNeq.          InfixOperator       ::= "<>" ;
+OPEqS.          InfixOperator       ::= "==" ;
+OPNeqS.         InfixOperator       ::= "!=" ;
+OPLt.           InfixOperator       ::= "<" ;
+OPEqLt.         InfixOperator       ::= "<=" ;
+OPLtD.          InfixOperator       ::= "<." ;
+OPEqLtD.        InfixOperator       ::= "<=." ;
+OPGt.           InfixOperator       ::= ">" ;
+OPEqGt.         InfixOperator       ::= ">=" ;
+OPGtD.          InfixOperator       ::= ">." ;
+OPEqGtD.        InfixOperator       ::= ">=." ;
+
+OPPrefMinus     PrefixOperator      ::= "-" ;
+OPPrefMinusD    PrefixOperator      ::= "-." ;
+OPPrefNot       PrefixOperator      ::= "!" ;
