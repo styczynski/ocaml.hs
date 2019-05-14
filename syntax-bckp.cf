@@ -1,22 +1,44 @@
 IRoot.          Implementation      ::= ImplPhrase ;
 
 IPhrase.        ImplPhrase          ::= Expression ;
-IDef.           ImplPhrase          ::= Definition ;
+IDef.           ImplDefinition      ::= Definition ;
 
 DefLet.         Definition          ::= "let" Pattern "=" Expression ;
+DefLetAnd.      Definition          ::= "let" Pattern "=" Expression "and" Definition ;
 
 PatIdent.       Pattern             ::= Ident ;
 PatConst.       Pattern             ::= Constant ;
+PatNested.      Pattern             ::= "(" Pattern ")" ;
+PatHead.        Pattern             ::= Pattern "::" Pattern ;
+PatNone.        Pattern             ::= "_" ;
+PatTuple.       Pattern             ::= Pattern "," Pattern ;
+PatVariant.     Pattern             ::= Pattern "|" Pattern ;
 
 EConst.         Expression          ::= Constant ;
 EIdent.         Expression          ::= Ident ;
-EComplex.       Expression          ::= NAryExpression ;
+ENested.        Expression          ::= "("  Expression ")" ;
 
+EComplex.       Expression          ::= NAryExpression ;
+ESeq.           Expression          ::= SeqExpression ;
+
+ESeqThen.       SeqExpression       ::= Expression ";" Expression ;
+ESeqIf.         SeqExpression       ::= "if" Expression "then" Expression ;
+ESeqWhile.      SeqExpression       ::= "while" Expression "do" Expression "done" ;
+ESeqFor.        SeqExpression       ::= "for" Ident "=" Expression ForDirection Expression "do" Expression "done" ;
+ESeqLet.        SeqExpression       ::= Definition "in" Expression ;
+
+ForDirTo.       ForDirection        ::= "to" ;
+ForDirDownTo.   ForDirection        ::= "downto" ;
+
+ENFollow.       NAryExpression      ::= Expression Expression ;
+ENAnd.          NAryExpression      ::= Expression "&&" Expression ;
+ENOr.           NAryExpression      ::= Expression "||" Expression ;
+ENCon.          NAryExpression      ::= Expression "." Expression ;
 ENPrefix.       NAryExpression      ::= PrefixOperator Expression ;
 ENInfix.        NAryExpression      ::= Expression InfixOperator Expression ;
 
 CInt.           Constant            ::= Integer ;
-CString.        Constant            ::= String ;
+CString.        Constant            ::= "\"" String "\"" ;
 
 OPPlus.         InfixOperator       ::= "+" ;
 OPMinus.        InfixOperator       ::= "-" ;
