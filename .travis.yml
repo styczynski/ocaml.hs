@@ -3,9 +3,8 @@ ghc:
   - "8.4.1"
 
 before_install:
-  - apt-get install curl
-  - curl -sSL https://get.haskellstack.org/ | sh
-  - cabal update
+  - sudo apt-get install curl
+  - curl -sSL https://get.haskellstack.org/ | sudo sh
   - cabal install BNFC
 
 script:
