@@ -1,23 +1,43 @@
 IRoot.          Implementation      ::= ImplPhrase ;
+IRootComplex.   Implementation      ::= Implementation Implementation ;
 
-IPhrase.        ImplPhrase          ::= Expression ;
-IDef.           ImplPhrase          ::= Definition ;
+IPhrase.        ImplPhrase          ::= Expression ";;" ;
+IDef.           ImplPhrase          ::= Definition ";;" ;
 
 DefLet.         Definition          ::= "let" Pattern "=" Expression ;
 
+PatList.        Pattern             ::= Pattern Pattern ;
 PatIdent.       Pattern             ::= Ident ;
 PatConst.       Pattern             ::= Constant ;
+PatNested.      Pattern             ::= "(" Pattern ")" ;
+PatHead.        Pattern             ::= Pattern "::" Pattern ;
+PatNone.        Pattern             ::= "_" ;
+PatTuple.       Pattern             ::= Pattern "," Pattern ;
+PatVariant.     Pattern             ::= Pattern "|" Pattern ;
 
 EConst.         Expression          ::= Constant ;
 EIdent.         Expression          ::= Ident ;
 EComplex.       Expression          ::= NAryExpression ;
+EParens.        Expression          ::= "(" Expression ")" ;
 
+ECall.          Call                ::= Ident Expression ;
+ECallWith.      Call                ::= Call Expression ;
+
+ENCall.         NAryExpression      ::= Call  ;
 ENPrefix.       NAryExpression      ::= PrefixOperator Expression ;
 ENInfix.        NAryExpression      ::= Expression InfixOperator Expression ;
+ENLet.          NAryExpression      ::= "let" Pattern "=" Expression "in" Expression ;
+ENIf.           NAryExpression      ::= "if" Expression "then" Expression ;
+ENWhile.        NAryExpression      ::= "while" Expression "do" Expression "done" ;
+ENFor.          NAryExpression      ::= "for" Ident "=" Expression ForDirection Expression "do" Expression "done" ;
+
+ForDirTo.       ForDirection        ::= "to" ;
+ForDirDownTo.   ForDirection        ::= "downto" ;
 
 CInt.           Constant            ::= Integer ;
 CString.        Constant            ::= String ;
 
+OPSemicolon.    InfixOperator       ::= ";" ;
 OPPlus.         InfixOperator       ::= "+" ;
 OPMinus.        InfixOperator       ::= "-" ;
 OPMul.          InfixOperator       ::= "*" ;

@@ -6,6 +6,7 @@ IDef.           ImplDefinition      ::= Definition ;
 DefLet.         Definition          ::= "let" Pattern "=" Expression ;
 DefLetAnd.      Definition          ::= "let" Pattern "=" Expression "and" Definition ;
 
+PatList.        Pattern             ::= Pattern Pattern ;
 PatIdent.       Pattern             ::= Ident ;
 PatConst.       Pattern             ::= Constant ;
 PatNested.      Pattern             ::= "(" Pattern ")" ;
