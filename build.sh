@@ -8,4 +8,7 @@ cd parser &&
 stack exec happy -- -gca ParSyntax.y &&
 stack exec alex -- -g LexSyntax.x &&
 cd .. &&
+rm -f ocamlhs.cabal &&
+rm -r -f -d parser/*.x &&
+rm -r -f -d parser/*.y &&
 stack build
