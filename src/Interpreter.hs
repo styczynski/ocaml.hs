@@ -5,6 +5,7 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 
+import Environment
 import Runtime
 import Printer
 import AbsSyntax
@@ -23,28 +24,34 @@ evalNotSupported tree = do
   return (\env -> do
     return RUnit)
 
-evalInfixOperator :: InfixOperator -> RuntimeValue -> RuntimeValue -> Exec RuntimeValue
-evalInfixOperator (OPPlus) (RInt a) (RInt b) = do
+callNotSupported :: (Show tree) => tree -> Exec RuntimeValue
+callNotSupported tree = do
+  throwError ("DynamicCall: Call not supported: " ++ (show tree))
+  return RUnit
+
+callInfixOperator :: InfixOperator -> RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+callInfixOperator (OPPlus) (RInt a) (RInt b) = do
   return (RInt (a + b))
-evalInfixOperator (OPMinus) (RInt a) (RInt b) = do
+callInfixOperator (OPMinus) (RInt a) (RInt b) = do
   return (RInt (a - b))
-evalInfixOperator (OPMul) (RInt a) (RInt b) = do
+callInfixOperator (OPMul) (RInt a) (RInt b) = do
   return (RInt (a * b))
-evalInfixOperator (OPDiv) (RInt a) (RInt b) = do
+callInfixOperator (OPDiv) (RInt a) (RInt b) = do
   return (RInt (quot a b))
+callInfixOperator op _ _ = callNotSupported op
 
 eval :: Implementation -> Eval ProgramFn
 eval (IRootComplex a b) = do
   expA <- eval a
   expB <- eval b
   return (\env -> do
-    valA <- expA EmptyEnv
-    valB <- expB EmptyEnv
+    valA <- expA emptyEnv
+    valB <- expB emptyEnv
     return valB)
 eval (IRoot a) = do
   exp <- evalImplPhrase a
   return (\env -> do
-      val <- exp EmptyEnv
+      val <- exp emptyEnv
       return val)
 eval tree = evalNotSupported tree
 
@@ -53,7 +60,7 @@ evalImplPhrase :: ImplPhrase -> Eval ProgramFn
 evalImplPhrase (IPhrase expr) = do
   exp <- evalExpression expr
   return (\env -> do
-     val <- exp EmptyEnv
+     val <- exp emptyEnv
      return val)
 evalImplPhrase tree = evalNotSupported tree
 
@@ -68,15 +75,15 @@ evalExpression (EConst (CString val)) = do
 evalExpression (EParens expr) = do
     exp <- evalExpression expr
     return (\env -> do
-       val <- exp EmptyEnv
+       val <- exp emptyEnv
        return val)
 evalExpression (EComplex (ENInfix exprA op exprB)) = do
     expA <- evalExpression exprA
     expB <- evalExpression exprB
     return (\env -> do
-       valA <- expA EmptyEnv
-       valB <- expB EmptyEnv
-       res <- evalInfixOperator op valA valB
+       valA <- expA emptyEnv
+       valB <- expB emptyEnv
+       res <- callInfixOperator op valA valB
        return res)
 evalExpression tree = evalNotSupported tree
 

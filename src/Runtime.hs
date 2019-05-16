@@ -1,9 +1,6 @@
 module Runtime where
 
-
-data Environment = EmptyEnv
-
-data RuntimeValue = RUnit | RInt Integer | RString String deriving (Show, Eq)
+import Environment
 
 data ProgramResult = FailedParse String | FailedExecution String | Executed RuntimeValue Environment
 

@@ -12,6 +12,7 @@ import ParSyntax
 import SkelSyntax
 import AbsSyntax
 
+import Environment
 import Runtime
 import Interpreter
 import Printer
@@ -33,7 +34,7 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrLn s
                           exitFailure
            Ok  tree -> do putStrLn "\nParse Successful!"
-                          res <- runAST tree EmptyEnv
+                          res <- runAST tree emptyEnv
                           putStrLn (resultToStr res)
                           exitSuccess
 
