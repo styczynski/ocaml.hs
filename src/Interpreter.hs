@@ -28,88 +28,98 @@ callNotSupported tree = do
 
 callInfixOperator :: InfixOperator -> RuntimeValue -> RuntimeValue -> Exec RuntimeValue
 callInfixOperator (OPPlus) (RInt a) (RInt b) = do
-  return (RInt (a + b))
+  return $ RInt $ a + b
 callInfixOperator (OPMinus) (RInt a) (RInt b) = do
-  return (RInt (a - b))
+  return $ RInt $ a - b
 callInfixOperator (OPMul) (RInt a) (RInt b) = do
-  return (RInt (a * b))
+  return $ RInt $ a * b
 callInfixOperator (OPDiv) (RInt a) (RInt b) = do
-  return (RInt (quot a b))
+  return $ RInt $ quot a b
 callInfixOperator op _ _ = callNotSupported op
 
 eval :: Implementation -> Eval ProgramFn
 eval (IRootComplex a b) = do
   expA <- eval a
   expB <- eval b
-  return (\env -> do
+  return $ \env -> do
     valA <- expA emptyEnv
     valB <- expB emptyEnv
-    return valB)
+    return valB
 eval (IRoot a) = do
   exp <- evalImplPhrase a
-  return (\env -> do
+  return $ \env -> do
       val <- exp emptyEnv
-      return val)
+      return val
 eval tree = evalNotSupported tree
 
 
 evalImplPhrase :: ImplPhrase -> Eval ProgramFn
 evalImplPhrase (IPhrase expr) = do
   exp <- evalExpression expr
-  return (\env -> do
+  return $ \env -> do
      val <- exp emptyEnv
-     return val)
+     return val
 evalImplPhrase (IDef expr) = do
   exp <- evalDefinition expr
-  return (\env -> do
+  return $ \env -> do
      val <- exp emptyEnv
-     return val)
+     return val
 evalImplPhrase tree = evalNotSupported tree
 
 
 evalDefinition :: Definition -> Eval ProgramFn
 evalDefinition (DefLet (PatIdent name) expr) = do
   exp <- evalExpression expr
-  return (\env -> do
+  return $ \env -> do
      val <- exp emptyEnv
-     modify (\e -> setVariable e name val)
-     return val)
+     modify $ \e -> setVariable e name val
+     return val
 evalDefinition (DefLetFun (PatIdent name) (fnParams) expr) = do
   exp <- evalExpression expr
-  return (\env -> do
-     fnBody <- return (\params env -> do
+  return $ \env -> do
+     fnBody <- return $ \params env -> do
         val <- exp emptyEnv
-        return val)
+        return val
      let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) in (do
        modify (\e -> setVariable e name fn)
-       return fn))
+       return fn)
 evalDefinition tree = evalNotSupported tree
 
 
 evalExpression :: Expression -> Eval ProgramFn
 evalExpression (EIdent name) = do
-    return (\env -> do
+    return $ \env -> do
         state <- get
-        return (getVariable state name))
+        return $ getVariable state name
 evalExpression (EConst (CInt val)) = do
-    return (\env -> do
-        return (RInt val))
+    return $ \env -> do
+        return (RInt val)
 evalExpression (EConst (CString val)) = do
-    return (\env -> do
-        return (RString val))
+    return $ \env -> do
+        return (RString val)
 evalExpression (EParens expr) = do
     exp <- evalExpression expr
-    return (\env -> do
+    return $ \env -> do
        val <- exp emptyEnv
-       return val)
+       return val
+evalExpression (EComplex (ENCall name args)) = do
+    argsExprs <- return (map (\arg -> evalExpression arg) args)
+    return $ \env -> do
+      state <- get
+      fn <- return $ getVariable state name
+      fnBody <- case fn of
+        RFunc _ (RFuncBody body) -> return body
+        val -> throwError $ "CallError: Called object is not a function: " ++ (getTypeString val)
+      result <- fnBody [] emptyEnv
+      return result
 evalExpression (EComplex (ENInfix exprA op exprB)) = do
     expA <- evalExpression exprA
     expB <- evalExpression exprB
-    return (\env -> do
+    return $ \env -> do
        valA <- expA emptyEnv
        valB <- expB emptyEnv
        res <- callInfixOperator op valA valB
-       return res)
+       return res
 evalExpression tree = evalNotSupported tree
 
 ---

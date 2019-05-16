@@ -1,1 +1,1 @@
-let x y = 2 ;;
+let foo a = 2 ;; foo 1 ;;

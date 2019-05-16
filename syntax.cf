@@ -18,11 +18,9 @@ EConst.         Expression          ::= Constant ;
 EIdent.         Expression          ::= Ident ;
 EComplex.       Expression          ::= NAryExpression ;
 EParens.        Expression          ::= "(" Expression ")" ;
+separator       Expression          "" ;
 
-ECall.          Call                ::= Ident Expression ;
-ECallWith.      Call                ::= Call Expression ;
-
-ENCall.         NAryExpression      ::= Call  ;
+ENCall.         NAryExpression      ::= Ident [Expression] ;
 ENPrefix.       NAryExpression      ::= PrefixOperator Expression ;
 ENInfix.        NAryExpression      ::= Expression InfixOperator Expression ;
 ENLet.          NAryExpression      ::= "let" Pattern "=" Expression "in" Expression ;
