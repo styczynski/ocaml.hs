@@ -5,15 +5,14 @@ IPhrase.        ImplPhrase          ::= Expression ";;" ;
 IDef.           ImplPhrase          ::= Definition ";;" ;
 
 DefLet.         Definition          ::= "let" Pattern "=" Expression ;
+DefLetFun.      Definition          ::= "let" Pattern [Pattern] "=" Expression ;
 
-PatList.        Pattern             ::= Pattern Pattern ;
 PatIdent.       Pattern             ::= Ident ;
 PatConst.       Pattern             ::= Constant ;
 PatNested.      Pattern             ::= "(" Pattern ")" ;
-PatHead.        Pattern             ::= Pattern "::" Pattern ;
 PatNone.        Pattern             ::= "_" ;
-PatTuple.       Pattern             ::= Pattern "," Pattern ;
-PatVariant.     Pattern             ::= Pattern "|" Pattern ;
+
+separator       Pattern             "" ;
 
 EConst.         Expression          ::= Constant ;
 EIdent.         Expression          ::= Ident ;

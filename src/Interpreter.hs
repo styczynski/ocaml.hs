@@ -10,9 +10,6 @@ import Runtime
 import Printer
 import AbsSyntax
 
-type Exec = StateT (Environment) (ReaderT (Environment) (ExceptT String IO))
-type ProgramFn = Environment -> Exec RuntimeValue
-
 data Program = Valid ProgramFn | Invalid (String)
 data InterpreterState = EmptyState | ValueState
 
@@ -77,7 +74,17 @@ evalDefinition (DefLet (PatIdent name) expr) = do
      val <- exp emptyEnv
      modify (\e -> setVariable e name val)
      return val)
+evalDefinition (DefLetFun (PatIdent name) (fnParams) expr) = do
+  exp <- evalExpression expr
+  return (\env -> do
+     fnBody <- return (\params env -> do
+        val <- exp emptyEnv
+        return val)
+     let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) in (do
+       modify (\e -> setVariable e name fn)
+       return fn))
 evalDefinition tree = evalNotSupported tree
+
 
 evalExpression :: Expression -> Eval ProgramFn
 evalExpression (EIdent name) = do
