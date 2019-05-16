@@ -62,10 +62,28 @@ evalImplPhrase (IPhrase expr) = do
   return (\env -> do
      val <- exp emptyEnv
      return val)
+evalImplPhrase (IDef expr) = do
+  exp <- evalDefinition expr
+  return (\env -> do
+     val <- exp emptyEnv
+     return val)
 evalImplPhrase tree = evalNotSupported tree
 
 
+evalDefinition :: Definition -> Eval ProgramFn
+evalDefinition (DefLet (PatIdent name) expr) = do
+  exp <- evalExpression expr
+  return (\env -> do
+     val <- exp emptyEnv
+     modify (\e -> setVariable e name val)
+     return val)
+evalDefinition tree = evalNotSupported tree
+
 evalExpression :: Expression -> Eval ProgramFn
+evalExpression (EIdent name) = do
+    return (\env -> do
+        state <- get
+        return (getVariable state name))
 evalExpression (EConst (CInt val)) = do
     return (\env -> do
         return (RInt val))
