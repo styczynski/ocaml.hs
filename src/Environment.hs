@@ -26,6 +26,7 @@ getType RUnit = TUnit
 getType (RInt _) = TInt
 getType (RString _) = TString
 getType (RFunc sig _) = TFunc sig
+getType RInvalid = TUnknown
 getType _ = TUnknown
 
 typeToString :: RuntimeType -> String
@@ -39,7 +40,7 @@ typeToString (TFunc (RFuncSignature params ret)) =
 getTypeString :: RuntimeValue -> String
 getTypeString val = typeToString $ getType $ val
 
-data RuntimeValue = RUnit | RInt Integer | RString String | RFunc RFuncSignature RFuncBody deriving (Show)
+data RuntimeValue = RInvalid | RUnit | RInt Integer | RString String | RFunc RFuncSignature RFuncBody deriving (Show)
 
 data Environment = Environment { variables :: (Map.Map Ident RuntimeValue) } deriving (Show)
 
@@ -50,6 +51,9 @@ setVariable env name val =
   let Environment { variables = oldVariables } = env in
   env { variables = (Map.insert name val oldVariables) }
 
+setVariables :: Environment -> [Ident] -> [RuntimeValue] -> Environment
+setVariables env names vals = foldl (\env (n,v) -> setVariable env n v) env (zip names vals)
+
 delVariable :: Environment -> Ident -> Environment
 delVariable env name =
   let Environment { variables = oldVariables } = env in
@@ -58,4 +62,4 @@ delVariable env name =
 getVariable :: Environment -> Ident -> RuntimeValue
 getVariable env name =
   let Environment { variables = oldVariables } = env in
-  Map.findWithDefault RUnit name oldVariables
+  Map.findWithDefault RInvalid name oldVariables

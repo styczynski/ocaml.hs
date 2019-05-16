@@ -1,1 +1,1 @@
-let foo a = 2 ;; foo 1 ;;
+let foo h = h + 1 ;; foo 2 ;;

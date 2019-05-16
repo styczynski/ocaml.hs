@@ -10,10 +10,24 @@ import Runtime
 import Printer
 import AbsSyntax
 
+import qualified Data.Map as Map
+
+
 data Program = Valid ProgramFn | Invalid (String)
 data InterpreterState = EmptyState | ValueState
 
 type Eval = StateT (InterpreterState) (ReaderT (Environment) (ExceptT String IO))
+
+
+getPatternMapping :: Pattern -> RuntimeValue -> Map.Map Ident RuntimeValue
+getPatternMapping (PatIdent name) val = Map.insert name val Map.empty
+
+setPattern :: Environment -> Pattern -> RuntimeValue -> Environment
+setPattern env pattern val = let pm = getPatternMapping pattern val in
+  Map.foldrWithKey (\name val env -> setVariable env name val) env pm
+
+setPatterns :: Environment -> [Pattern] -> [RuntimeValue] -> Environment
+setPatterns env patterns vals = foldl (\env (p,v) -> setPattern env p v) env (zip patterns vals)
 
 evalNotSupported :: (Show tree) => tree -> Eval ProgramFn
 evalNotSupported tree = do
@@ -78,7 +92,7 @@ evalDefinition (DefLetFun (PatIdent name) (fnParams) expr) = do
   exp <- evalExpression expr
   return $ \env -> do
      fnBody <- return $ \params env -> do
-        val <- exp emptyEnv
+        val <- modify (\s -> setPatterns s fnParams params) >> (exp emptyEnv)
         return val
      let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) in (do
        modify (\e -> setVariable e name fn)
@@ -103,14 +117,16 @@ evalExpression (EParens expr) = do
        val <- exp emptyEnv
        return val
 evalExpression (EComplex (ENCall name args)) = do
-    argsExprs <- return (map (\arg -> evalExpression arg) args)
+    argsExprs <- (mapM (\arg -> evalExpression arg) args)
     return $ \env -> do
       state <- get
       fn <- return $ getVariable state name
       fnBody <- case fn of
         RFunc _ (RFuncBody body) -> return body
-        val -> throwError $ "CallError: Called object is not a function: " ++ (getTypeString val)
-      result <- fnBody [] emptyEnv
+        RInvalid -> throwError $ "CallError: Called object does not exist"
+        val -> return (\_ _ -> return val)
+      expVals <- mapM (\exp -> exp emptyEnv) argsExprs
+      result <- fnBody expVals emptyEnv
       return result
 evalExpression (EComplex (ENInfix exprA op exprB)) = do
     expA <- evalExpression exprA
