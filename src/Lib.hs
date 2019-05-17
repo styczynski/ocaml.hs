@@ -53,14 +53,12 @@ prettify v s = let ts = myLLexer s in case pImplementation ts of
 
 generateHS :: Verbosity -> String -> IO String
 generateHS v s = let ts = myLLexer s in case pImplementation ts of
-            Bad s    -> do putStrLn "\nParse              Failed...\n"
-                           putStrV v "Tokens:"
-                           putStrV v $ show ts
-                           putStrLn s
+            Bad s    -> do
                            exitFailure
-            Ok  tree -> do putStrLn "\nParse Successful!"
+            Ok  tree -> do
                            res <- genHSAST tree emptyEnv
                            return res
 
+generateHSFromContents v = getContents >>= generateHS v
 prettifyContents v = getContents >>= prettify v
 execContents v = getContents >>= run v

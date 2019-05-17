@@ -163,9 +163,9 @@ genHSImplPhrase (IMacro macro) = genHSMacro macro
 
 genHSMacro :: BuiltinMacro -> Eval String
 genHSMacro (MacHSSuite impl) = do
-  return "OK"
+  return $ treeToStr impl
 genHSMacro (MacHSInline impl) = do
-  return "WELL!"
+  return $ treeToStr impl
 
 runGenHSAST tree env = runExceptT (runReaderT (runStateT (genHS tree) (EmptyState)) (env))
 genHSAST tree env = do

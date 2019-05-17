@@ -6,7 +6,8 @@ import Lib
 
 data MainArgs = MainArgs
   { verbosity :: Int
-  , prettify :: Bool }
+  , prettify :: Bool
+  , generatehs :: Bool }
 
 parseMainArgs :: Parser MainArgs
 parseMainArgs = MainArgs
@@ -20,6 +21,10 @@ parseMainArgs = MainArgs
     ( long "prettify"
       <> short 'p'
       <> help "Do not interpret anything, only prettify the code and print it." )
+  <*> switch
+      ( long "generatehs"
+        <> short 'g'
+        <> help "Do not interpret anything just parse macros and generate Haskell code." )
 
 main :: IO ()
 main = mainEntry =<< execParser opts
@@ -30,7 +35,8 @@ main = mainEntry =<< execParser opts
       <> header "Piotr Styczynski 2019" )
 
 mainEntry :: MainArgs -> IO ()
-mainEntry (MainArgs verbosity prettify) = case (verbosity, prettify) of
-  (v, True) -> (prettifyContents v) >>= putStrLn
-  (v, False) -> execContents v
+mainEntry (MainArgs verbosity prettify generatehs) = case (verbosity, prettify, generatehs) of
+  (v, True, False) -> (prettifyContents v) >>= putStrLn
+  (v, False, False) -> execContents v
+  (v, _, True) -> (generateHSFromContents v) >>= putStrLn
 mainEntry _ = return ()
