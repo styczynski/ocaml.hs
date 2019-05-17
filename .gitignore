@@ -3,6 +3,8 @@
 .idea/
 .idea/**
 
+*.tmp
+
 examples/good/lol.ml
 
 test/Generated/
