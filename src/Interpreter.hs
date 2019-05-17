@@ -5,6 +5,7 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 
+import Macros
 import Environment
 import Runtime
 import Printer
@@ -17,7 +18,6 @@ data Program = Valid ProgramFn | Invalid (String)
 data InterpreterState = EmptyState | ValueState
 
 type Eval = StateT (InterpreterState) (ReaderT (Environment) (ExceptT String IO))
-
 
 getPatternMapping :: Pattern -> RuntimeValue -> Map.Map Ident RuntimeValue
 getPatternMapping (PatIdent name) val = Map.insert name val Map.empty
@@ -52,6 +52,9 @@ callInfixOperator (OPDiv) (RInt a) (RInt b) = do
 callInfixOperator op _ _ = callNotSupported op
 
 eval :: Implementation -> Eval ProgramFn
+eval INothing = do
+  return $ \env -> do
+    return RUnit
 eval (IRootComplex a b) = do
   expA <- eval a
   expB <- eval b
@@ -138,7 +141,40 @@ evalExpression (EComplex (ENInfix exprA op exprB)) = do
        return res
 evalExpression tree = evalNotSupported tree
 
----
+----------------
+
+genHS :: Implementation -> Eval String
+genHS INothing = do
+  return ""
+genHS (IRootComplex a b) = do
+  expA <- genHS a
+  expB <- genHS b
+  return (expA ++ expB)
+genHS (IRoot a) = do
+  exp <- genHSImplPhrase a
+  return exp
+
+genHSImplPhrase :: ImplPhrase -> Eval String
+genHSImplPhrase (IPhrase expr) = do
+  return ""
+genHSImplPhrase (IDef expr) = do
+  return ""
+genHSImplPhrase (IMacro macro) = genHSMacro macro
+
+genHSMacro :: BuiltinMacro -> Eval String
+genHSMacro (MacHSSuite impl) = do
+  return "OK"
+genHSMacro (MacHSInline impl) = do
+  return "WELL!"
+
+runGenHSAST tree env = runExceptT (runReaderT (runStateT (genHS tree) (EmptyState)) (env))
+genHSAST tree env = do
+  e <- runGenHSAST tree env
+  output <- return (case e of
+    Left s -> s
+    Right (e, _) -> e)
+  return output
+-------------
 
 
 runInterpretAST tree env = runExceptT (runReaderT (runStateT (eval tree) (EmptyState)) (env))
@@ -160,7 +196,7 @@ execProgram prog env = do
 
 runAST :: Implementation -> Environment -> IO ProgramResult
 runAST tree env = do
-  program <- interpretAST tree env
+  program <- interpretAST (removeMacros tree) env
   result <- (case program of
     Valid p -> execProgram p env
     Invalid s -> return (FailedParse s))

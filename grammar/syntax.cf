@@ -1,8 +1,13 @@
 IRoot.          Implementation      ::= ImplPhrase ;
 IRootComplex.   Implementation      ::= Implementation Implementation ;
+INothing.       Implementation      ::= "" ;
 
 IPhrase.        ImplPhrase          ::= Expression ;
 IDef.           ImplPhrase          ::= Definition ;
+IMacro.         ImplPhrase          ::= BuiltinMacro ;
+
+MacHSSuite.     BuiltinMacro        ::= "[@@@ocamlhs_suite]" Implementation "[@@@end]" ;
+MacHSInline.    BuiltinMacro        ::= "[@@@ocamlhs_code]"  Implementation "[@@@end]" ;
 
 DefLet.         Definition          ::= "let" Pattern "=" Expression ;
 DefLetFun.      Definition          ::= "let" Pattern [Pattern] "=" Expression ;
