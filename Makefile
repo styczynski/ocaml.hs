@@ -18,16 +18,20 @@ interpreter: install-deps parser-src
 test: interpreter generate-tests
 	stack test :ocamlhs-test --no-terminal --coverage
 
-generate-tests: $(wildcard examples/*.ml) $(subst .ml,Spec.hs,$(subst examples/,,$(wildcard examples/*.ml)))
-	echo "Generated tests from examples."
+clean-tests:
+	rm -r -f -d test/Generated
 
-%Spec.hs: examples/%.ml
+generate-tests: clean-tests generate-tests-good
+	echo "Done. Generated all tests from examples."
+
+generate-tests-good: $(wildcard examples/good/*.ml) $(subst .ml,GoodSpec.hs,$(subst examples/good/,,$(wildcard examples/good/*.ml)))
+	echo "Generated tests from examples/good."
+
+%GoodSpec.hs: examples/good/%.ml
 	@mkdir -p test/Generated > /dev/null 2> /dev/null
 	cat $< | stack exec ocamlhs-exe -- -g > $@.tmp
 	$(eval NAME:=$(shell basename -s ".ml" "$<"))
-	echo $(NAME)
-	$(info $(NAME))
-	sed -i -e "s/module MainSpec/module Generated.$(NAME)Spec/g" $@.tmp
+	sed -i -e "s/module MainSpec/module Generated.$(NAME)GoodSpec/g" $@.tmp
 	mv $@.tmp test/Generated/$@
 
 clean:
