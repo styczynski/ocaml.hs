@@ -3,6 +3,8 @@
 .idea/
 .idea/**
 
+examples/good/lol.ml
+
 test/Generated/
 test/Generated/**
 parser/
