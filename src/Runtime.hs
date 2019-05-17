@@ -4,6 +4,9 @@ import Environment
 
 data ProgramResult = FailedParse String | FailedExecution String | Executed RuntimeValue Environment
 
+getProgramResult :: ProgramResult -> RuntimeValue
+getProgramResult (Executed v _) = v
+
 runtimeValueToStr :: RuntimeValue -> String
 runtimeValueToStr RUnit = "()"
 runtimeValueToStr (RInt val) = (show val)

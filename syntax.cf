@@ -1,8 +1,8 @@
 IRoot.          Implementation      ::= ImplPhrase ;
 IRootComplex.   Implementation      ::= Implementation Implementation ;
 
-IPhrase.        ImplPhrase          ::= Expression ";;" ;
-IDef.           ImplPhrase          ::= Definition ";;" ;
+IPhrase.        ImplPhrase          ::= Expression ;
+IDef.           ImplPhrase          ::= Definition ;
 
 DefLet.         Definition          ::= "let" Pattern "=" Expression ;
 DefLetFun.      Definition          ::= "let" Pattern [Pattern] "=" Expression ;

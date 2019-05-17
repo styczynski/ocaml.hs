@@ -1,1 +1,3 @@
-let foo h = h + 1 ;; foo 2 ;;
+let foo h = h + 9
+
+let bar = foo 2

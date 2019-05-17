@@ -20,7 +20,13 @@ instance Show RFuncBody where
 instance Show RFuncSignature where
   show sig = typeToString (TFunc sig)
 
-data RuntimeType = TUnit | TInt | TString | TFunc RFuncSignature | TUnknown
+instance Eq RFuncBody where
+  (==) a b = False
+
+instance Eq RFuncSignature where
+  (==) (RFuncSignature argsA retA) (RFuncSignature argsB retB) = (argsA == argsB) && (retA == retB)
+
+data RuntimeType = TUnit | TInt | TString | TFunc RFuncSignature | TUnknown deriving (Show, Eq)
 getType :: RuntimeValue -> RuntimeType
 getType RUnit = TUnit
 getType (RInt _) = TInt
@@ -40,7 +46,7 @@ typeToString (TFunc (RFuncSignature params ret)) =
 getTypeString :: RuntimeValue -> String
 getTypeString val = typeToString $ getType $ val
 
-data RuntimeValue = RInvalid | RUnit | RInt Integer | RString String | RFunc RFuncSignature RFuncBody deriving (Show)
+data RuntimeValue = RInvalid | RUnit | RInt Integer | RString String | RFunc RFuncSignature RFuncBody deriving (Show, Eq)
 
 data Environment = Environment { variables :: (Map.Map Ident RuntimeValue) } deriving (Show)
 

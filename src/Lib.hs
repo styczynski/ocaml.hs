@@ -1,6 +1,7 @@
 module Lib (
   run,
-  execContents
+  execContents,
+  evaluate
 ) where
 
 import System.IO ( stdin, hGetContents )
@@ -23,11 +24,16 @@ type ParseFun a = [Token] -> Err a
 
 myLLexer = myLexer
 
-runFile :: Verbosity -> ParseFun Implementation -> FilePath -> IO ()
-runFile v p f = putStrLn f >> readFile f >>= run v p
+runFile :: Verbosity -> FilePath -> IO ()
+runFile v f = putStrLn f >> readFile f >>= run v
 
-run :: Verbosity -> ParseFun Implementation -> String -> IO ()
-run v p s = let ts = myLLexer s in case p ts of
+evaluate :: Verbosity -> String -> IO ProgramResult
+evaluate v s = let ts = myLLexer s in case pImplementation ts of
+          Bad s    -> return $ FailedParse s
+          Ok  tree -> runAST tree emptyEnv
+
+run :: Verbosity -> String -> IO ()
+run v s = let ts = myLLexer s in case pImplementation ts of
            Bad s    -> do putStrLn "\nParse              Failed...\n"
                           putStrV v "Tokens:"
                           putStrV v $ show ts
@@ -38,4 +44,4 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrLn (resultToStr res)
                           exitSuccess
 
-execContents = getContents >>= run 2 pImplementation
+execContents = getContents >>= run 2
