@@ -14,5 +14,6 @@ removeMacros (IRootComplex a b) =
 removeMacros (IRoot phrase) = case phrase of
   IPhrase expr -> IRoot $ IPhrase expr
   IDef def -> IRoot $ IDef def
+  IMacro (MacHSSuite impl _) -> impl
   IMacro macro -> discardMacro macro
 removeMacros impl = impl

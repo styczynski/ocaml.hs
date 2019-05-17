@@ -6,8 +6,7 @@ IPhrase.        ImplPhrase          ::= Expression ;
 IDef.           ImplPhrase          ::= Definition ;
 IMacro.         ImplPhrase          ::= BuiltinMacro ;
 
-MacHSSuite.     BuiltinMacro        ::= "[@@@ocamlhs_suite]" Implementation "[@@@end]" ;
-MacHSInline.    BuiltinMacro        ::= "[@@@ocamlhs_code]"  Implementation "[@@@end]" ;
+MacHSSuite.     BuiltinMacro        ::= "[@@@ocamlhs_suite]" Implementation "[@@@ocamlhs_suite_test]" [Constant] "[@@@end ocamlhs_suite]";
 
 DefLet.         Definition          ::= "let" Pattern "=" Expression ;
 DefLetFun.      Definition          ::= "let" Pattern [Pattern] "=" Expression ;
@@ -38,6 +37,7 @@ ForDirDownTo.   ForDirection        ::= "downto" ;
 
 CInt.           Constant            ::= Integer ;
 CString.        Constant            ::= String ;
+separator       Constant            "" ;
 
 OPSemicolon.    InfixOperator       ::= ";" ;
 OPPlus.         InfixOperator       ::= "+" ;

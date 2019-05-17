@@ -3,6 +3,8 @@
 .idea/
 .idea/**
 
+test/Generated/
+test/Generated/**
 parser/
 
 dist

@@ -15,8 +15,20 @@ parser-src: install-deps
 interpreter: install-deps parser-src
 	stack build
 
-test: interpreter
+test: interpreter generate-tests
 	stack test :ocamlhs-test --no-terminal --coverage
+
+generate-tests: $(wildcard examples/*.ml) $(subst .ml,Spec.hs,$(subst examples/,,$(wildcard examples/*.ml)))
+	echo "Generated tests from examples."
+
+%Spec.hs: examples/%.ml
+	@mkdir -p test/Generated > /dev/null 2> /dev/null
+	cat $< | stack exec ocamlhs-exe -- -g > $@.tmp
+	$(eval NAME:=$(shell basename -s ".ml" "$<"))
+	echo $(NAME)
+	$(info $(NAME))
+	sed -i -e "s/module MainSpec/module Generated.$(NAME)Spec/g" $@.tmp
+	mv $@.tmp test/Generated/$@
 
 clean:
 	rm -r -f -d parser
