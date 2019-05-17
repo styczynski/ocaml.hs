@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cat "$1" | stack exec interpreter -- ${@:2}root@styczyn:~/IdeaProjects/ocaml.hs
