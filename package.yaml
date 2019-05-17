@@ -37,7 +37,7 @@ library:
   - parser
 
 executables:
-  ocamlhs-exe:
+  interpreter:
     main:                Main.hs
     source-dirs:
     - app
@@ -59,4 +59,4 @@ tests:
     - -with-rtsopts=-N
     defaults: hspec/hspec@master
     dependencies:
-    - ocamlhs
+    - ocaml
