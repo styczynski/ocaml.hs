@@ -16,7 +16,7 @@ interpreter: install-deps parser-src
 	stack build
 
 test: interpreter
-	stack test
+	stack test :ocamlhs-test --no-terminal --coverage
 
 clean:
 	rm -r -f -d parser
