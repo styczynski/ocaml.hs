@@ -25,6 +25,7 @@ EParens.        Expression          ::= "(" Expression ")" ;
 separator       Expression          "" ;
 
 ENCall.         NAryExpression      ::= Ident [Expression] ;
+ENFun.          NAryExpression      ::= "fun" [Pattern] "->" Expression;
 ENPrefix.       NAryExpression      ::= PrefixOperator Expression ;
 ENInfix.        NAryExpression      ::= Expression InfixOperator Expression ;
 ENLet.          NAryExpression      ::= "let" Pattern "=" Expression "in" Expression ;

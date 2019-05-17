@@ -180,6 +180,14 @@ evalExpression (EComplex (ENLet pat patExpr e)) = do
       valPattern <- exprPattern emptyEnv
       result <- modify (\s -> setPattern s pat valPattern) >> (exprInner emptyEnv)
       return result
+evalExpression (EComplex (ENFun (fnParams) expr)) = do
+    exp <- evalExpression expr
+    return $ \env -> do
+       fnBody <- return $ \params env -> do
+          val <- modify (\s -> setPatterns s fnParams params) >> (exp emptyEnv)
+          return val
+       let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) in (do
+         return fn)
 evalExpression (EComplex (ENCall name args)) = do
     argsExprs <- (mapM (\arg -> evalExpression arg) args)
     return $ \env -> do

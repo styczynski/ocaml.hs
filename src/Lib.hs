@@ -1,6 +1,6 @@
 module Lib where
 
-import System.IO ( stdin, hGetContents )
+import System.IO ( stdin, stderr, hPutStrLn, hGetContents )
 import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 
@@ -31,32 +31,30 @@ evaluate v s = let ts = myLLexer s in case pImplementation ts of
 
 run :: Verbosity -> String -> IO ()
 run v s = let ts = myLLexer s in case pImplementation ts of
-           Bad s    -> do putStrLn "\nParse              Failed...\n"
+           Bad s    -> do hPutStrLn stderr "\nParse              Failed...\n"
                           putStrV v "Tokens:"
                           putStrV v $ show ts
-                          putStrLn s
+                          hPutStrLn stderr s
                           exitFailure
-           Ok  tree -> do putStrLn "\nParse Successful!"
+           Ok  tree -> do
                           res <- runAST tree emptyEnv
                           putStrLn (resultToStr res)
                           exitSuccess
 
 prettify :: Verbosity -> String -> IO String
 prettify v s = let ts = myLLexer s in case pImplementation ts of
-            Bad s    -> do putStrLn "\nParse              Failed...\n"
-                           putStrV v "Tokens:"
+            Bad s    -> do hPutStrLn stderr "\nParse              Failed...\n"
                            putStrV v $ show ts
-                           putStrLn s
+                           hPutStrLn stderr s
                            exitFailure
-            Ok  tree -> do putStrLn "\nParse Successful!"
+            Ok  tree -> do
                            return (printTree tree)
 
 generateHS :: Verbosity -> String -> IO String
 generateHS v s = let ts = myLLexer s in case pImplementation ts of
-            Bad s    -> do putStrLn "\nParse              Failed...\n"
-                           putStrV v "Tokens:"
+            Bad s    -> do hPutStrLn stderr "\nParse              Failed...\n"
                            putStrV v $ show ts
-                           putStrLn s
+                           hPutStrLn stderr s
                            exitFailure
             Ok  tree -> do
                            res <- genHSAST tree emptyEnv
