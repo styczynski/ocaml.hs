@@ -40,8 +40,8 @@ CString.        Constant            ::= String ;
 CBool.          Constant            ::= ConstantBool ;
 separator       Constant            "" ;
 
-CBTrue.         ConstantBool        ::= "True" ;
-CBFalse.        ConstantBool        ::= "False" ;
+CBTrue.         ConstantBool        ::= "true" ;
+CBFalse.        ConstantBool        ::= "false" ;
 
 OPAnd.          InfixOperator       ::= "&&" ;
 OPOr.           InfixOperator       ::= "||" ;
