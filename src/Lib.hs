@@ -8,6 +8,7 @@ import System.IO ( stdin, hGetContents )
 import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 
+import PrintSyntax
 import LexSyntax
 import ParSyntax
 import SkelSyntax
@@ -43,5 +44,15 @@ run v s = let ts = myLLexer s in case pImplementation ts of
                           res <- runAST tree emptyEnv
                           putStrLn (resultToStr res)
                           exitSuccess
+
+prettify :: Verbosity -> String -> IO String
+prettify v s = let ts = myLLexer s in case pImplementation ts of
+            Bad s    -> do putStrLn "\nParse              Failed...\n"
+                           putStrV v "Tokens:"
+                           putStrV v $ show ts
+                           putStrLn s
+                           exitFailure
+            Ok  tree -> do putStrLn "\nParse Successful!"
+                           return (printTree tree)
 
 execContents = getContents >>= run 2
