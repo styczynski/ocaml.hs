@@ -1,8 +1,4 @@
-module Lib (
-  run,
-  execContents,
-  evaluate
-) where
+module Lib where
 
 import System.IO ( stdin, hGetContents )
 import System.Environment ( getArgs, getProgName )
@@ -55,4 +51,5 @@ prettify v s = let ts = myLLexer s in case pImplementation ts of
             Ok  tree -> do putStrLn "\nParse Successful!"
                            return (printTree tree)
 
-execContents = getContents >>= run 2
+prettifyContents v = getContents >>= prettify v
+execContents v = getContents >>= run v
