@@ -124,6 +124,17 @@ evalExpression (EParens expr) = do
     return $ \env -> do
        val <- exp emptyEnv
        return val
+evalExpression (EComplex (ENIf cond th el)) = do
+    expCondition <- evalExpression cond
+    expThen <- evalExpression th
+    expElse <- evalExpression el
+    return $ \env -> do
+      condVal <- expCondition emptyEnv
+      boolCond <- return $ case condVal of
+        RInt val -> val > 0
+        _ -> False
+      result <- (if boolCond then (expThen emptyEnv) else (expElse emptyEnv))
+      return result
 evalExpression (EComplex (ENCall name args)) = do
     argsExprs <- (mapM (\arg -> evalExpression arg) args)
     return $ \env -> do

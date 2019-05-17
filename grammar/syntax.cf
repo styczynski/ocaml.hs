@@ -28,7 +28,7 @@ ENCall.         NAryExpression      ::= Ident [Expression] ;
 ENPrefix.       NAryExpression      ::= PrefixOperator Expression ;
 ENInfix.        NAryExpression      ::= Expression InfixOperator Expression ;
 ENLet.          NAryExpression      ::= "let" Pattern "=" Expression "in" Expression ;
-ENIf.           NAryExpression      ::= "if" Expression "then" Expression ;
+ENIf.           NAryExpression      ::= "if" Expression "then" Expression "else" Expression ;
 ENWhile.        NAryExpression      ::= "while" Expression "do" Expression "done" ;
 ENFor.          NAryExpression      ::= "for" Ident "=" Expression ForDirection Expression "do" Expression "done" ;
 
