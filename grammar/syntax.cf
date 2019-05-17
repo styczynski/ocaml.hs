@@ -37,8 +37,14 @@ ForDirDownTo.   ForDirection        ::= "downto" ;
 
 CInt.           Constant            ::= Integer ;
 CString.        Constant            ::= String ;
+CBool.          Constant            ::= ConstantBool ;
 separator       Constant            "" ;
 
+CBTrue.         ConstantBool        ::= "True" ;
+CBFalse.        ConstantBool        ::= "False" ;
+
+OPAnd.          InfixOperator       ::= "&&" ;
+OPOr.           InfixOperator       ::= "||" ;
 OPSemicolon.    InfixOperator       ::= ";" ;
 OPPlus.         InfixOperator       ::= "+" ;
 OPMinus.        InfixOperator       ::= "-" ;

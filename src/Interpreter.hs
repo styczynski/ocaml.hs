@@ -46,14 +46,46 @@ callNotSupported tree = do
   return RUnit
 
 callInfixOperator :: InfixOperator -> RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+
 callInfixOperator (OPPlus) (RInt a) (RInt b) = do
   return $ RInt $ a + b
+
 callInfixOperator (OPMinus) (RInt a) (RInt b) = do
   return $ RInt $ a - b
+
 callInfixOperator (OPMul) (RInt a) (RInt b) = do
   return $ RInt $ a * b
+
 callInfixOperator (OPDiv) (RInt a) (RInt b) = do
   return $ RInt $ quot a b
+
+callInfixOperator (OPLt) (RInt a) (RInt b) = do
+  return $ RBool $ a < b
+
+callInfixOperator (OPLt) (RInt a) (RInt b) = do
+  return $ RBool $ a < b
+
+callInfixOperator (OPEqLt) (RInt a) (RInt b) = do
+  return $ RBool $ a <= b
+
+callInfixOperator (OPGt) (RInt a) (RInt b) = do
+  return $ RBool $ a > b
+
+callInfixOperator (OPEqGt) (RInt a) (RInt b) = do
+  return $ RBool $ a >= b
+
+callInfixOperator (OPAnd) (RBool a) (RBool b) = do
+  return $ RBool $ a && b
+
+callInfixOperator (OPOr) (RBool a) (RBool b) = do
+  return $ RBool $ a || b
+
+callInfixOperator (OPEq) (RInt a) (RInt b) = do
+  return $ RBool $ a == b
+
+callInfixOperator (OPEqS) (RInt a) (RInt b) = do
+  return $ RBool $ a == b
+
 callInfixOperator op _ _ = callNotSupported op
 
 eval :: Implementation -> Eval ProgramFn
@@ -116,6 +148,12 @@ evalExpression (EIdent name) = do
 evalExpression (EConst (CInt val)) = do
     return $ \env -> do
         return (RInt val)
+evalExpression (EConst (CBool CBTrue)) = do
+    return $ \env -> do
+        return (RBool True)
+evalExpression (EConst (CBool CBFalse)) = do
+    return $ \env -> do
+        return (RBool False)
 evalExpression (EConst (CString val)) = do
     return $ \env -> do
         return (RString val)
@@ -130,9 +168,9 @@ evalExpression (EComplex (ENIf cond th el)) = do
     expElse <- evalExpression el
     return $ \env -> do
       condVal <- expCondition emptyEnv
-      boolCond <- return $ case condVal of
-        RInt val -> val > 0
-        _ -> False
+      boolCond <- case condVal of
+        RBool val -> return val
+        v -> throwError $ "TypeError: Cannot evaluate if condition on " ++ (getTypeString v)
       result <- (if boolCond then (expThen emptyEnv) else (expElse emptyEnv))
       return result
 evalExpression (EComplex (ENCall name args)) = do
