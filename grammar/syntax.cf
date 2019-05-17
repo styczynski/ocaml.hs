@@ -1,6 +1,6 @@
 IRoot.          Implementation      ::= ImplPhrase ;
 IRootComplex.   Implementation      ::= Implementation Implementation ;
-INothing.       Implementation      ::= "" ;
+internal INothing.       Implementation      ::= "" ;
 
 IPhrase.        ImplPhrase          ::= Expression ;
 IDef.           ImplPhrase          ::= Definition ;

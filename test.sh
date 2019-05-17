@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cat ./examples/basic.ml | stack exec ocamlhs-exe
+cat ./examples/GlobalLet.ml | stack exec ocamlhs-exe -- -g
