@@ -173,6 +173,13 @@ evalExpression (EComplex (ENIf cond th el)) = do
         v -> throwError $ "TypeError: Cannot evaluate if condition on " ++ (getTypeString v)
       result <- (if boolCond then (expThen emptyEnv) else (expElse emptyEnv))
       return result
+evalExpression (EComplex (ENLet pat patExpr e)) = do
+    exprInner <- evalExpression e
+    exprPattern <- evalExpression patExpr
+    return $ \env -> do
+      valPattern <- exprPattern emptyEnv
+      result <- modify (\s -> setPattern s pat valPattern) >> (exprInner emptyEnv)
+      return result
 evalExpression (EComplex (ENCall name args)) = do
     argsExprs <- (mapM (\arg -> evalExpression arg) args)
     return $ \env -> do
