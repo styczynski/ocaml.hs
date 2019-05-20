@@ -59,4 +59,4 @@ tests:
     - -with-rtsopts=-N
     defaults: hspec/hspec@master
     dependencies:
-    - ocaml
+    - ocamlhs
