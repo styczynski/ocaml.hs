@@ -42,3 +42,5 @@ extra-deps:
 - zenc-0.1.1
 - opench-meteo-0.2.0.0
 - text-1.2.2.1
+- raw-strings-qq-1.1
+- para-1.1
