@@ -14,15 +14,11 @@ version: ${version}`,
 });
 
 const help = () => ({
-  value: `:listen [id] - starts remote debugging session
-:theme dark|light
-:load &lt;script_url&gt; load also supports shortcuts, like \`:load jquery\`
-:libraries
+  value: `:theme dark|light
 :clear
 :history
 :about
 :version
-copy(<value>) and $_ for last value
 
 ${about().value}`,
   html: true,
@@ -30,7 +26,7 @@ ${about().value}`,
 
 const about = () => ({
   value:
-    'Built by <a href="https://twitter.com/rem" target="_blank">@rem</a> • <a href="https://github.com/remy/jsconsole" target="_blank">open source</a> • <a href="https://www.paypal.me/rem/9.99usd" target="_blank">donate</a>',
+    'Built by <a href="https://github.com/styczynski/" target="_blank">@styczynski</a> • <a href="https://github.com/styczynski/ocaml.hs" target="_blank">ocaml.hs</a> • 2019',
   html: true,
 });
 
@@ -155,11 +151,8 @@ const listen = async ({ args: [id], console: internalConsole }) => {
 };
 
 const commands = {
-  libraries,
   help,
   about,
-  load,
-  listen,
   theme,
   clear,
   history,
