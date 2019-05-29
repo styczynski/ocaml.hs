@@ -251,7 +251,7 @@ genHSMacro (MacHSSuite impl code) _ = do
     spec = do
       describe "Interpreter arithmetics" $ do
         it "Should add two numbers" $ do
-          res <- evaluate 2 |] ++ "([r|" ++ contents ++ "|])" ++
+          res <- run 2 |] ++ "([r|" ++ contents ++ "|])" ++
           (foldl (\acc (CString str) -> acc ++ [r|
           |] ++ str) "" code)
   return $ unlines [ header ]
