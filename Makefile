@@ -1,6 +1,9 @@
 all: interpreter
 	echo "Done."
 
+web: interpreter-web
+	echo "Done."
+
 install-deps:
 	stack install --only-dependencies
 
@@ -14,6 +17,9 @@ parser-src: install-deps
 
 interpreter: install-deps parser-src
 	stack build
+
+interpreter-web:
+	cd ./web && make all
 
 test: interpreter generate-tests
 	stack test :ocamlhs-test --no-terminal --coverage

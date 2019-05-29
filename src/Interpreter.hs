@@ -134,7 +134,7 @@ evalDefinition (DefLetFun (PatIdent name) (fnParams) expr) = do
      fnBody <- return $ \params env -> do
         val <- modify (\s -> setPatterns s fnParams params) >> (exp emptyEnv)
         return val
-     let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) in (do
+     let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) (name : (map patternToIdent fnParams)) in (do
        modify (\e -> setVariable e name fn)
        return fn)
 evalDefinition tree = evalNotSupported tree
@@ -186,7 +186,7 @@ evalExpression (EComplex (ENFun (fnParams) expr)) = do
        fnBody <- return $ \params env -> do
           val <- modify (\s -> setPatterns s fnParams params) >> (exp emptyEnv)
           return val
-       let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) in (do
+       let fn = RFunc (RFuncSignature (map (\_ -> TUnknown) fnParams) TUnknown) (RFuncBody fnBody) [] in (do
          return fn)
 evalExpression (EComplex (ENCall name args)) = do
     argsExprs <- (mapM (\arg -> evalExpression arg) args)
@@ -194,7 +194,7 @@ evalExpression (EComplex (ENCall name args)) = do
       state <- get
       fn <- return $ getVariable state name
       fnBody <- case fn of
-        RFunc _ (RFuncBody body) -> return body
+        RFunc _ (RFuncBody body) _ -> return body
         RInvalid -> throwError $ "CallError: Called object does not exist"
         val -> return (\_ _ -> return val)
       expVals <- mapM (\exp -> exp emptyEnv) argsExprs
@@ -278,6 +278,14 @@ interpretAST tree env = do
 execProgram :: ProgramFn -> Environment -> IO ProgramResult
 execProgram prog env = do
   e <- runExceptT (runReaderT (runStateT (prog env) (env)) (env))
+  result <- return (case e of
+    Left err -> FailedExecution err
+    Right (res, state) -> Executed res state)
+  return result
+
+execFunction :: RFuncBody -> [RuntimeValue] -> Environment -> IO ProgramResult
+execFunction (RFuncBody body) args env = do
+  e <- runExceptT (runReaderT (runStateT (body args env) (env)) (env))
   result <- return (case e of
     Left err -> FailedExecution err
     Right (res, state) -> Executed res state)
