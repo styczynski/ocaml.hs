@@ -21,10 +21,12 @@ type ParseFun a = [Token] -> Err a
 
 myLLexer = myLexer
 
-run :: Verbosity -> String -> IO String
-run v s = let ts = myLLexer s in case pImplementation ts of
-          Bad s    -> return $ show s
+runWith :: Verbosity -> String -> Environment -> IO ProgramResult
+runWith v s env = let ts = myLLexer s in case pImplementation ts of
+          Bad s    -> return $ FailedParse $ show s
           Ok  tree -> do
-                        putStrLn "Hello"
-                        res <- runAST tree emptyEnv
-                        return (resultToStr res)
+                        res <- runAST tree env
+                        return res
+
+run :: Verbosity -> String -> IO ProgramResult
+run v s = runWith v s emptyEnv

@@ -32,7 +32,7 @@ getType RUnit = TUnit
 getType (RInt _) = TInt
 getType (RBool _) = TBool
 getType (RString _) = TString
-getType (RFunc sig _) = TFunc sig
+getType (RFunc sig _ _) = TFunc sig
 getType RInvalid = TUnknown
 getType _ = TUnknown
 
@@ -45,10 +45,14 @@ typeToString TUnknown = "unknown"
 typeToString (TFunc (RFuncSignature params ret)) =
   "function: " ++ (foldl (\acc el -> (if (acc == "") then "" else (acc ++ "-> ")) ++ (typeToString el) ++ " ") "" (params ++ [ret]))
 
+patternToIdent :: Pattern -> Ident
+patternToIdent (PatIdent name) = name
+patternToIdent p = Ident $ show p
+
 getTypeString :: RuntimeValue -> String
 getTypeString val = typeToString $ getType $ val
 
-data RuntimeValue = RBool Bool | RInvalid | RUnit | RInt Integer | RString String | RFunc RFuncSignature RFuncBody deriving (Show, Eq)
+data RuntimeValue = RBool Bool | RInvalid | RUnit | RInt Integer | RString String | RFunc RFuncSignature RFuncBody [Ident] deriving (Show, Eq)
 
 data Environment = Environment { variables :: (Map.Map Ident RuntimeValue) } deriving (Show)
 

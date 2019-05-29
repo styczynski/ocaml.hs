@@ -7,13 +7,20 @@ data ProgramResult = FailedParse String | FailedExecution String | Executed Runt
 getProgramResult :: ProgramResult -> RuntimeValue
 getProgramResult (Executed v _) = v
 
+getProgramEnvironmentDefault :: ProgramResult -> Environment -> Environment
+getProgramEnvironmentDefault (Executed _ env) _ = env
+getProgramEnvironmentDefault _ defaultEnv = defaultEnv
+
+getProgramEnvironment :: ProgramResult -> Environment
+getProgramEnvironment r = getProgramEnvironmentDefault r emptyEnv
+
 runtimeValueToStr :: RuntimeValue -> String
 runtimeValueToStr RUnit = "()"
 runtimeValueToStr (RInt val) = (show val)
 runtimeValueToStr (RString val) = (show val)
 runtimeValueToStr (RBool True) = "true"
 runtimeValueToStr (RBool False) = "false"
-runtimeValueToStr (RFunc _ _) = " "
+runtimeValueToStr (RFunc _ _ _) = " "
 runtimeValueToStr val = (show val)
 
 resultToStr :: ProgramResult -> String

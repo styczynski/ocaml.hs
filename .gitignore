@@ -6,6 +6,9 @@
 *.tmp
 
 examples/good/lol.ml
+web/frontend/src/parser/
+web/frontend/node_modules/
+**/node_modules/
 
 test/Generated/
 test/Generated/**
