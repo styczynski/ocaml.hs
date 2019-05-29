@@ -8,7 +8,7 @@ const API = process.env.REACT_APP_API || '';
 // :load <url> - to inject new DOM
 
 const welcome = () => ({
-  value: `Use <strong>:help</strong> to show jsconsole commands
+  value: `Use <strong>:help</strong> to show interpreter commands
 version: ${version}`,
   html: true,
 });
