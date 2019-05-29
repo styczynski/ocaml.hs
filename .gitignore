@@ -38,4 +38,5 @@ cabal.project.local~
 .ghc.environment.*
 
 !web/ocamlhs-web.cabal
+!docs/parser
 web/frontend/build/
