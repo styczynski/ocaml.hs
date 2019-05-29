@@ -53,19 +53,19 @@
 }
 
 .icon.copy {
-  background-image: url(/copy.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/copy.svg);
 }
 
 .icon.link {
-  background-image: url(/link.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/link.svg);
 }
 
 .icon.search {
-  background-image: url(/search.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/search.svg);
 }
 
 .icon.expand {
-  background-image: url(/expand.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/expand.svg);
   padding: 0;
   background-color: transparent;
   margin: 0;

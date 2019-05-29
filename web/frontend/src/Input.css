@@ -18,7 +18,7 @@
 .Input:before {
   position: absolute;
   content: '';
-  background-image: url(/prompt.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/prompt.svg);
   background-size: contain;
   top: 0.9rem;
   left: 0.4rem;
@@ -29,7 +29,7 @@
 }
 
 .Line .input:before {
-  background-image: url(/in.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/in.svg);
 }
 
 .Input .cli,

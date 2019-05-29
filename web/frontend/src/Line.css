@@ -37,7 +37,7 @@
 }
 
 .Line .input:before {
-  background-image: url(/in.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/in.svg);
   top: 0.9rem;
 }
 
@@ -46,7 +46,7 @@
 }
 
 .Line .output:before {
-  background-image: url(/out.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/out.svg);
 }
 
 .Line .output.log:before {
@@ -54,7 +54,7 @@
 }
 
 .Line .error.output:before {
-  background-image: url(/error.svg);
+  background-image: url(http://styczynski.in/ocaml.hs/error.svg);
 }
 
 .Line:hover .LineNav,
