@@ -86,11 +86,25 @@ export default async function run(command) {
         } else if (output.funSig) {
             const fnBody = res.value;
             let argsSig = "";
+
+            let argsNames = [];
+            let funName = "fn";
+            if (output.funSig.args_names && output.funSig.args_names.length == output.funSig.args_count + 1) {
+                funName = output.funSig.args_names[0];
+                argsNames = output.funSig.args_names.slice(1);
+            } else {
+                for (let i=0;i<output.funSig.args_count;++i) {
+                    argsNames.push(`x${i}`);
+                }
+            }
+
             for (let i=0;i<output.funSig.args_count;++i) {
                 if (argsSig != "") argsSig += ", ";
-                argsSig += "x"+i;
+                argsSig += argsNames[i];
             }
-            res.value = new (Function.prototype.bind.apply(Function, ['anonymous'].concat(argsSig).concat([`return fnBody([${argsSig}]);`])));
+
+            const code = `return function ${funName}(${argsSig}) { return ([${argsSig}]); };`;
+            res.value = (new (Function.prototype.bind.apply(Function, [funName].concat(argsSig).concat([code]))))();
 
         }
 
