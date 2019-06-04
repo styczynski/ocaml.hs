@@ -1,76 +1,67 @@
-IRoot.          Implementation      ::= ImplPhrase ;
-IRootComplex.   Implementation      ::= Implementation Implementation ;
-internal INothing.       Implementation      ::= "" ;
+IRoot.          Implementation      ::= ImplPhrase ";;" ;
 
-IPhrase.        ImplPhrase          ::= Expression ;
-IDef.           ImplPhrase          ::= Definition ;
-IMacro.         ImplPhrase          ::= BuiltinMacro ;
+IPhrase.        ImplPhrase          ::= LetExpression ;
 
-MacHSSuite.     BuiltinMacro        ::= "[@@@ocamlhs_suite]" Implementation "[@@@ocamlhs_suite_test]" [Constant] "[@@@end ocamlhs_suite]";
+PatIdent.       SimplePattern       ::= Ident ;
+PatConst.       SimplePattern       ::= Constant ;
+PatNested.      SimplePattern       ::= "(" SimplePattern ")" ;
+PatNone.        SimplePattern       ::= "_" ;
+separator       SimplePattern       "" ;
 
-DefLet.         Definition          ::= "let" Pattern "=" Expression ;
-DefLetFun.      Definition          ::= "let" Pattern [Pattern] "=" Expression ;
+ExprConst.      Expression6         ::= Constant ;
+ExprCall.       Expression6         ::= Ident [SimpleExpression];
+Expr6.          Expression5         ::= PrefixOperator Expression6 ;
+Expr5.          Expression4         ::= Expression4 InfixOperatorE Expression5 ;
+Expr4.          Expression3         ::= Expression3 InfixOperatorD Expression4 ;
+Expr3.          Expression2         ::= Expression2 InfixOperatorC Expression3 ;
+Expr2.          Expression1         ::= Expression2 InfixOperatorB Expression1 ;
+Expr1.          Expression          ::= Expression1 InfixOperatorA Expression ;
 
-PatIdent.       Pattern             ::= Ident ;
-PatConst.       Pattern             ::= Constant ;
-PatNested.      Pattern             ::= "(" Pattern ")" ;
-PatNone.        Pattern             ::= "_" ;
+coercions Expression 6 ;
 
-separator       Pattern             "" ;
+ESConst.        SimpleExpression    ::= Constant ;
+ESIdent.        SimpleExpression    ::= Ident ;
+ESExpr.         SimpleExpression    ::= "(" Expression ")" ;
+separator SimpleExpression "" ;
 
-EConst.         Expression          ::= Constant ;
-EIdent.         Expression          ::= Ident ;
-EComplex.       Expression          ::= NAryExpression ;
-EParens.        Expression          ::= "(" Expression ")" ;
-separator       Expression          "" ;
-
-ENCall.         NAryExpression      ::= Ident [Expression] ;
-ENFun.          NAryExpression      ::= "fun" [Pattern] "->" Expression;
-ENPrefix.       NAryExpression      ::= PrefixOperator Expression ;
-ENInfix.        NAryExpression      ::= Expression InfixOperator Expression ;
-ENLet.          NAryExpression      ::= "let" Pattern "=" Expression "in" Expression ;
-ENIf.           NAryExpression      ::= "if" Expression "then" Expression "else" Expression ;
-ENWhile.        NAryExpression      ::= "while" Expression "do" Expression "done" ;
-ENFor.          NAryExpression      ::= "for" Ident "=" Expression ForDirection Expression "do" Expression "done" ;
+EExpr.          LetExpression       ::= Expression ;
+EFun.           LetExpression       ::= "fun" SimplePattern [SimplePattern] "->" LetExpression ;
+ENLet.          LetExpression       ::= "let" SimplePattern [SimplePattern] "=" LetExpression "in" LetExpression ;
+EIf.            LetExpression       ::= "if" LetExpression "then" LetExpression ;
+EWhile.         LetExpression       ::= "while" LetExpression "do" LetExpression "done" ;
+EFor.           LetExpression       ::= "for" Ident "=" LetExpression ForDirection LetExpression "do" LetExpression "done" ;
 
 ForDirTo.       ForDirection        ::= "to" ;
 ForDirDownTo.   ForDirection        ::= "downto" ;
 
+OpOr.           InfixOperatorA      ::= "||" ;
+OpAnd.          InfixOperatorB      ::= "&&" ;
+OpEq.           InfixOperatorC      ::= "=" ;
+OpEqSt.         InfixOperatorC      ::= "==" ;
+OpNEq.          InfixOperatorC      ::= "<>" ;
+OpNEqSt.        InfixOperatorC      ::= "!=" ;
+OpLt.           InfixOperatorC      ::= "<" ;
+OpLtD.          InfixOperatorC      ::= "<." ;
+OpGt.           InfixOperatorC      ::= ">" ;
+OpGtD.          InfixOperatorC      ::= ">." ;
+OpLtEq.         InfixOperatorC      ::= "<=" ;
+OpLtEqD.        InfixOperatorC      ::= "<=." ;
+OpGtEq.         InfixOperatorC      ::= ">=" ;
+OpGtEqD.        InfixOperatorC      ::= ">=." ;
+OpAdd.          InfixOperatorD      ::= "+" ;
+OpAddD.         InfixOperatorD      ::= "+." ;
+OpSub.          InfixOperatorD      ::= "-" ;
+OpSubD.         InfixOperatorD      ::= "-." ;
+OpMul.          InfixOperatorE      ::= "*" ;
+OpDiv.          InfixOperatorE      ::= "/" ;
+OpNot.          PrefixOperator      ::= "!" ;
+OpNeg.          PrefixOperator      ::= "-" ;
+OpNegD.         PrefixOperator      ::= "-." ;
+
 CInt.           Constant            ::= Integer ;
 CString.        Constant            ::= String ;
 CBool.          Constant            ::= ConstantBool ;
-separator       Constant            "" ;
 
 CBTrue.         ConstantBool        ::= "true" ;
 CBFalse.        ConstantBool        ::= "false" ;
 
-OPAnd.          InfixOperator       ::= "&&" ;
-OPOr.           InfixOperator       ::= "||" ;
-OPSemicolon.    InfixOperator       ::= ";" ;
-OPPlus.         InfixOperator       ::= "+" ;
-OPMinus.        InfixOperator       ::= "-" ;
-OPMul.          InfixOperator       ::= "*" ;
-OPDiv.          InfixOperator       ::= "/" ;
-OPMod.          InfixOperator       ::= "mod" ;
-OPPlusD.        InfixOperator       ::= "+." ;
-OPMinusD.       InfixOperator       ::= "-." ;
-OPMulD.         InfixOperator       ::= "*." ;
-OPDivD.         InfixOperator       ::= "/." ;
-OPJoin.         InfixOperator       ::= "@" ;
-OPXor.          InfixOperator       ::= "^" ;
-OPNot.          InfixOperator       ::= "!" ;
-OPDef.          InfixOperator       ::= ":=" ;
-OPEq.           InfixOperator       ::= "=" ;
-OPNeq.          InfixOperator       ::= "<>" ;
-OPEqS.          InfixOperator       ::= "==" ;
-OPNeqS.         InfixOperator       ::= "!=" ;
-OPLt.           InfixOperator       ::= "<" ;
-OPEqLt.         InfixOperator       ::= "<=" ;
-OPLtD.          InfixOperator       ::= "<." ;
-OPEqLtD.        InfixOperator       ::= "<=." ;
-OPGt.           InfixOperator       ::= ">" ;
-OPEqGt.         InfixOperator       ::= ">=" ;
-OPGtD.          InfixOperator       ::= ">." ;
-OPEqGtD.        InfixOperator       ::= ">=." ;
-
-OPPrefNot.      PrefixOperator      ::= "!" ;
