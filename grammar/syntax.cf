@@ -1,6 +1,6 @@
 IRoot.          Implementation      ::= ImplPhrase ";;" ;
 
-IPhrase.        ImplPhrase          ::= LetExpression ;
+IPhrase.        ImplPhrase          ::= ComplexExpression ;
 
 PatIdent.       SimplePattern       ::= Ident ;
 PatConst.       SimplePattern       ::= Constant ;
@@ -24,12 +24,12 @@ ESIdent.        SimpleExpression    ::= Ident ;
 ESExpr.         SimpleExpression    ::= "(" Expression ")" ;
 separator SimpleExpression "" ;
 
-EExpr.          LetExpression       ::= Expression ;
-EFun.           LetExpression       ::= "fun" SimplePattern [SimplePattern] "->" LetExpression ;
-ENLet.          LetExpression       ::= "let" SimplePattern [SimplePattern] "=" LetExpression "in" LetExpression ;
-EIf.            LetExpression       ::= "if" LetExpression "then" LetExpression ;
-EWhile.         LetExpression       ::= "while" LetExpression "do" LetExpression "done" ;
-EFor.           LetExpression       ::= "for" Ident "=" LetExpression ForDirection LetExpression "do" LetExpression "done" ;
+ECExpr.          ComplexExpression       ::= Expression ;
+ECFun.           ComplexExpression       ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
+ECLet.          ComplexExpression       ::= "let" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
+ECIf.            ComplexExpression       ::= "if" ComplexExpression "then" ComplexExpression ;
+ECWhile.         ComplexExpression       ::= "while" ComplexExpression "do" ComplexExpression "done" ;
+ECFor.           ComplexExpression       ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
 
 ForDirTo.       ForDirection        ::= "to" ;
 ForDirDownTo.   ForDirection        ::= "downto" ;

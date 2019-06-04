@@ -7,6 +7,7 @@ import SkelSyntax
 import AbsSyntax
 import ErrM
 
+import Runtime
 import Environment
 import InterpreterDefinitions
 import Interpreter

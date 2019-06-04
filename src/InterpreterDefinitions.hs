@@ -3,4 +3,7 @@ module InterpreterDefinitions where
 import Runtime
 import Environment
 
-data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Environment
+import Control.Monad.Except
+import Control.Monad.State
+import Control.Monad.Identity
+import Control.Monad.Reader
