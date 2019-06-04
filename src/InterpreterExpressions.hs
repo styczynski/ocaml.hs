@@ -15,10 +15,20 @@ import AbsSyntax
 
 execComplexExpression :: ComplexExpression -> Exec RuntimeValue
 execComplexExpression (ECExpr expr) = execExpression expr
-execComplexExpression (ECLet pattern restPatterns letExpr expr) = do
+execComplexExpression (ECLet pattern [] letExpr expr) = do
   letVal <- execComplexExpression letExpr
   val <- local (setPattern pattern letVal) $ (execComplexExpression expr)
   return $ val
+execComplexExpression (ECLet (PatIdent name) restPatterns letExpr expr) = do
+  fnBody <- return $ \args ->
+    local (setPatterns restPatterns args) $ (execComplexExpression letExpr)
+  val <- local (createFunction name (RFunSig 0) fnBody) $ (execComplexExpression expr)
+  return $ val
+
+execSimpleExpression :: SimpleExpression -> Exec RuntimeValue
+execSimpleExpression (ESConst c) = execExpression $ ExprConst c
+execSimpleExpression (ESIdent name) = ask >>= pullVariable name
+execSimpleExpression (ESExpr expr) = execExpression expr
 
 execExprOn :: Expression -> (Exec RuntimeValue -> Exec RuntimeValue) -> Exec RuntimeValue
 execExprOn exp fn = fn $ execExpression exp
@@ -40,8 +50,10 @@ execExprOnUnpack2 exp1 exp2 fn = do
   return $ r
 
 execExpression :: Expression -> Exec RuntimeValue
-execExpression (ExprCall name args) =
-  ask >>= pullVariable name
+execExpression (ExprCall name []) = ask >>= pullVariable name
+execExpression (ExprCall name argsExprs) = do
+  args <- mapM (\exp -> execSimpleExpression exp) argsExprs
+  ask >>= callFunction name args
 
 execExpression (ExprConst (CInt value)) = return $ RInt value
 execExpression (ExprConst (CString value)) = return $ RString value

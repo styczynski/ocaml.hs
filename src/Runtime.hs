@@ -9,9 +9,19 @@ import Control.Monad.Reader
 import qualified Data.Map as Map
 
 
-data Environment = Environment { variables :: (Map.Map Ident RuntimeValue) } deriving (Show)
+data Environment = Environment {
+  variables :: (Map.Map Ident RuntimeValue),
+  definitions :: (Map.Map Ident RuntimeDefinition)
+}
 data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Environment
 type Exec = StateT (Environment) (ReaderT (Environment) (ExceptT String IO))
+
+type RFunBody = [RuntimeValue] -> Exec RuntimeValue
+data RFunSig = RFunSig Int
+
+data RuntimeDefinition
+  = RDFun RFunSig RFunBody
+  | RDInvalid
 
 data RuntimeValue
   = REmpty
