@@ -79,3 +79,7 @@ createFunction :: Ident -> RFunSig -> RFunBody -> Environment -> Environment
 createFunction name sig body env =
   let (fr, frEnv) = allocRef env in
   setVariable name (RRef fr) $ setRefStorage fr (RfFun sig body) frEnv
+
+getProgramEnvironmentDefault :: ExecutionResult -> Environment -> Environment
+getProgramEnvironmentDefault (Executed _ env) _ = env
+getProgramEnvironmentDefault _ envDefault = envDefault

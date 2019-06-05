@@ -33,6 +33,11 @@ data RuntimeValue
   | RRef Integer
   deriving (Show, Eq)
 
+resultToStr :: ExecutionResult -> String
+resultToStr (Executed val _) = valueToStr val
+resultToStr (FailedParse err) = err
+resultToStr (FailedExecution err) = err
+
 valueToStr :: RuntimeValue -> String
 valueToStr REmpty = "()"
 valueToStr (RInt val) = show val

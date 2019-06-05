@@ -24,8 +24,8 @@ foreign import javascript unsafe "runParser = $1"
 
 runtimeValueFromJS :: JSVal -> IO RuntimeValue
 runtimeValueFromJS val
-  | isNull val = return $ RUnit
-  | isUndefined val = return $ RUnit
+  | isNull val = return $ REmpty
+  | isUndefined val = return $ REmpty
   | isString val = do
     (input :: String) <- unpack . fromJust <$> fromJSVal val
     return $ RString $ input
@@ -37,41 +37,42 @@ runtimeValueFromJS val
         return $ RBool $ input
 
 runtimeValueToJS :: RuntimeValue -> Environment -> JSVal
-runtimeValueToJS RUnit _ = jsNull
+runtimeValueToJS REmpty _ = jsNull
 runtimeValueToJS (RInt val) _ = toJSInt $ fromIntegral val
 runtimeValueToJS (RString val) _ = jsval $ pack val
 runtimeValueToJS (RBool True) _ = toJSBool True
 runtimeValueToJS (RBool False) _ = toJSBool False
-runtimeValueToJS (RFunc _ body _) env = jsval $ unsafePerformIO $ syncCallback1' $ \jv -> do
-  result <- execFunction body (map (unsafePerformIO . runtimeValueFromJS) $ unsafePerformIO $ fromJSArray $ jv) env
-  callback <- syncCallback1' $ \jv -> do
-      (input :: String) <- unpack . fromJust <$> fromJSVal jv
-      ret <- executeCode input (getProgramEnvironmentDefault result env)
-      return $ ret
-  return $ runtimeValueToJS (getProgramResult result) (getProgramEnvironmentDefault result env)
-runtimeValueToJS val _ = jsval $ pack $ show val
+--runtimeValueToJS (RFunc _ body _) env = jsval $ unsafePerformIO $ syncCallback1' $ \jv -> do
+--  result <- execFunction body (map (unsafePerformIO . runtimeValueFromJS) $ unsafePerformIO $ fromJSArray $ jv) env
+--  callback <- syncCallback1' $ \jv -> do
+--      (input :: String) <- unpack . fromJust <$> fromJSVal jv
+--      ret <- executeCode input (getProgramEnvironmentDefault result env)
+--      return $ ret
+--  return $ runtimeValueToJS (getExecutionResult result) (getProgramEnvironmentDefault result env)
+--runtimeValueToJS val _ = jsval $ pack $ show val
 
-resultToJS :: ProgramResult -> Environment -> JSVal
+resultToJS :: ExecutionResult -> Environment -> JSVal
 resultToJS (FailedParse err) _ = jsval $ pack $ err
 resultToJS (FailedExecution err) _ = jsval $ pack $ err
 resultToJS (Executed val _) env = runtimeValueToJS val env
 
-resultToErrorJS :: ProgramResult -> JSVal
+resultToErrorJS :: ExecutionResult -> JSVal
 resultToErrorJS (FailedParse _) = jsval $ pack "ParseError"
 resultToErrorJS (FailedExecution _) = jsval $ pack "RuntimeError"
 resultToErrorJS (Executed _ _) = jsNull
 
-resultToEnvJS :: ProgramResult -> JSVal
+resultToEnvJS :: ExecutionResult -> JSVal
 resultToEnvJS (Executed _ env) = environmentToJS env
 resultToEnvJS _ = jsNull
 
-resultToFunSigJS :: ProgramResult -> IO JSVal
-resultToFunSigJS (Executed (RFunc (RFuncSignature argsT retT) _ names) _) = do
-  (o :: Object) <- create
-  setProp (pack "args_count") (toJSInt $ length argsT) o
-  setProp (pack "args_names") (unsafePerformIO $ toJSArray $ map (\(Ident name) -> jsval $ pack $ name) names) o
-  return $ jsval o
+resultToFunSigJS :: ExecutionResult -> IO JSVal
 resultToFunSigJS _ = return $ jsNull
+--resultToFunSigJS (Executed (RFunc (RFuncSignature argsT retT) _ names) _) = do
+--  (o :: Object) <- create
+--  setProp (pack "args_count") (toJSInt $ length argsT) o
+--  setProp (pack "args_names") (unsafePerformIO $ toJSArray $ map (\(Ident name) -> jsval $ pack $ name) names) o
+--  return $ jsval o
+--resultToFunSigJS _ = return $ jsNull
 
 environmentToJS :: Environment -> JSVal
 environmentToJS e = unsafePerformIO $ toJSArray $ map (\((Ident key), value) -> unsafePerformIO $ toJSArray [jsval $ pack key, runtimeValueToJS value e]) $ Map.toList $ variables e
