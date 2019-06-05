@@ -27,7 +27,7 @@ separator SimpleExpression "" ;
 ECExpr.          ComplexExpression       ::= Expression ;
 ECFun.           ComplexExpression       ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
 ECLet.          ComplexExpression       ::= "let" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
-ECIf.            ComplexExpression       ::= "if" ComplexExpression "then" ComplexExpression ;
+ECIf.            ComplexExpression       ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
 ECWhile.         ComplexExpression       ::= "while" ComplexExpression "do" ComplexExpression "done" ;
 ECFor.           ComplexExpression       ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
 

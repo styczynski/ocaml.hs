@@ -11,6 +11,7 @@ valueEq :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueEq (RInt a) (RInt b) = return $ a == b
 valueEq (RString a) (RString b) = return $ a == b
 valueEq (RBool a) (RBool b) = return $ a == b
+valueEq (RRef a) (RRef b) = return $ a == b
 valueEq REmpty REmpty = return True
 valueEq _ _ = throwError "Failed comparison"
 

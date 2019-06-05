@@ -10,8 +10,9 @@ import qualified Data.Map as Map
 
 
 data Environment = Environment {
-  variables :: (Map.Map Ident RuntimeValue),
-  definitions :: (Map.Map Ident RuntimeDefinition)
+  variables     :: (Map.Map Ident RuntimeValue),
+  refs          :: (Map.Map Integer RuntimeRefValue),
+  nextFreeRef   :: Integer
 }
 data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Environment
 type Exec = StateT (Environment) (ReaderT (Environment) (ExceptT String IO))
@@ -19,9 +20,9 @@ type Exec = StateT (Environment) (ReaderT (Environment) (ExceptT String IO))
 type RFunBody = [RuntimeValue] -> Exec RuntimeValue
 data RFunSig = RFunSig Int
 
-data RuntimeDefinition
-  = RDFun RFunSig RFunBody
-  | RDInvalid
+data RuntimeRefValue
+  = RfFun RFunSig RFunBody
+  | RfInvalid RuntimeValue
 
 data RuntimeValue
   = REmpty
@@ -29,6 +30,7 @@ data RuntimeValue
   | RInt Integer
   | RString String
   | RBool Bool
+  | RRef Integer
   deriving (Show, Eq)
 
 valueToStr :: RuntimeValue -> String
@@ -36,7 +38,8 @@ valueToStr REmpty = "()"
 valueToStr (RInt val) = show val
 valueToStr (RString val) = show val
 valueToStr (RBool val) = show val
-valueToStr (RInvalid) = show "Invalid"
+valueToStr (RRef _) = "<ref>"
+valueToStr (RInvalid) = "Invalid"
 
 unpackBool :: RuntimeValue -> Exec Bool
 unpackBool val =

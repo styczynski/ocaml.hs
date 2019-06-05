@@ -14,14 +14,33 @@ import InterpreterPatterns
 import AbsSyntax
 
 execComplexExpression :: ComplexExpression -> Exec RuntimeValue
+execComplexExpression (ECIf cond exp1 exp2) = do
+  condVal <- execComplexExpression cond >>= unpackBool
+  if condVal then (execComplexExpression exp1) else (execComplexExpression exp2)
+execComplexExpression (ECWhile cond exp) = do
+  condVal <- execComplexExpression cond >>= unpackBool
+  if condVal then (execComplexExpression (ECWhile cond exp)) else (return REmpty)
+execComplexExpression (ECFor name expVal1 dir expVal2 exp) = do
+  val1 <- execComplexExpression expVal1 >>= unpackInt
+  val2 <- execComplexExpression expVal2 >>= unpackInt
+  case dir of
+    ForDirTo -> if val1 < val2 then
+        execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 + 1) dir expVal2 exp)
+      else
+        return $ REmpty
+    ForDirDownTo -> if val1 > val2 then
+        execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
+      else
+        return $ REmpty
 execComplexExpression (ECExpr expr) = execExpression expr
 execComplexExpression (ECLet pattern [] letExpr expr) = do
   letVal <- execComplexExpression letExpr
   val <- local (setPattern pattern letVal) $ (execComplexExpression expr)
   return $ val
 execComplexExpression (ECLet (PatIdent name) restPatterns letExpr expr) = do
+  fnEnv <- ask
   fnBody <- return $ \args ->
-    local (setPatterns restPatterns args) $ (execComplexExpression letExpr)
+    local (\_ -> setPatterns restPatterns args fnEnv) $ (execComplexExpression letExpr)
   val <- local (createFunction name (RFunSig 0) fnBody) $ (execComplexExpression expr)
   return $ val
 
