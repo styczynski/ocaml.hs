@@ -18,6 +18,9 @@ runBlock :: Verbosity -> String -> IO ()
 runBlock v s = do
   result <- run v s
   case result of
+     FailedExecution s -> do
+                    hPutStrLn stderr s
+                    exitFailure
      FailedParse s  -> do
                     hPutStrLn stderr s
                     exitFailure

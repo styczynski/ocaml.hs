@@ -13,71 +13,95 @@ import InterpreterPatterns
 
 import AbsSyntax
 
-execComplexExpression :: ComplexExpression -> Exec RuntimeValue
+execComplexExpression :: ComplexExpression -> Exec (RuntimeValue, Environment)
 execComplexExpression (ECIf cond exp1 exp2) = do
-  condVal <- execComplexExpression cond >>= unpackBool
-  if condVal then (execComplexExpression exp1) else (execComplexExpression exp2)
+  (condVal, condEnv) <- execComplexExpression cond >>= unpackBool
+  if condVal then (local (\_ -> condEnv) $ execComplexExpression exp1) else (local (\_ -> condEnv) $ execComplexExpression exp2)
 execComplexExpression (ECWhile cond exp) = do
-  condVal <- execComplexExpression cond >>= unpackBool
-  if condVal then (execComplexExpression (ECWhile cond exp)) else (return REmpty)
+  (condVal, condEnv) <- execComplexExpression cond >>= unpackBool
+  if condVal then (local (\_ -> condEnv) $ execComplexExpression (ECWhile cond exp)) else (return (REmpty, condEnv))
 execComplexExpression (ECFor name expVal1 dir expVal2 exp) = do
-  val1 <- execComplexExpression expVal1 >>= unpackInt
-  val2 <- execComplexExpression expVal2 >>= unpackInt
+  (val1, env1) <- execComplexExpression expVal1 >>= unpackInt
+  (val2, env2) <- local (\_ -> env1) $ execComplexExpression expVal2 >>= unpackInt
   case dir of
     ForDirTo -> if val1 < val2 then
-        execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 + 1) dir expVal2 exp)
+        local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 + 1) dir expVal2 exp)
       else
-        return $ REmpty
+        return $ (REmpty, env2)
     ForDirDownTo -> if val1 > val2 then
-        execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
+        local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
       else
-        return $ REmpty
+        return $ (REmpty, env2)
 execComplexExpression (ECExpr expr) = execExpression expr
 execComplexExpression (ECLet pattern [] letExpr expr) = do
-  letVal <- execComplexExpression letExpr
-  val <- local (setPattern pattern letVal) $ (execComplexExpression expr)
-  return $ val
+  (letVal, letEnv) <- execComplexExpression letExpr
+  (val, valEnv) <- local (\_ -> setPattern pattern letVal letEnv) $ (execComplexExpression expr)
+  return $ (val, valEnv)
 execComplexExpression (ECLet (PatIdent name) restPatterns letExpr expr) = do
-  fnEnv <- ask
+  argsCount <- return $ length restPatterns
   fnBody <- return $ \args ->
-    local (\_ -> setPatterns restPatterns args fnEnv) $ (execComplexExpression letExpr)
-  val <- local (createFunction name (RFunSig 0) fnBody) $ (execComplexExpression expr)
-  return $ val
+    local (setPatterns restPatterns args) $ (execComplexExpression letExpr)
+  (val, valEnv) <- local (createFunction name (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
+  return $ (val, valEnv)
 
-execSimpleExpression :: SimpleExpression -> Exec RuntimeValue
+execSimpleExpression :: SimpleExpression -> Exec (RuntimeValue, Environment)
 execSimpleExpression (ESConst c) = execExpression $ ExprConst c
-execSimpleExpression (ESIdent name) = ask >>= pullVariable name
+execSimpleExpression (ESIdent name) = do
+  val <- ask >>= pullVariable name
+  env <- ask
+  return (val, env)
 execSimpleExpression (ESExpr expr) = execExpression expr
 
-execExprOn :: Expression -> (Exec RuntimeValue -> Exec RuntimeValue) -> Exec RuntimeValue
-execExprOn exp fn = fn $ execExpression exp
+execExprOn :: Expression -> (Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)) -> Exec (RuntimeValue, Environment)
+execExprOn exp fn = do
+  (val, env) <- execExpression exp
+  (valFn, valEnv) <- fn (return (val, env))
+  return (valFn, valEnv)
 
-execExprOn2 :: Expression -> Expression -> (Exec RuntimeValue -> Exec RuntimeValue -> Exec RuntimeValue) -> Exec RuntimeValue
-execExprOn2 exp1 exp2 fn = fn (execExpression exp1) (execExpression exp2)
+execExprOn2 :: Expression -> Expression -> (Exec (RuntimeValue, Environment)-> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)) -> Exec (RuntimeValue, Environment)
+execExprOn2 exp1 exp2 fn = do
+  (val1, env1) <- execExpression exp1
+  (val2, env2) <- local (\_ -> env1) $ execExpression exp2
+  (valFn, valEnv) <- fn (return (val1,env1)) (return (val2,env2))
+  return (valFn, valEnv)
 
-execExprOnUnpack :: Expression -> (RuntimeValue -> Exec RuntimeValue) -> Exec RuntimeValue
+execExprOnUnpack :: Expression -> (RuntimeValue -> Exec RuntimeValue) -> Exec (RuntimeValue, Environment)
 execExprOnUnpack exp fn = do
-  val <- execExpression exp
+  (val, env) <- execExpression exp
   r <- fn val
-  return $ r
+  return (r, env)
 
-execExprOnUnpack2 :: Expression -> Expression -> (RuntimeValue -> RuntimeValue -> Exec RuntimeValue) -> Exec RuntimeValue
+execExprOnUnpack2 :: Expression -> Expression -> (RuntimeValue -> RuntimeValue -> Exec RuntimeValue) -> Exec (RuntimeValue, Environment)
 execExprOnUnpack2 exp1 exp2 fn = do
-  val1 <- execExpression exp1
-  val2 <- execExpression exp2
+  (val1, env1) <- execExpression exp1
+  (val2, env2) <- local (\_ -> env1) $ execExpression exp2
   r <- fn val1 val2
-  return $ r
+  return (r, env2)
 
-execExpression :: Expression -> Exec RuntimeValue
-execExpression (ExprCall name []) = ask >>= pullVariable name
+execExpression :: Expression -> Exec (RuntimeValue, Environment)
+execExpression (ExprCall name []) = do
+  val <- ask >>= pullVariable name
+  env <- ask
+  return (val, env)
 execExpression (ExprCall name argsExprs) = do
-  args <- mapM (\exp -> execSimpleExpression exp) argsExprs
-  ask >>= callFunction name args
+  env <- ask
+  (args, argsEnv) <- foldM (\(res, env) exp -> do
+    (r, newEnv) <- local (\_ -> env) $ execSimpleExpression exp
+    return ((res ++ [r]), newEnv)) ([], env) argsExprs
+  callFunction name args argsEnv
 
-execExpression (ExprConst (CInt value)) = return $ RInt value
-execExpression (ExprConst (CString value)) = return $ RString value
-execExpression (ExprConst (CBool CBTrue)) = return $ RBool True
-execExpression (ExprConst (CBool CBFalse)) = return $ RBool False
+execExpression (ExprConst (CInt value)) = do
+  env <- ask
+  return ((RInt value), env)
+execExpression (ExprConst (CString value)) = do
+  env <- ask
+  return ((RString value), env)
+execExpression (ExprConst (CBool CBTrue)) = do
+  env <- ask
+  return ((RBool True), env)
+execExpression (ExprConst (CBool CBFalse)) = do
+  env <- ask
+  return ((RBool False), env)
 execExpression (Expr6 OpNot exp) = execExprOn exp $ vmapBool (\x -> RBool $ not x)
 execExpression (Expr6 OpNeg exp) = execExprOn exp $ vmapInt (\x -> RInt $ -x)
 execExpression (Expr5 exp1 OpMul exp2) = execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x*y)

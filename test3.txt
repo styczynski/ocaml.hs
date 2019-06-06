@@ -1,0 +1,1 @@
+let exec fn var = fn var in let myfun x = x+2 in exec myfun 2 ;;

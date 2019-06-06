@@ -64,16 +64,29 @@ pullVariable name env =
     RInvalid -> throwError "Missing runtime value"
     val -> return $ val
 
-execFunction :: RFunSig -> RFunBody -> [RuntimeValue] -> Environment -> Exec RuntimeValue
-execFunction (RFunSig sig) body args env =
+execFunction :: RFunSig -> RFunBody -> [RuntimeValue] -> Exec (RuntimeValue, Environment)
+execFunction (RFunSig sig) body args =
   body args
 
-callFunction :: Ident -> [RuntimeValue] -> Environment -> Exec RuntimeValue
+callFunction :: Ident -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
 callFunction name args env = do
   def <- pullRefStorage name env
-  case def of
-    RfFun sig body -> execFunction sig body args env
-    _ -> throwError "Object is not callable"
+  let argsInCount = length args in
+    case def of
+      RfFun (RFunSig argsCount) body ->
+        if argsInCount < argsCount then
+          let fnBody = \paramArgs -> execFunction (RFunSig argsCount) body (args ++ paramArgs) in
+            -- throwError ("Create partially applied function " ++ (show argsInCount) ++ (show argsCount))
+            return $ newFunction (RFunSig (argsCount - argsInCount)) fnBody env
+        else do
+          (val, valEnv) <- execFunction (RFunSig argsCount) body args
+          return (val, valEnv)
+      v -> throwError ("Object is not callable: " ++ (show name) ++ " => " ++ (show v))
+
+newFunction :: RFunSig -> RFunBody -> Environment -> (RuntimeValue, Environment)
+newFunction sig body env =
+  let (fr, frEnv) = allocRef env in
+  ((RRef fr), (setRefStorage fr (RfFun sig body) frEnv))
 
 createFunction :: Ident -> RFunSig -> RFunBody -> Environment -> Environment
 createFunction name sig body env =
