@@ -13,20 +13,30 @@ valueEq (RString a) (RString b) = return $ a == b
 valueEq (RBool a) (RBool b) = return $ a == b
 valueEq (RRef a) (RRef b) = return $ a == b
 valueEq REmpty REmpty = return True
-valueEq _ _ = throwError "Failed comparison"
+valueEq x y = do
+  env <- ask
+  raise $ "Could not compare (==) objects of type " ++ (getTypeStr (x, env)) ++ " and " ++ (getTypeStr (y, env))
 
 valueLt :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueLt (RInt a) (RInt b) = return $ a < b
-valueLt _ _ = throwError "Failed comparison"
+valueLt x y = do
+  env <- ask
+  raise $ "Could not compare (<) objects of type " ++ (getTypeStr (x, env)) ++ " and " ++ (getTypeStr (y, env))
 
 valueGt :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueGt (RInt a) (RInt b) = return $ a > b
-valueGt _ _ = throwError "Failed comparison"
+valueGt x y = do
+  env <- ask
+  raise $ "Could not compare (>) objects of type " ++ (getTypeStr (x, env)) ++ " and " ++ (getTypeStr (y, env))
 
 valueLtEq :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueLtEq (RInt a) (RInt b) = return $ a <= b
-valueLtEq _ _ = throwError "Failed comparison"
+valueLtEq x y = do
+  env <- ask
+  raise $ "Could not compare (<=) objects of type " ++ (getTypeStr (x, env)) ++ " and " ++ (getTypeStr (y, env))
 
 valueGtEq :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueGtEq (RInt a) (RInt b) = return $ a >= b
-valueGtEq _ _ = throwError "Failed comparison"
+valueGtEq x y = do
+  env <- ask
+  raise $ "Could not compare (>=) objects of type " ++ (getTypeStr (x, env)) ++ " and " ++ (getTypeStr (y, env))

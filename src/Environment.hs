@@ -53,15 +53,15 @@ getVariable name env =
   Map.findWithDefault RInvalid name oldVariables
 
 pullRefStorage :: Ident -> Environment -> Exec RuntimeRefValue
-pullRefStorage name env =
+pullRefStorage name@(Ident nameStr) env =
   let v = getVariable name env in case v of
-    RInvalid -> throwError "Missing runtime value"
+    RInvalid -> raise $ "Variable " ++ nameStr ++ " does not exist"
     val -> return $ getRefStorage val env
 
 pullVariable :: Ident -> Environment -> Exec RuntimeValue
-pullVariable name env =
+pullVariable name@(Ident nameStr) env =
   let v = getVariable name env in case v of
-    RInvalid -> throwError "Missing runtime value"
+    RInvalid -> raise $ "Variable " ++ nameStr ++ " does not exist"
     val -> return $ val
 
 execFunction :: RFunSig -> RFunBody -> [RuntimeValue] -> Exec (RuntimeValue, Environment)
@@ -69,7 +69,7 @@ execFunction (RFunSig sig) body args =
   body args
 
 callFunction :: Ident -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
-callFunction name args env = do
+callFunction name@(Ident nameStr) args env = do
   def <- pullRefStorage name env
   let argsInCount = length args in
     case def of
@@ -81,7 +81,7 @@ callFunction name args env = do
         else do
           (val, valEnv) <- execFunction (RFunSig argsCount) body args
           return (val, valEnv)
-      v -> throwError ("Object is not callable: " ++ (show name) ++ " => " ++ (show v))
+      RfInvalid _ -> raise $ "Reference " ++ nameStr ++ " points nowhere"
 
 newFunction :: RFunSig -> RFunBody -> Environment -> (RuntimeValue, Environment)
 newFunction sig body env =

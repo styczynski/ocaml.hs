@@ -24,8 +24,8 @@ runBlock v s = do
      FailedParse s  -> do
                     hPutStrLn stderr s
                     exitFailure
-     Executed v _ -> do
-                    putStrLn (valueToStr v)
+     Executed v env -> do
+                    putStrLn $ "-: " ++ (getTypeStr (v,env)) ++ " " ++ (valueToStr v)
                     exitSuccess
 
 execContents v = getContents >>= runBlock v

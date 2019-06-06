@@ -11,7 +11,6 @@ import Data.Text.Internal.Search
 import qualified Data.Text as T
 import qualified Data.Map as Map
 
-
 data Environment = Environment {
   variables       :: (Map.Map Ident RuntimeValue),
   refs            :: (Map.Map Integer RuntimeRefValue),
@@ -28,7 +27,7 @@ data ExecutionResult = FailedParse String | FailedExecution String | Executed Ru
 type Exec = StateT (InterpreterState) (ReaderT (Environment) (ExceptT String IO))
 
 type RFunBody = [RuntimeValue] -> Exec (RuntimeValue, Environment)
-data RFunSig = RFunSig Int
+data RFunSig = RFunSig Int deriving (Show, Eq)
 
 data RuntimeRefValue
   = RfFun RFunSig RFunBody
@@ -42,6 +41,38 @@ data RuntimeValue
   | RBool Bool
   | RRef Integer
   deriving (Show, Eq)
+
+data RuntimeType
+  = TEmpty
+  | TInvalid
+  | TInt
+  | TString
+  | TBool
+  | TFun RFunSig
+  deriving (Show, Eq)
+
+getType :: (RuntimeValue, Environment) -> RuntimeType
+getType (REmpty, _) = TEmpty
+getType ((RInt _), _) = TInt
+getType ((RString _), _) = TString
+getType ((RBool _), _) = TBool
+getType (RInvalid, _) = TInvalid
+getType ((RRef id), env) =
+  let Environment { refs = refs } = env in
+    case Map.findWithDefault (RfInvalid RInvalid) id refs of
+      RfInvalid _ -> TInvalid
+      RfFun sig body -> TFun sig
+
+typeToStr :: RuntimeType -> String
+typeToStr TEmpty = "()"
+typeToStr TInt = "Int"
+typeToStr TString = "String"
+typeToStr TBool = "Bool"
+typeToStr TInvalid = "Invalid"
+typeToStr (TFun (RFunSig argsCount)) = "Function<" ++ (show argsCount) ++ ">"
+
+getTypeStr :: (RuntimeValue, Environment) -> String
+getTypeStr = typeToStr . getType
 
 instance Show RuntimeRefValue where
   show (RfInvalid val) = "<Invalid " ++ (show val) ++ ">"
@@ -58,7 +89,7 @@ proceedD a = do
 proceed :: (Show a, Print a) => a -> Exec ()
 proceed a = do
   state <- get
-  put $ let InterpreterState { trace = trace } = state in state { lastNode = (treeToStr a), lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)] ++ trace)  }
+  put $ let InterpreterState { trace = trace } = state in state { lastNode = (treeToStr a), lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)])  }
 
 proceedT :: (Show a, Print a) => a -> (Exec (RuntimeValue, Environment)) -> (Exec (RuntimeValue, Environment))
 proceedT a val = do
@@ -68,10 +99,11 @@ proceedT a val = do
 raise :: String -> Exec a
 raise errorText = do
   state <- get
-  let InterpreterState { lastNode = lastNode, lastNodeDetail = lastNodeDetail } = state in
-    let (fInd : _) = indices (T.pack lastNodeDetail) (T.pack lastNode) in
-      let pointerText = (T.unpack (T.replicate fInd (T.pack " "))) ++ "^" in
-        throwError $ "RuntimeError:\n" ++ "   " ++ lastNode ++ "\n   " ++ pointerText ++ "\n    " ++ errorText
+  let InterpreterState { lastNode = lastNode, lastNodeDetail = lastNodeDetail, trace = trace } = state in
+    let traceStr = foldl (\acc el -> acc ++ "     | Execute: " ++ el ++ "\n") "" trace in
+      let (fInd : _) = indices (T.pack lastNodeDetail) (T.pack lastNode) in
+        let pointerText = (T.unpack (T.replicate fInd (T.pack " "))) ++ "^" in
+          throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n   " ++ pointerText ++ "\n    " ++ errorText ++ "\n" ++ traceStr
 
 resultToStr :: ExecutionResult -> String
 resultToStr (Executed val _) = valueToStr val
@@ -87,22 +119,22 @@ valueToStr (RRef _) = "<ref>"
 valueToStr (RInvalid) = "Invalid"
 
 unpackBool :: (RuntimeValue, Environment) -> Exec (Bool, Environment)
-unpackBool (val, env) =
+unpackBool arg@(val, env) =
   case val of
     RBool v -> return (v, env)
-    _ -> throwError "Expected type: Bool"
+    _ -> raise $ "Expected type: " ++ (typeToStr TBool) ++ ", got: " ++ (getTypeStr arg)
 
 unpackInt :: (RuntimeValue, Environment) -> Exec (Integer, Environment)
-unpackInt (val, env) =
+unpackInt arg@(val, env) =
   case val of
     RInt v -> return (v, env)
-    v -> raise $ "Expected type: Int got " ++ (show v)
+    _ -> raise $ "Expected type: " ++ (typeToStr TInt) ++ ", got: " ++ (getTypeStr arg)
 
 unpackString :: (RuntimeValue, Environment) -> Exec (String, Environment)
-unpackString (val, env) =
+unpackString arg@(val, env) =
   case val of
     RString v -> return (v, env)
-    _ -> throwError "Expected type: String"
+    _ -> raise $ "Expected type: " ++ (typeToStr TString) ++ ", got: " ++ (getTypeStr arg)
 
 vmapBool :: (Bool -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
 vmapBool fn e1 = do
