@@ -12,9 +12,14 @@ import AbsSyntax
 
 
 getPatternMapping :: SimplePattern -> RuntimeValue -> Map.Map Ident RuntimeValue
-getPatternMapping (PatNested pat) val = getPatternMapping pat val
 getPatternMapping (PatConst _) _ = Map.empty
+getPatternMapping (PatCons hPat tPat) (RList (h:t)) =
+   Map.unionWith (\_ b -> b) (getPatternMapping hPat h) (getPatternMapping tPat $ RList t)
 getPatternMapping PatNone _ = Map.empty
+getPatternMapping (PatTuple (PTuple firstElement tupleElements)) (RTuple vals) =
+  fst $ foldl (\(accMap,accVals) (PTupleElement elem) ->
+      let submap = getPatternMapping elem (head accVals) in
+        ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) (firstElement : tupleElements)
 getPatternMapping (PatIdent name) val = Map.insert name val Map.empty
 getPatternMapping (PatList (PList elems)) (RList vals) =
   fst $ foldl (\(accMap,accVals) (PListElement elem) ->

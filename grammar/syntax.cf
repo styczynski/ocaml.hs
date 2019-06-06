@@ -6,12 +6,18 @@ PList.          PList       ::= "[" [PListElement] "]" ;
 PListElement.     PListElement    ::= SimplePattern ;
 separator PListElement ";" ;
 
-PatIdent.       SimplePattern       ::= Ident ;
-PatConst.       SimplePattern       ::= Constant ;
-PatNested.      SimplePattern       ::= "(" SimplePattern ")" ;
-PatCons.        SimplePattern       ::= SimplePattern "::" SimplePattern ;
-PatList.        SimplePattern       ::= PList ;
-PatNone.        SimplePattern       ::= "_" ;
+PTuple. PTuple ::= PTupleElement "," [PTupleElement] ;
+PTupleElement. PTupleElement ::= SimplePattern1 ;
+separator nonempty PTupleElement "," ;
+
+PatList.        SimplePattern2      ::= PList ;
+PatNone.        SimplePattern2      ::= "_" ;
+PatIdent.       SimplePattern2      ::= Ident ;
+PatConst.       SimplePattern2      ::= Constant ;
+PatCons.        SimplePattern1      ::= SimplePattern2 "::" SimplePattern1 ;
+PatTuple.       SimplePattern       ::= PTuple ;
+
+coercions       SimplePattern       2 ;
 separator       SimplePattern       "" ;
 
 ExprCompl.      Expression6         ::= "(" ComplexExpression ")" ;
