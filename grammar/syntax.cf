@@ -8,6 +8,8 @@ PatNested.      SimplePattern       ::= "(" SimplePattern ")" ;
 PatNone.        SimplePattern       ::= "_" ;
 separator       SimplePattern       "" ;
 
+ExprCompl.      Expression6         ::= "(" ComplexExpression ")" ;
+ExprList.       Expression6         ::= DList ;
 ExprConst.      Expression6         ::= Constant ;
 ExprCall.       Expression6         ::= Ident [SimpleExpression];
 Expr6.          Expression5         ::= PrefixOperator Expression6 ;
@@ -22,6 +24,7 @@ coercions Expression 6 ;
 ESConst.        SimpleExpression    ::= Constant ;
 ESIdent.        SimpleExpression    ::= Ident ;
 ESExpr.         SimpleExpression    ::= "(" Expression ")" ;
+ESList.         SimpleExpression       ::= DList ;
 separator SimpleExpression "" ;
 
 ECExpr.          ComplexExpression       ::= Expression ;
@@ -31,11 +34,16 @@ ECIf.            ComplexExpression       ::= "if" ComplexExpression "then" Compl
 ECWhile.         ComplexExpression       ::= "while" ComplexExpression "do" ComplexExpression "done" ;
 ECFor.           ComplexExpression       ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
 
+DList.          DList       ::= "[" [ListElement] "]" ;
+ListElement.     ListElement    ::= SimpleExpression ;
+separator ListElement ";" ;
+
 ForDirTo.       ForDirection        ::= "to" ;
 ForDirDownTo.   ForDirection        ::= "downto" ;
 
 OpOr.           InfixOperatorA      ::= "||" ;
 OpAnd.          InfixOperatorB      ::= "&&" ;
+OpCons.         InfixOperatorB      ::= "::" ;
 OpEq.           InfixOperatorC      ::= "=" ;
 OpEqSt.         InfixOperatorC      ::= "==" ;
 OpNEq.          InfixOperatorC      ::= "<>" ;

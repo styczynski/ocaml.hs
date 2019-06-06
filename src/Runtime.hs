@@ -39,6 +39,7 @@ data RuntimeValue
   | RInt Integer
   | RString String
   | RBool Bool
+  | RList [RuntimeValue]
   | RRef Integer
   deriving (Show, Eq)
 
@@ -48,6 +49,7 @@ data RuntimeType
   | TInt
   | TString
   | TBool
+  | TList RuntimeType
   | TFun RFunSig
   deriving (Show, Eq)
 
@@ -57,6 +59,8 @@ getType ((RInt _), _) = TInt
 getType ((RString _), _) = TString
 getType ((RBool _), _) = TBool
 getType (RInvalid, _) = TInvalid
+getType ((RList []), _) = TList TEmpty
+getType ((RList (h:t)), env) = TList $ getType (h,env)
 getType ((RRef id), env) =
   let Environment { refs = refs } = env in
     case Map.findWithDefault (RfInvalid RInvalid) id refs of
@@ -69,6 +73,7 @@ typeToStr TInt = "Int"
 typeToStr TString = "String"
 typeToStr TBool = "Bool"
 typeToStr TInvalid = "Invalid"
+typeToStr (TList instype) = "[" ++ (typeToStr instype) ++ "]"
 typeToStr (TFun (RFunSig argsCount)) = "Function<" ++ (show argsCount) ++ ">"
 
 getTypeStr :: (RuntimeValue, Environment) -> String
@@ -115,6 +120,9 @@ valueToStr REmpty = "()"
 valueToStr (RInt val) = show val
 valueToStr (RString val) = show val
 valueToStr (RBool val) = show val
+valueToStr (RList vals) = "[ " ++ (foldl (\acc el ->
+    if (acc == "") then valueToStr el else acc ++ "; " ++ (valueToStr el)
+  ) "" vals) ++ " ]"
 valueToStr (RRef _) = "<ref>"
 valueToStr (RInvalid) = "Invalid"
 

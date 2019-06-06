@@ -13,6 +13,15 @@ import InterpreterPatterns
 
 import AbsSyntax
 
+execList :: DList -> Exec (RuntimeValue, Environment)
+execList ast@(DList listElements) = do
+  proceedD ast
+  env <- ask
+  (listItems, listEnv) <- foldM (\(res, env) (ListElement exp) -> do
+      (r, newEnv) <- local (\_ -> env) $ execSimpleExpression exp
+      return ((res ++ [r]), newEnv)) ([], env) listElements
+  return $ ((RList listItems), listEnv)
+
 execComplexExpression :: ComplexExpression -> Exec (RuntimeValue, Environment)
 execComplexExpression ast@(ECIf cond exp1 exp2) = do
   proceed ast
@@ -65,6 +74,7 @@ execSimpleExpression (ESIdent name) = do
   env <- ask
   return (val, env)
 execSimpleExpression (ESExpr expr) = execExpression expr
+execSimpleExpression (ESList list) = execList list
 
 execExprOn :: Expression -> (Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)) -> Exec (RuntimeValue, Environment)
 execExprOn exp fn = do
@@ -93,6 +103,8 @@ execExprOnUnpack2 exp1 exp2 fn = do
   return (r, env2)
 
 execExpression :: Expression -> Exec (RuntimeValue, Environment)
+execExpression (ExprCompl expr) = execComplexExpression expr
+execExpression (ExprList list) = execList list
 execExpression ast@(ExprCall name []) = do
   proceedD ast
   val <- ask >>= pullVariable name
@@ -132,5 +144,6 @@ execExpression ast@(Expr3 exp1 OpLt exp2) = proceedT ast $ execExprOnUnpack2 exp
 execExpression ast@(Expr3 exp1 OpGt exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGt val1 val2 >>= \r -> return $ RBool r
 execExpression ast@(Expr3 exp1 OpLtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLtEq val1 val2 >>= \r -> return $ RBool r
 execExpression ast@(Expr3 exp1 OpGtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGtEq val1 val2 >>= \r -> return $ RBool r
+execExpression ast@(Expr2 exp1 OpCons exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueCons val1 val2
 execExpression ast@(Expr2 exp1 OpAnd exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x && y)
 execExpression ast@(Expr1 exp1 OpOr exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x || y)

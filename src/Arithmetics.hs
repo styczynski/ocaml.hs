@@ -40,3 +40,9 @@ valueGtEq (RInt a) (RInt b) = return $ a >= b
 valueGtEq x y = do
   env <- ask
   raise $ "Could not compare (>=) objects of type " ++ (getTypeStr (x, env)) ++ " and " ++ (getTypeStr (y, env))
+
+valueCons :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueCons a (RList b) = return $ RList $ (a:b)
+valueCons x y = do
+  env <- ask
+  raise $ "Could not append (::) element to list: " ++ (getTypeStr (x, env)) ++ " :: " ++ (getTypeStr (y, env))
