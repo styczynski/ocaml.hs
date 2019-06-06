@@ -46,3 +46,9 @@ valueCons a (RList b) = return $ RList $ (a:b)
 valueCons x y = do
   env <- ask
   raise $ "Could not append (::) element to list: " ++ (getTypeStr (x, env)) ++ " :: " ++ (getTypeStr (y, env))
+
+valueJoin :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueJoin (RList a) (RList b) = return $ RList $ a ++ b
+valueJoin x y = do
+  env <- ask
+  raise $ "Could not join (@) lists: " ++ (getTypeStr (x, env)) ++ " @ " ++ (getTypeStr (y, env))

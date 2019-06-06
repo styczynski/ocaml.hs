@@ -12,7 +12,14 @@ import AbsSyntax
 
 
 getPatternMapping :: SimplePattern -> RuntimeValue -> Map.Map Ident RuntimeValue
+getPatternMapping (PatNested pat) val = getPatternMapping pat val
+getPatternMapping (PatConst _) _ = Map.empty
+getPatternMapping PatNone _ = Map.empty
 getPatternMapping (PatIdent name) val = Map.insert name val Map.empty
+getPatternMapping (PatList (PList elems)) (RList vals) =
+  fst $ foldl (\(accMap,accVals) (PListElement elem) ->
+    let submap = getPatternMapping elem (head accVals) in
+      ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) elems
 
 setPattern :: SimplePattern -> RuntimeValue -> Environment -> Environment
 setPattern pattern val env = let pm = getPatternMapping pattern val in

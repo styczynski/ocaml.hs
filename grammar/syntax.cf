@@ -2,9 +2,15 @@ IRoot.          Implementation      ::= ImplPhrase ";;" ;
 
 IPhrase.        ImplPhrase          ::= ComplexExpression ;
 
+PList.          PList       ::= "[" [PListElement] "]" ;
+PListElement.     PListElement    ::= SimplePattern ;
+separator PListElement ";" ;
+
 PatIdent.       SimplePattern       ::= Ident ;
 PatConst.       SimplePattern       ::= Constant ;
 PatNested.      SimplePattern       ::= "(" SimplePattern ")" ;
+PatCons.        SimplePattern       ::= SimplePattern "::" SimplePattern ;
+PatList.        SimplePattern       ::= PList ;
 PatNone.        SimplePattern       ::= "_" ;
 separator       SimplePattern       "" ;
 
@@ -28,6 +34,7 @@ ESList.         SimpleExpression       ::= DList ;
 separator SimpleExpression "" ;
 
 ECExpr.          ComplexExpression       ::= Expression ;
+ECTuple.          ComplexExpression       ::= DTuple ;
 ECFun.           ComplexExpression       ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
 ECLet.          ComplexExpression       ::= "let" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
 ECIf.            ComplexExpression       ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
@@ -35,14 +42,19 @@ ECWhile.         ComplexExpression       ::= "while" ComplexExpression "do" Comp
 ECFor.           ComplexExpression       ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
 
 DList.          DList       ::= "[" [ListElement] "]" ;
-ListElement.     ListElement    ::= SimpleExpression ;
+ListElement.     ListElement    ::= ComplexExpression ;
 separator ListElement ";" ;
+
+DTuple. DTuple ::= DTupleElement "," [DTupleElement] ;
+DTupleElement. DTupleElement ::= Expression ;
+separator nonempty DTupleElement "," ;
 
 ForDirTo.       ForDirection        ::= "to" ;
 ForDirDownTo.   ForDirection        ::= "downto" ;
 
 OpOr.           InfixOperatorA      ::= "||" ;
 OpAnd.          InfixOperatorB      ::= "&&" ;
+OpJoin.         InfixOperatorB      ::= "@" ;
 OpCons.         InfixOperatorB      ::= "::" ;
 OpEq.           InfixOperatorC      ::= "=" ;
 OpEqSt.         InfixOperatorC      ::= "==" ;

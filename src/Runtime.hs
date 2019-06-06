@@ -39,6 +39,7 @@ data RuntimeValue
   | RInt Integer
   | RString String
   | RBool Bool
+  | RTuple [RuntimeValue]
   | RList [RuntimeValue]
   | RRef Integer
   deriving (Show, Eq)
@@ -49,7 +50,9 @@ data RuntimeType
   | TInt
   | TString
   | TBool
+  | TTuple [RuntimeType]
   | TList RuntimeType
+  | TListEmpty
   | TFun RFunSig
   deriving (Show, Eq)
 
@@ -59,7 +62,8 @@ getType ((RInt _), _) = TInt
 getType ((RString _), _) = TString
 getType ((RBool _), _) = TBool
 getType (RInvalid, _) = TInvalid
-getType ((RList []), _) = TList TEmpty
+getType ((RTuple elems), env) = TTuple $ map (\e -> getType (e,env)) elems
+getType ((RList []), _) = TListEmpty
 getType ((RList (h:t)), env) = TList $ getType (h,env)
 getType ((RRef id), env) =
   let Environment { refs = refs } = env in
@@ -73,6 +77,11 @@ typeToStr TInt = "Int"
 typeToStr TString = "String"
 typeToStr TBool = "Bool"
 typeToStr TInvalid = "Invalid"
+typeToStr (TTuple []) = "()"
+typeToStr (TTuple elems) = "(" ++ (foldl (\acc el ->
+   if (acc == "") then typeToStr el else acc ++ "," ++ (typeToStr el)
+ ) "" elems) ++ ")"
+typeToStr TListEmpty = "[]"
 typeToStr (TList instype) = "[" ++ (typeToStr instype) ++ "]"
 typeToStr (TFun (RFunSig argsCount)) = "Function<" ++ (show argsCount) ++ ">"
 
@@ -120,6 +129,10 @@ valueToStr REmpty = "()"
 valueToStr (RInt val) = show val
 valueToStr (RString val) = show val
 valueToStr (RBool val) = show val
+valueToStr (RTuple []) = "()"
+valueToStr (RTuple vals) = "( " ++ (foldl (\acc el ->
+    if (acc == "") then valueToStr el else acc ++ ", " ++ (valueToStr el)
+  ) "" vals) ++ " )"
 valueToStr (RList vals) = "[ " ++ (foldl (\acc el ->
     if (acc == "") then valueToStr el else acc ++ "; " ++ (valueToStr el)
   ) "" vals) ++ " ]"

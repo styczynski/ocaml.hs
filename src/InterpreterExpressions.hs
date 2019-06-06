@@ -18,11 +18,21 @@ execList ast@(DList listElements) = do
   proceedD ast
   env <- ask
   (listItems, listEnv) <- foldM (\(res, env) (ListElement exp) -> do
-      (r, newEnv) <- local (\_ -> env) $ execSimpleExpression exp
+      (r, newEnv) <- local (\_ -> env) $ execComplexExpression exp
       return ((res ++ [r]), newEnv)) ([], env) listElements
   return $ ((RList listItems), listEnv)
 
+execTuple :: DTuple -> Exec (RuntimeValue, Environment)
+execTuple ast@(DTuple firstElement tupleElements) = do
+  proceedD ast
+  env <- ask
+  (tupleItems, tupleEnv) <- foldM (\(res, env) (DTupleElement exp) -> do
+      (r, newEnv) <- local (\_ -> env) $ execExpression exp
+      return ((res ++ [r]), newEnv)) ([], env) (firstElement:tupleElements)
+  return $ ((RTuple tupleItems), tupleEnv)
+
 execComplexExpression :: ComplexExpression -> Exec (RuntimeValue, Environment)
+execComplexExpression (ECTuple tuple) = execTuple tuple
 execComplexExpression ast@(ECIf cond exp1 exp2) = do
   proceed ast
   (condVal, condEnv) <- execComplexExpression cond >>= unpackBool
@@ -145,5 +155,6 @@ execExpression ast@(Expr3 exp1 OpGt exp2) = proceedT ast $ execExprOnUnpack2 exp
 execExpression ast@(Expr3 exp1 OpLtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLtEq val1 val2 >>= \r -> return $ RBool r
 execExpression ast@(Expr3 exp1 OpGtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGtEq val1 val2 >>= \r -> return $ RBool r
 execExpression ast@(Expr2 exp1 OpCons exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueCons val1 val2
+execExpression ast@(Expr2 exp1 OpJoin exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueJoin val1 val2
 execExpression ast@(Expr2 exp1 OpAnd exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x && y)
 execExpression ast@(Expr1 exp1 OpOr exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x || y)
