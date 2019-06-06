@@ -1,0 +1,1 @@
+let uuu = let fn a b = a*b in fn 2 in uuu "a" ;;

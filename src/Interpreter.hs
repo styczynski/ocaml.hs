@@ -19,7 +19,7 @@ execPhrase (IPhrase expr) = execComplexExpression expr
 
 runAST :: Implementation -> Environment -> IO ExecutionResult
 runAST tree env  = do
-  r <- runExceptT (runReaderT (runStateT (exec tree) (env)) (env))
+  r <- runExceptT (runReaderT (runStateT (exec tree) (InterpreterState { lastNode = "", lastNodeDetail = "", trace = [] })) (env))
   result <- return (case r of
       Left err -> FailedExecution err
       Right ((res, env), _) -> Executed res env)

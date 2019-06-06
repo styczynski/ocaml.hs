@@ -14,13 +14,16 @@ import InterpreterPatterns
 import AbsSyntax
 
 execComplexExpression :: ComplexExpression -> Exec (RuntimeValue, Environment)
-execComplexExpression (ECIf cond exp1 exp2) = do
+execComplexExpression ast@(ECIf cond exp1 exp2) = do
+  proceed ast
   (condVal, condEnv) <- execComplexExpression cond >>= unpackBool
   if condVal then (local (\_ -> condEnv) $ execComplexExpression exp1) else (local (\_ -> condEnv) $ execComplexExpression exp2)
-execComplexExpression (ECWhile cond exp) = do
+execComplexExpression ast@(ECWhile cond exp) = do
+  proceed ast
   (condVal, condEnv) <- execComplexExpression cond >>= unpackBool
   if condVal then (local (\_ -> condEnv) $ execComplexExpression (ECWhile cond exp)) else (return (REmpty, condEnv))
-execComplexExpression (ECFor name expVal1 dir expVal2 exp) = do
+execComplexExpression ast@(ECFor name expVal1 dir expVal2 exp) = do
+  proceed ast
   (val1, env1) <- execComplexExpression expVal1 >>= unpackInt
   (val2, env2) <- local (\_ -> env1) $ execComplexExpression expVal2 >>= unpackInt
   case dir of
@@ -32,17 +35,28 @@ execComplexExpression (ECFor name expVal1 dir expVal2 exp) = do
         local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
       else
         return $ (REmpty, env2)
-execComplexExpression (ECExpr expr) = execExpression expr
-execComplexExpression (ECLet pattern [] letExpr expr) = do
+execComplexExpression ast@(ECExpr expr) = do
+  proceed ast
+  execExpression expr
+execComplexExpression ast@(ECLet pattern [] letExpr expr) = do
+  proceed ast
   (letVal, letEnv) <- execComplexExpression letExpr
   (val, valEnv) <- local (\_ -> setPattern pattern letVal letEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
-execComplexExpression (ECLet (PatIdent name) restPatterns letExpr expr) = do
+execComplexExpression ast@(ECLet (PatIdent name) restPatterns letExpr expr) = do
+  proceed ast
   argsCount <- return $ length restPatterns
   fnBody <- return $ \args ->
     local (setPatterns restPatterns args) $ (execComplexExpression letExpr)
   (val, valEnv) <- local (createFunction name (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
   return $ (val, valEnv)
+execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
+  proceed ast
+  argsCount <- return $ 1 + (length restPatterns)
+  fnBody <- return $ \args ->
+    local (setPatterns ([pattern] ++ restPatterns) args) $ (execComplexExpression bodyExpr)
+  env <- ask
+  return $ newFunction (RFunSig argsCount) fnBody env
 
 execSimpleExpression :: SimpleExpression -> Exec (RuntimeValue, Environment)
 execSimpleExpression (ESConst c) = execExpression $ ExprConst c
@@ -79,39 +93,44 @@ execExprOnUnpack2 exp1 exp2 fn = do
   return (r, env2)
 
 execExpression :: Expression -> Exec (RuntimeValue, Environment)
-execExpression (ExprCall name []) = do
+execExpression ast@(ExprCall name []) = do
+  proceedD ast
   val <- ask >>= pullVariable name
   env <- ask
   return (val, env)
-execExpression (ExprCall name argsExprs) = do
+execExpression ast@(ExprCall name argsExprs) = do
+  proceedD ast
   env <- ask
   (args, argsEnv) <- foldM (\(res, env) exp -> do
     (r, newEnv) <- local (\_ -> env) $ execSimpleExpression exp
     return ((res ++ [r]), newEnv)) ([], env) argsExprs
   callFunction name args argsEnv
-
-execExpression (ExprConst (CInt value)) = do
+execExpression ast@(ExprConst (CInt value)) = do
+  proceedD ast
   env <- ask
   return ((RInt value), env)
-execExpression (ExprConst (CString value)) = do
+execExpression ast@(ExprConst (CString value)) = do
+  proceedD ast
   env <- ask
   return ((RString value), env)
-execExpression (ExprConst (CBool CBTrue)) = do
+execExpression ast@(ExprConst (CBool CBTrue)) = do
+  proceedD ast
   env <- ask
   return ((RBool True), env)
-execExpression (ExprConst (CBool CBFalse)) = do
+execExpression ast@(ExprConst (CBool CBFalse)) = do
+  proceedD ast
   env <- ask
   return ((RBool False), env)
-execExpression (Expr6 OpNot exp) = execExprOn exp $ vmapBool (\x -> RBool $ not x)
-execExpression (Expr6 OpNeg exp) = execExprOn exp $ vmapInt (\x -> RInt $ -x)
-execExpression (Expr5 exp1 OpMul exp2) = execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x*y)
-execExpression (Expr5 exp1 OpDiv exp2) = execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ div x y)
-execExpression (Expr4 exp1 OpAdd exp2) = execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x+y)
-execExpression (Expr4 exp1 OpSub exp2) = execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x-y)
-execExpression (Expr3 exp1 OpEq exp2) = execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueEq val1 val2 >>= \r -> return $ RBool r
-execExpression (Expr3 exp1 OpLt exp2) = execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLt val1 val2 >>= \r -> return $ RBool r
-execExpression (Expr3 exp1 OpGt exp2) = execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGt val1 val2 >>= \r -> return $ RBool r
-execExpression (Expr3 exp1 OpLtEq exp2) = execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLtEq val1 val2 >>= \r -> return $ RBool r
-execExpression (Expr3 exp1 OpGtEq exp2) = execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGtEq val1 val2 >>= \r -> return $ RBool r
-execExpression (Expr2 exp1 OpAnd exp2) = execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x && y)
-execExpression (Expr1 exp1 OpOr exp2) = execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x || y)
+execExpression ast@(Expr6 OpNot exp) = proceedT ast $ execExprOn exp $ vmapBool (\x -> RBool $ not x)
+execExpression ast@(Expr6 OpNeg exp) = proceedT ast $ execExprOn exp $ vmapInt (\x -> RInt $ -x)
+execExpression ast@(Expr5 exp1 OpMul exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x*y)
+execExpression ast@(Expr5 exp1 OpDiv exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ div x y)
+execExpression ast@(Expr4 exp1 OpAdd exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x+y)
+execExpression ast@(Expr4 exp1 OpSub exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x-y)
+execExpression ast@(Expr3 exp1 OpEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueEq val1 val2 >>= \r -> return $ RBool r
+execExpression ast@(Expr3 exp1 OpLt exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLt val1 val2 >>= \r -> return $ RBool r
+execExpression ast@(Expr3 exp1 OpGt exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGt val1 val2 >>= \r -> return $ RBool r
+execExpression ast@(Expr3 exp1 OpLtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLtEq val1 val2 >>= \r -> return $ RBool r
+execExpression ast@(Expr3 exp1 OpGtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGtEq val1 val2 >>= \r -> return $ RBool r
+execExpression ast@(Expr2 exp1 OpAnd exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x && y)
+execExpression ast@(Expr1 exp1 OpOr exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x || y)
