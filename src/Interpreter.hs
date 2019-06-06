@@ -12,10 +12,14 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 
 exec :: Implementation -> Exec (RuntimeValue, Environment)
-exec (IRoot implPhrase) = execPhrase implPhrase
+exec (IRoot implPhrases) = do
+  rootEnv <- ask
+  foldM (\(_,env) phrase -> do
+     local (\_ -> env) $ execPhrase phrase) (REmpty,rootEnv) implPhrases
 
 execPhrase :: ImplPhrase -> Exec (RuntimeValue, Environment)
 execPhrase (IPhrase expr) = execComplexExpression expr
+execPhrase (IDefType typeDef) = execTypeDef typeDef
 
 runAST :: Implementation -> Environment -> IO ExecutionResult
 runAST tree env  = do

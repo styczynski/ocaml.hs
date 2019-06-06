@@ -39,6 +39,7 @@ data RuntimeValue
   | RInt Integer
   | RString String
   | RBool Bool
+  | RVariant Ident Ident RuntimeValue
   | RTuple [RuntimeValue]
   | RList [RuntimeValue]
   | RRef Integer
@@ -53,6 +54,7 @@ data RuntimeType
   | TTuple [RuntimeType]
   | TList RuntimeType
   | TListEmpty
+  | TVariant Ident Ident RuntimeType
   | TFun RFunSig
   deriving (Show, Eq)
 
@@ -62,6 +64,7 @@ getType ((RInt _), _) = TInt
 getType ((RString _), _) = TString
 getType ((RBool _), _) = TBool
 getType (RInvalid, _) = TInvalid
+getType ((RVariant name option val), env) = TVariant name option $ getType (val,env)
 getType ((RTuple elems), env) = TTuple $ map (\e -> getType (e,env)) elems
 getType ((RList []), _) = TListEmpty
 getType ((RList (h:t)), env) = TList $ getType (h,env)
@@ -77,6 +80,7 @@ typeToStr TInt = "Int"
 typeToStr TString = "String"
 typeToStr TBool = "Bool"
 typeToStr TInvalid = "Invalid"
+typeToStr (TVariant (Ident name) _ _) = name
 typeToStr (TTuple []) = "()"
 typeToStr (TTuple elems) = "(" ++ (foldl (\acc el ->
    if (acc == "") then typeToStr el else acc ++ "," ++ (typeToStr el)
@@ -128,6 +132,7 @@ valueToStr :: RuntimeValue -> String
 valueToStr REmpty = "()"
 valueToStr (RInt val) = show val
 valueToStr (RString val) = show val
+valueToStr (RVariant _ (Ident option) val) = option ++ " " ++ (valueToStr val)
 valueToStr (RBool val) = show val
 valueToStr (RTuple []) = "()"
 valueToStr (RTuple vals) = "( " ++ (foldl (\acc el ->

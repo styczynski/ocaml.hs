@@ -1,0 +1,4 @@
+type bintree = 
+	| Leaf
+	| Tree of int
+;; Leaf ;;

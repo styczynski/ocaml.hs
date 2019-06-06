@@ -1,6 +1,18 @@
-IRoot.          Implementation      ::= ImplPhrase ";;" ;
+IRoot.          Implementation      ::= [ImplPhrase] ;
+terminator nonempty ImplPhrase ";;" ;
+separator Ident "" ;
 
 IPhrase.        ImplPhrase          ::= ComplexExpression ;
+IDefType.        ImplPhrase          ::= TypeDef ;
+
+
+
+TypeDefVarP.       TypeDef             ::= "type" Ident "=" "|" [TDefVariant] ;
+TypeDefVar.        TypeDef             ::= "type" Ident "=" [TDefVariant] ;
+
+TDefVarCompl.       TDefVariant            ::= Ident "of" Ident [Ident] ;
+TDefVarSimpl.      TDefVariant            ::= Ident ;
+separator nonempty TDefVariant "|" ;
 
 PList.          PList       ::= "[" [PListElement] "]" ;
 PListElement.     PListElement    ::= SimplePattern ;
