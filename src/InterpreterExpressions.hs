@@ -74,16 +74,19 @@ execComplexExpression ast@(ECMatch expr clauses) = do
     Nothing -> raise $ "Not-exhaustive match exception"
     Just exp -> do
       local (\_ -> matchEnv) $ execComplexExpression exp
+execComplexExpression ast@(ECFunction matchClauses) = do
+  proceed ast
+  execComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprCall (Ident "x") []) matchClauses
 execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   execExpression expr
-execComplexExpression ast@(ECLet pattern [] letExpr expr) = do
+execComplexExpression ast@(ECLet _ pattern [] letExpr expr) = do
   proceed ast
   (letVal, letEnv) <- execComplexExpression letExpr
   patEnv <- setPattern pattern letVal letEnv
   (val, valEnv) <- local (\_ -> patEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
-execComplexExpression ast@(ECLet (PatIdent name) restPatterns letExpr expr) = do
+execComplexExpression ast@(ECLet _ (PatIdent name) restPatterns letExpr expr) = do
   proceed ast
   argsCount <- return $ length restPatterns
   fnBody <- return $ \args -> do

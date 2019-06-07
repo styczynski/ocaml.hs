@@ -1,0 +1,4 @@
+let tl = function
+    [] -> failwith "tl"
+  | _::l -> l
+    in tl [];;
