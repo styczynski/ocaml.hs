@@ -66,9 +66,13 @@ ECExpr.          ComplexExpression       ::= Expression ;
 ECTuple.          ComplexExpression       ::= DTuple ;
 ECFun.           ComplexExpression       ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
 ECLet.          ComplexExpression       ::= "let" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
+ECMatch.        ComplexExpression       ::= "match" ComplexExpression "with" [MatchClause] ;
 ECIf.            ComplexExpression       ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
 ECWhile.         ComplexExpression       ::= "while" ComplexExpression "do" ComplexExpression "done" ;
 ECFor.           ComplexExpression       ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
+
+MatchClause.     MatchClause  ::=  SimplePattern "->" ComplexExpression ;
+separator nonempty MatchClause "|" ;
 
 DList.          DList       ::= "[" [ListElement] "]" ;
 ListElement.     ListElement    ::= ComplexExpression ;

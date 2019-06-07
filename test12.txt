@@ -1,0 +1,5 @@
+type bintree =
+        | Leaf
+        | Tree of int
+;;
+let (Tree x) = (Leaf) in x ;;

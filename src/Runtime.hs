@@ -14,6 +14,7 @@ import qualified Data.Map as Map
 data Environment = Environment {
   variables       :: (Map.Map Ident RuntimeValue),
   refs            :: (Map.Map Integer RuntimeRefValue),
+  defs            :: (Map.Map Ident RuntimeDef),
   nextFreeRef     :: Integer
 }
 
@@ -43,6 +44,11 @@ data RuntimeValue
   | RTuple [RuntimeValue]
   | RList [RuntimeValue]
   | RRef Integer
+  deriving (Show, Eq)
+
+data RuntimeDef
+  = DInvalid
+  | DVariant Ident Ident
   deriving (Show, Eq)
 
 data RuntimeType

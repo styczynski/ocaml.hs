@@ -9,7 +9,12 @@ import qualified Data.Map as Map
 import AbsSyntax
 import Runtime
 
-emptyEnv = Environment { variables=Map.empty, refs=Map.empty, nextFreeRef=0 }
+emptyEnv = Environment {
+  variables = Map.empty,
+  refs = Map.empty,
+  defs = Map.empty,
+  nextFreeRef = 0
+}
 
 allocRef :: Environment -> (Integer, Environment)
 allocRef env =
@@ -18,11 +23,26 @@ allocRef env =
 
 setVariable :: Ident -> RuntimeValue -> Environment -> Environment
 setVariable name val env =
-  let Environment { variables = oldVariables } = delVariable name env in
+  let Environment { variables = oldVariables } = delVariable name $ delDef name env in
   env { variables = (Map.insert name val oldVariables) }
 
 setVariables :: [Ident] -> [RuntimeValue] -> Environment -> Environment
 setVariables names vals env = foldl (\env (n,v) -> setVariable n v env) env (zip names vals)
+
+setDef :: Ident -> RuntimeDef -> Environment -> Environment
+setDef name def env =
+  let Environment { defs = defs } = env in
+  env { defs = (Map.insert name def defs) }
+
+getDef :: Ident -> Environment -> RuntimeDef
+getDef name env =
+  let Environment { defs = defs } = env in
+  Map.findWithDefault DInvalid name defs
+
+delDef :: Ident -> Environment -> Environment
+delDef name env =
+  let Environment { defs = defs } = env in
+  env { defs = (Map.delete name defs) }
 
 setRefStorage :: Integer -> RuntimeRefValue -> Environment -> Environment
 setRefStorage id val env =
@@ -96,3 +116,4 @@ createFunction name sig body env =
 getProgramEnvironmentDefault :: ExecutionResult -> Environment -> Environment
 getProgramEnvironmentDefault (Executed _ env) _ = env
 getProgramEnvironmentDefault _ envDefault = envDefault
+

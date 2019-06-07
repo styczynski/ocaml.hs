@@ -10,29 +10,63 @@ import Runtime
 import Environment
 import AbsSyntax
 
+getPatternMapping :: SimplePattern -> RuntimeValue -> Exec (Map.Map Ident RuntimeValue)
+getPatternMapping (PatConst _) _ = return $ Map.empty
+getPatternMapping (PatCons hPat tPat) (RList (h:t)) = do
+   e1 <- getPatternMapping hPat h
+   e2 <- getPatternMapping tPat $ RList t
+   return $ Map.unionWith (\_ b -> b) e1 e2
+getPatternMapping PatNone _ = return $ Map.empty
+getPatternMapping (PatTuple (PTuple firstElement tupleElements)) (RTuple vals) = do
+  (newEnv, _) <- foldM (\(accMap,accVals) (PTupleElement elem) -> do
+      submap <- getPatternMapping elem (head accVals)
+      return $ ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) (firstElement : tupleElements)
+  return newEnv
+getPatternMapping (PatIdent name) val = do
+  env <- ask
+  nameDef <- return $ getDef name env
+  case (nameDef, val) of
+    (DInvalid, val) -> return $ Map.insert name val Map.empty
+    (dval@(DVariant varName optName), (RVariant rName rOpt REmpty)) -> if (varName == rName && optName == rOpt) then
+        return $ Map.insert name val Map.empty
+      else
+        raise $ "Could not match two variant types: " ++ (getTypeStr (val, env))
+    _ -> raise $ "Match pattern failed"
+getPatternMapping (PatConstr typeConstr patternOption) val@(RVariant optionVar option optionVal) = do
+  env <- ask
+  nameDef <- return $ getDef typeConstr env
+  case nameDef of
+    DInvalid -> raise $ "Constructor for data " ++ (treeToStr typeConstr) ++ " do not exist, matching failed."
+    dvar@(DVariant varName optName) ->
+      -- TODO: Fix This ugly error message
+      if (optionVar == varName && optName == option && typeConstr == option) then
+        getPatternMapping patternOption optionVal
+      else raise $ "Constructor type match failed. Tried to match " ++ (show dvar) ++ " with value of type " ++ (show val)
+getPatternMapping (PatList (PList elems)) (RList vals) = do
+  (newEnv, _) <- foldM (\(accMap,accVals) (PListElement elem) -> do
+    submap <- getPatternMapping elem (head accVals)
+    return $ ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) elems
+  return newEnv
+getPatternMapping pattern value = raise $ "Pattern matching error. Could not match " ++ (treeToStr pattern) ++ " with " ++ (valueToStr value)
 
-getPatternMapping :: SimplePattern -> RuntimeValue -> Map.Map Ident RuntimeValue
-getPatternMapping (PatConst _) _ = Map.empty
-getPatternMapping (PatCons hPat tPat) (RList (h:t)) =
-   Map.unionWith (\_ b -> b) (getPatternMapping hPat h) (getPatternMapping tPat $ RList t)
-getPatternMapping PatNone _ = Map.empty
-getPatternMapping (PatTuple (PTuple firstElement tupleElements)) (RTuple vals) =
-  fst $ foldl (\(accMap,accVals) (PTupleElement elem) ->
-      let submap = getPatternMapping elem (head accVals) in
-        ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) (firstElement : tupleElements)
-getPatternMapping (PatIdent name) val = Map.insert name val Map.empty
-getPatternMapping (PatConstr typeConstr patternOption) (RVariant _ option optionVal) =
-  if option == typeConstr then
-    getPatternMapping patternOption optionVal
-  else Map.empty
-getPatternMapping (PatList (PList elems)) (RList vals) =
-  fst $ foldl (\(accMap,accVals) (PListElement elem) ->
-    let submap = getPatternMapping elem (head accVals) in
-      ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) elems
+setPattern :: SimplePattern -> RuntimeValue -> Environment -> Exec Environment
+setPattern pattern val env = do
+  pm <- getPatternMapping pattern val
+  return $ Map.foldrWithKey (\name val env -> setVariable name val env) env pm
 
-setPattern :: SimplePattern -> RuntimeValue -> Environment -> Environment
-setPattern pattern val env = let pm = getPatternMapping pattern val in
-  Map.foldrWithKey (\name val env -> setVariable name val env) env pm
+setPatterns :: [SimplePattern] -> [RuntimeValue] -> Environment -> Exec Environment
+setPatterns patterns vals env = foldM (\env (p,v) -> setPattern p v env) env (zip patterns vals)
 
-setPatterns :: [SimplePattern] -> [RuntimeValue] -> Environment -> Environment
-setPatterns patterns vals env = foldl (\env (p,v) -> setPattern p v env) env (zip patterns vals)
+--setPatternsIfCan :: [SimplePattern] -> [RuntimeValue] -> Environment -> Exec (Environment, SimplePattern, Bool)
+--setPatternsIfCan patterns vals env = do {
+--    newEnv <- setPatterns patterns vals env ;
+--    return (newEnv, True)
+--  } `catchError` (\err -> return (env, False))
+
+setMatchPatterns :: [(SimplePattern, a)] -> RuntimeValue -> Environment -> Exec (Environment, Maybe a)
+setMatchPatterns patterns val env = do
+  (newEnv, selVal) <- foldM (\(env, sel) (pat, selVal) -> do {
+      newEnv <- setPattern pat val env ;
+      return (newEnv, Just selVal)
+    } `catchError` (\err -> return (env, sel))) (env, Nothing) patterns
+  return (newEnv, selVal)

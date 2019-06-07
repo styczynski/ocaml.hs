@@ -1,0 +1,5 @@
+type bintree =
+        | Leaf
+        | Tree of int
+;;
+match (Tree 10) with Leaf -> 1 | (Tree x) -> x ;;

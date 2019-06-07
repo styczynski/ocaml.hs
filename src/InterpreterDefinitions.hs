@@ -12,12 +12,16 @@ import AbsSyntax
 
 createVariant :: Ident -> Environment -> TDefVariant -> Exec Environment
 createVariant name env (TDefVarSimpl option) = do
-  return $ setVariable option (RVariant name option $ REmpty) env
+  env1 <- return $ setVariable option (RVariant name option $ REmpty) env
+  env2 <- return $ setDef option (DVariant name option) env1
+  return env2
 createVariant name env (TDefVarCompl option _) = do
   fnBody <- return $ \[arg] -> do
     env <- ask
     return ((RVariant name option $ arg), env)
-  return $ createFunction option (RFunSig 1) fnBody env
+  env1 <- return $ createFunction option (RFunSig 1) fnBody env
+  env2 <- return $ setDef option (DVariant name option) env1
+  return env2
 
 constructVariantType :: Ident -> [TDefVariant] -> Exec (RuntimeValue, Environment)
 constructVariantType name variants = do

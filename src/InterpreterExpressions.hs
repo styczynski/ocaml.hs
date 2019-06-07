@@ -54,26 +54,38 @@ execComplexExpression ast@(ECFor name expVal1 dir expVal2 exp) = do
         local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
       else
         return $ (REmpty, env2)
+execComplexExpression ast@(ECMatch expr clauses) = do
+  (expVal, expEnv) <- execComplexExpression expr
+  (matchEnv, matchRes) <- setMatchPatterns (map (\(MatchClause pat patExp) -> (pat, patExp)) clauses) expVal expEnv
+  case matchRes of
+    Nothing -> raise $ "Not-exhaustive match exception"
+    Just exp -> do
+      local (\_ -> matchEnv) $ execComplexExpression exp
 execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   execExpression expr
 execComplexExpression ast@(ECLet pattern [] letExpr expr) = do
   proceed ast
   (letVal, letEnv) <- execComplexExpression letExpr
-  (val, valEnv) <- local (\_ -> setPattern pattern letVal letEnv) $ (execComplexExpression expr)
+  patEnv <- setPattern pattern letVal letEnv
+  (val, valEnv) <- local (\_ -> patEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECLet (PatIdent name) restPatterns letExpr expr) = do
   proceed ast
   argsCount <- return $ length restPatterns
-  fnBody <- return $ \args ->
-    local (setPatterns restPatterns args) $ (execComplexExpression letExpr)
+  fnBody <- return $ \args -> do
+    env <- ask
+    patEnv <- setPatterns restPatterns args env
+    local (\_ -> patEnv) $ (execComplexExpression letExpr)
   (val, valEnv) <- local (createFunction name (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   proceed ast
   argsCount <- return $ 1 + (length restPatterns)
-  fnBody <- return $ \args ->
-    local (setPatterns ([pattern] ++ restPatterns) args) $ (execComplexExpression bodyExpr)
+  fnBody <- return $ \args -> do
+    env <- ask
+    patEnv <- setPatterns ([pattern] ++ restPatterns) args env
+    local (\_ -> patEnv) $ (execComplexExpression bodyExpr)
   env <- ask
   return $ newFunction (RFunSig argsCount) fnBody env
 
