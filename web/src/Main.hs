@@ -36,12 +36,39 @@ runtimeValueFromJS val
         (input :: Bool) <- fromJust <$> fromJSVal val
         return $ RBool $ input
 
-runtimeValueToJS :: RuntimeValue -> Environment -> JSVal
-runtimeValueToJS REmpty _ = jsNull
-runtimeValueToJS (RInt val) _ = toJSInt $ fromIntegral val
-runtimeValueToJS (RString val) _ = jsval $ pack val
-runtimeValueToJS (RBool True) _ = toJSBool True
-runtimeValueToJS (RBool False) _ = toJSBool False
+createRuntimeValueWrapper :: String -> JSVal -> IO JSVal
+createRuntimeValueWrapper typeName val = do
+  (o :: Object) <- create
+  setProp (pack "type" :: JSString) (jsval . pack $ typeName) o
+  setProp (pack "value" :: JSString) val o
+  return $ jsval o
+
+runtimeValueToJS :: RuntimeValue -> Environment -> IO JSVal
+runtimeValueToJS REmpty _ = createRuntimeValueWrapper "REmpty" jsNull
+runtimeValueToJS REmpty _ = createRuntimeValueWrapper "RInvalid" jsNull
+runtimeValueToJS (RInt val) _ = createRuntimeValueWrapper "RInt" $ toJSInt $ fromIntegral val
+runtimeValueToJS (RString val) _ = createRuntimeValueWrapper "RString" $ jsval $ pack val
+runtimeValueToJS (RBool True) _ = createRuntimeValueWrapper "RBool" $ toJSBool True
+runtimeValueToJS (RBool False) _ = createRuntimeValueWrapper "RBool" $ toJSBool False
+runtimeValueToJS (RTuple []) _ = createRuntimeValueWrapper "RTuple" $ jsNull
+runtimeValueToJS (RTuple values) env = createRuntimeValueWrapper "RTuple" $
+  unsafePerformIO $ toJSArray $ map (\e -> unsafePerformIO $ runtimeValueToJS e env) values
+runtimeValueToJS (RList values) env = createRuntimeValueWrapper "RList" $
+  unsafePerformIO $ toJSArray $ map (\e -> unsafePerformIO $ runtimeValueToJS e env) values
+runtimeValueToJS (RRecord (Ident recordTypeName) fields) env = do
+  (o :: Object) <- create
+  setProp (pack "type" :: JSString) (jsval . pack $ "RRecord") o
+  val <- return $ toJSArray $ map (\((Ident key), value) -> unsafePerformIO $ toJSArray [jsval $ pack key, unsafePerformIO $ runtimeValueToJS value env]) $ Map.toList fields
+  setProp (pack "value" :: JSString) (unsafePerformIO val) o
+  setProp (pack "name" :: JSString) (jsval . pack $ recordTypeName) o
+  return $ jsval o
+runtimeValueToJS val@(RRef rid) env = do
+  refVal <- return $ getRefStorage val env
+  case refVal of
+    RfInvalid _ -> createRuntimeValueWrapper "RInvalid" $ jsNull
+    (RfFun (RFunSig sig) _) -> createRuntimeValueWrapper "RFunction" $ jsNull
+
+--runtimeValueToJS (RVariant _ (Ident option))
 --runtimeValueToJS (RFunc _ body _) env = jsval $ unsafePerformIO $ syncCallback1' $ \jv -> do
 --  result <- execFunction body (map (unsafePerformIO . runtimeValueFromJS) $ unsafePerformIO $ fromJSArray $ jv) env
 --  callback <- syncCallback1' $ \jv -> do
@@ -51,9 +78,9 @@ runtimeValueToJS (RBool False) _ = toJSBool False
 --  return $ runtimeValueToJS (getExecutionResult result) (getProgramEnvironmentDefault result env)
 --runtimeValueToJS val _ = jsval $ pack $ show val
 
-resultToJS :: ExecutionResult -> Environment -> JSVal
-resultToJS (FailedParse err) _ = jsval $ pack $ err
-resultToJS (FailedExecution err) _ = jsval $ pack $ err
+resultToJS :: ExecutionResult -> Environment -> IO JSVal
+resultToJS (FailedParse err) _ = return $ jsval $ pack $ err
+resultToJS (FailedExecution err) _ = return $ jsval $ pack $ err
 resultToJS (Executed val _) env = runtimeValueToJS val env
 
 resultToErrorJS :: ExecutionResult -> JSVal
@@ -75,13 +102,13 @@ resultToFunSigJS _ = return $ jsNull
 --resultToFunSigJS _ = return $ jsNull
 
 environmentToJS :: Environment -> JSVal
-environmentToJS e = unsafePerformIO $ toJSArray $ map (\((Ident key), value) -> unsafePerformIO $ toJSArray [jsval $ pack key, runtimeValueToJS value e]) $ Map.toList $ variables e
+environmentToJS e = unsafePerformIO $ toJSArray $ map (\((Ident key), value) -> unsafePerformIO $ toJSArray [jsval $ pack key, unsafePerformIO $runtimeValueToJS value e]) $ Map.toList $ variables e
 
 executeCode input env = do
   (o :: Object) <- create
   result <- return $ unsafePerformIO $ runWith 2 input env
   setProp (pack "resultStr" :: JSString) (jsval . pack $ (resultToStr result)) o
-  setProp (pack "result") (resultToJS result (getProgramEnvironmentDefault result env)) o
+  setProp (pack "result") (unsafePerformIO $ resultToJS result (getProgramEnvironmentDefault result env)) o
   setProp (pack "error") (resultToErrorJS result) o
   setProp (pack "env") (resultToEnvJS result) o
   setProp (pack "funSig") (unsafePerformIO $ resultToFunSigJS result) o

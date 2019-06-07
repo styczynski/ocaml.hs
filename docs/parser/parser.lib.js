@@ -1474,69 +1474,6 @@ function h$rand() {
    - 285 hentaigana
    - 3 additional Zanabazar Square characters */
 /* We do not support C11 <threads.h>.  */
-function h$get_current_timezone_seconds(t, pdst_v, pdst_o, pname_v, pname_o) {
-    var d = new Date(t * 1000);
-    var now = new Date();
-    var jan = new Date(now.getFullYear(),0,1);
-    var jul = new Date(now.getFullYear(),6,1);
-    var stdOff = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-    var isDst = d.getTimezoneOffset() < stdOff;
-    var tzo = d.getTimezoneOffset();
-    pdst_v.dv.setInt32(pdst_o, isDst ? 1 : 0, true);
-    if(!pname_v.arr) pname_v.arr = [];
-    var offstr = tzo < 0 ? ('+' + (tzo/-60)) : ('' + (tzo/-60));
-    pname_v.arr[pname_o] = [h$encodeUtf8("UTC" + offstr), 0];
-    return (-60*tzo)|0;
-}
-function h$clock_gettime(when, p_d, p_o) {
-/*  h$log("clock_gettime");
-  h$log(when);
-  h$log(p_d);
-  h$log(p_o); */
-  var o = p_o >> 2,
-      t = Date.now ? Date.now() : new Date().getTime(),
-      tf = Math.floor(t / 1000),
-      tn = 1000000 * (t - (1000 * tf));
-  p_d.i3[o] = tf|0;
-  p_d.i3[o+1] = tn|0;
-  return 0;
-}
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
-   This file is part of the GNU C Library.
-
-   The GNU C Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-
-   The GNU C Library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
-/* This header is separate from features.h so that the compiler can
-   include it implicitly at the start of every compilation.  It must
-   not itself include <features.h> or any other header that includes
-   <features.h> because the implicit include comes before any feature
-   test macros that may be defined in a source file before it first
-   explicitly includes a system header.  GCC knows the name of this
-   header in order to preinclude it.  */
-/* glibc's intent is to support the IEC 559 math functionality, real
-   and complex.  If the GCC (4.9 and later) predefined macros
-   specifying compiler intent are available, use them to determine
-   whether the overall intent is to support these features; otherwise,
-   presume an older compiler has intent to support these features and
-   define these macros by default.  */
-/* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
-   synchronized with ISO/IEC 10646:2017, fifth edition, plus
-   the following additions from Amendment 1 to the fifth edition:
-   - 56 emoji characters
-   - 285 hentaigana
-   - 3 additional Zanabazar Square characters */
-/* We do not support C11 <threads.h>.  */
 // values defined in Gen2.ClosureInfo
 // thread status
 /*
@@ -1750,233 +1687,6 @@ function h$_hs_text_encode_utf8(destp_v, destp_o, src_v, srcoff, srclen) {
     }
   }
   destp_v.arr[destp_o][1] = dest;
-}
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
-   This file is part of the GNU C Library.
-
-   The GNU C Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-
-   The GNU C Library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
-/* This header is separate from features.h so that the compiler can
-   include it implicitly at the start of every compilation.  It must
-   not itself include <features.h> or any other header that includes
-   <features.h> because the implicit include comes before any feature
-   test macros that may be defined in a source file before it first
-   explicitly includes a system header.  GCC knows the name of this
-   header in order to preinclude it.  */
-/* glibc's intent is to support the IEC 559 math functionality, real
-   and complex.  If the GCC (4.9 and later) predefined macros
-   specifying compiler intent are available, use them to determine
-   whether the overall intent is to support these features; otherwise,
-   presume an older compiler has intent to support these features and
-   define these macros by default.  */
-/* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
-   synchronized with ISO/IEC 10646:2017, fifth edition, plus
-   the following additions from Amendment 1 to the fifth edition:
-   - 56 emoji characters
-   - 285 hentaigana
-   - 3 additional Zanabazar Square characters */
-/* We do not support C11 <threads.h>.  */
-/* FNV-1 hash
- *
- * The FNV-1 hash description: http://isthe.com/chongo/tech/comp/fnv/
- * The FNV-1 hash is public domain: http://isthe.com/chongo/tech/comp/fnv/#public_domain
- */
-function h$hashable_fnv_hash_offset(str_a, o, len, hash) {
-  return h$hashable_fnv_hash(str_a, o, len, hash);
-}
-function h$hashable_fnv_hash(str_d, str_o, len, hash) {
-  if(len > 0) {
-    var d = str_d.u8;
-    for(var i=0;i<len;i++) {
-      hash = h$mulInt32(hash, 16777619) ^ d[str_o+i];
-    }
-  }
-  return hash;
-}
-// int hashable_getRandomBytes(unsigned char *dest, int nbytes)
-function h$hashable_getRandomBytes(dest_d, dest_o, len) {
-  if(len > 0) {
-    var d = dest_d.u8;
-    for(var i=0;i<len;i++) {
-      d[dest_o+i] = Math.floor(Math.random() * 256);
-    }
-  }
-  return len;
-}
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
-   This file is part of the GNU C Library.
-
-   The GNU C Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-
-   The GNU C Library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
-/* This header is separate from features.h so that the compiler can
-   include it implicitly at the start of every compilation.  It must
-   not itself include <features.h> or any other header that includes
-   <features.h> because the implicit include comes before any feature
-   test macros that may be defined in a source file before it first
-   explicitly includes a system header.  GCC knows the name of this
-   header in order to preinclude it.  */
-/* glibc's intent is to support the IEC 559 math functionality, real
-   and complex.  If the GCC (4.9 and later) predefined macros
-   specifying compiler intent are available, use them to determine
-   whether the overall intent is to support these features; otherwise,
-   presume an older compiler has intent to support these features and
-   define these macros by default.  */
-/* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
-   synchronized with ISO/IEC 10646:2017, fifth edition, plus
-   the following additions from Amendment 1 to the fifth edition:
-   - 56 emoji characters
-   - 285 hentaigana
-   - 3 additional Zanabazar Square characters */
-/* We do not support C11 <threads.h>.  */
-// values defined in Gen2.ClosureInfo
-// thread status
-/*
- * low-level heap object manipulation macros
- */
-// GHCJS.Prim.JSVal
-// GHCJS.Prim.JSException
-// Exception dictionary for JSException
-// SomeException
-// GHC.Ptr.Ptr
-// GHC.Integer.GMP.Internals
-// Data.Maybe.Maybe
-// #define HS_NOTHING h$nothing
-// Data.List
-// Data.Text
-// Data.Text.Lazy
-// black holes
-// can we skip the indirection for black holes?
-// resumable thunks
-// general deconstruction
-// retrieve  a numeric value that's possibly stored as an indirection
-// generic lazy values
-// generic data constructors and selectors
-// unboxed tuple returns
-// #define RETURN_UBX_TUP1(x) return x;
-// JS Objects stuff
-function h$isFloat (n) {
-  return n===+n && n!==(n|0);
-}
-function h$isInteger (n) {
-  return n===+n && n===(n|0);
-}
-/*
-        -- 0 - null, 1 - integer,
-        -- 2 - float, 3 - bool,
-        -- 4 - string, 5 - array
-        -- 6 - object
-*/
-function h$typeOf(o) {
-    if (!(o instanceof Object)) {
-        if (o == null) {
-            return 0;
-        } else if (typeof o == 'number') {
-            if (h$isInteger(o)) {
-                return 1;
-            } else {
-                return 2;
-            }
-        } else if (typeof o == 'boolean') {
-            return 3;
-        } else {
-            return 4;
-        }
-    } else {
-        if (Object.prototype.toString.call(o) == '[object Array]') {
-            // it's an array
-            return 5;
-        } else if (!o) {
-            // null 
-            return 0;
-        } else {
-            // it's an object
-            return 6;
-        }
-    }
-}
-function h$listProps(o) {
-    if (!(o instanceof Object)) {
-        return [];
-    }
-    var l = [], i = 0;
-    for (var prop in o) {
-        l[i++] = prop;
-    }
-    return l;
-}
-function h$flattenObj(o) {
-    var l = [], i = 0;
-    for (var prop in o) {
-        l[i++] = [prop, o[prop]];
-    }
-    return l;
-}
-/*
-
-  build an object from key/value pairs:
-    var obj = h$buildObject(key1, val1, key2, val2, ...);
-
-  note: magic name:
-    invocations of this function are replaced by object literals wherever
-    possible
-
- */
-function h$buildObject() {
-    var r = {}, l = arguments.length;
-    for(var i = 0; i < l; i += 2) {
-        var k = arguments[i], v = arguments[i+1];
-        r[k] = v;
-    }
-    return r;
-}
-// same as above, but from a list: [k1,v1,k2,v2,...]
-function h$buildObjectFromList(xs) {
-    var r = {}, k, v, t;
-    while(((xs).f === h$ghczmprimZCGHCziTypesziZC_con_e)) {
-        xs = ((xs).d2);
-        t = ((xs).d2);
-        if(((t).f === h$ghczmprimZCGHCziTypesziZC_con_e)) {
-            k = ((xs).d1);
-            v = ((t).d1);
-            xs = ((t).d2);
-            r[k] = v;
-        } else {
-            return r;
-        }
-    }
-    return r;
-}
-// same as above, but from a list of tuples [(k1,v1),(k2,v2),...]
-function h$buildObjectFromTupList(xs) {
-    var r = {};
-    while(((xs).f === h$ghczmprimZCGHCziTypesziZC_con_e)) {
- var h = ((xs).d1);
- xs = ((xs).d2);
- r[((((h).d1)).d1)] = ((((h).d2)).d1);
-    }
-    return r;
 }
 /* Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -2284,6 +1994,296 @@ function h$_hs_bytestring_long_long_uint_hex(x_a, x_b, buf_d, buf_o) {
         bu8[buf_o++] = c;
     }
     { h$ret1 = (next_free); return (buf_d); };
+}
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, see
+   <http://www.gnu.org/licenses/>.  */
+/* This header is separate from features.h so that the compiler can
+   include it implicitly at the start of every compilation.  It must
+   not itself include <features.h> or any other header that includes
+   <features.h> because the implicit include comes before any feature
+   test macros that may be defined in a source file before it first
+   explicitly includes a system header.  GCC knows the name of this
+   header in order to preinclude it.  */
+/* glibc's intent is to support the IEC 559 math functionality, real
+   and complex.  If the GCC (4.9 and later) predefined macros
+   specifying compiler intent are available, use them to determine
+   whether the overall intent is to support these features; otherwise,
+   presume an older compiler has intent to support these features and
+   define these macros by default.  */
+/* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
+   synchronized with ISO/IEC 10646:2017, fifth edition, plus
+   the following additions from Amendment 1 to the fifth edition:
+   - 56 emoji characters
+   - 285 hentaigana
+   - 3 additional Zanabazar Square characters */
+/* We do not support C11 <threads.h>.  */
+function h$get_current_timezone_seconds(t, pdst_v, pdst_o, pname_v, pname_o) {
+    var d = new Date(t * 1000);
+    var now = new Date();
+    var jan = new Date(now.getFullYear(),0,1);
+    var jul = new Date(now.getFullYear(),6,1);
+    var stdOff = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+    var isDst = d.getTimezoneOffset() < stdOff;
+    var tzo = d.getTimezoneOffset();
+    pdst_v.dv.setInt32(pdst_o, isDst ? 1 : 0, true);
+    if(!pname_v.arr) pname_v.arr = [];
+    var offstr = tzo < 0 ? ('+' + (tzo/-60)) : ('' + (tzo/-60));
+    pname_v.arr[pname_o] = [h$encodeUtf8("UTC" + offstr), 0];
+    return (-60*tzo)|0;
+}
+function h$clock_gettime(when, p_d, p_o) {
+/*  h$log("clock_gettime");
+  h$log(when);
+  h$log(p_d);
+  h$log(p_o); */
+  var o = p_o >> 2,
+      t = Date.now ? Date.now() : new Date().getTime(),
+      tf = Math.floor(t / 1000),
+      tn = 1000000 * (t - (1000 * tf));
+  p_d.i3[o] = tf|0;
+  p_d.i3[o+1] = tn|0;
+  return 0;
+}
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, see
+   <http://www.gnu.org/licenses/>.  */
+/* This header is separate from features.h so that the compiler can
+   include it implicitly at the start of every compilation.  It must
+   not itself include <features.h> or any other header that includes
+   <features.h> because the implicit include comes before any feature
+   test macros that may be defined in a source file before it first
+   explicitly includes a system header.  GCC knows the name of this
+   header in order to preinclude it.  */
+/* glibc's intent is to support the IEC 559 math functionality, real
+   and complex.  If the GCC (4.9 and later) predefined macros
+   specifying compiler intent are available, use them to determine
+   whether the overall intent is to support these features; otherwise,
+   presume an older compiler has intent to support these features and
+   define these macros by default.  */
+/* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
+   synchronized with ISO/IEC 10646:2017, fifth edition, plus
+   the following additions from Amendment 1 to the fifth edition:
+   - 56 emoji characters
+   - 285 hentaigana
+   - 3 additional Zanabazar Square characters */
+/* We do not support C11 <threads.h>.  */
+/* FNV-1 hash
+ *
+ * The FNV-1 hash description: http://isthe.com/chongo/tech/comp/fnv/
+ * The FNV-1 hash is public domain: http://isthe.com/chongo/tech/comp/fnv/#public_domain
+ */
+function h$hashable_fnv_hash_offset(str_a, o, len, hash) {
+  return h$hashable_fnv_hash(str_a, o, len, hash);
+}
+function h$hashable_fnv_hash(str_d, str_o, len, hash) {
+  if(len > 0) {
+    var d = str_d.u8;
+    for(var i=0;i<len;i++) {
+      hash = h$mulInt32(hash, 16777619) ^ d[str_o+i];
+    }
+  }
+  return hash;
+}
+// int hashable_getRandomBytes(unsigned char *dest, int nbytes)
+function h$hashable_getRandomBytes(dest_d, dest_o, len) {
+  if(len > 0) {
+    var d = dest_d.u8;
+    for(var i=0;i<len;i++) {
+      d[dest_o+i] = Math.floor(Math.random() * 256);
+    }
+  }
+  return len;
+}
+/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, see
+   <http://www.gnu.org/licenses/>.  */
+/* This header is separate from features.h so that the compiler can
+   include it implicitly at the start of every compilation.  It must
+   not itself include <features.h> or any other header that includes
+   <features.h> because the implicit include comes before any feature
+   test macros that may be defined in a source file before it first
+   explicitly includes a system header.  GCC knows the name of this
+   header in order to preinclude it.  */
+/* glibc's intent is to support the IEC 559 math functionality, real
+   and complex.  If the GCC (4.9 and later) predefined macros
+   specifying compiler intent are available, use them to determine
+   whether the overall intent is to support these features; otherwise,
+   presume an older compiler has intent to support these features and
+   define these macros by default.  */
+/* wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
+   synchronized with ISO/IEC 10646:2017, fifth edition, plus
+   the following additions from Amendment 1 to the fifth edition:
+   - 56 emoji characters
+   - 285 hentaigana
+   - 3 additional Zanabazar Square characters */
+/* We do not support C11 <threads.h>.  */
+// values defined in Gen2.ClosureInfo
+// thread status
+/*
+ * low-level heap object manipulation macros
+ */
+// GHCJS.Prim.JSVal
+// GHCJS.Prim.JSException
+// Exception dictionary for JSException
+// SomeException
+// GHC.Ptr.Ptr
+// GHC.Integer.GMP.Internals
+// Data.Maybe.Maybe
+// #define HS_NOTHING h$nothing
+// Data.List
+// Data.Text
+// Data.Text.Lazy
+// black holes
+// can we skip the indirection for black holes?
+// resumable thunks
+// general deconstruction
+// retrieve  a numeric value that's possibly stored as an indirection
+// generic lazy values
+// generic data constructors and selectors
+// unboxed tuple returns
+// #define RETURN_UBX_TUP1(x) return x;
+// JS Objects stuff
+function h$isFloat (n) {
+  return n===+n && n!==(n|0);
+}
+function h$isInteger (n) {
+  return n===+n && n===(n|0);
+}
+/*
+        -- 0 - null, 1 - integer,
+        -- 2 - float, 3 - bool,
+        -- 4 - string, 5 - array
+        -- 6 - object
+*/
+function h$typeOf(o) {
+    if (!(o instanceof Object)) {
+        if (o == null) {
+            return 0;
+        } else if (typeof o == 'number') {
+            if (h$isInteger(o)) {
+                return 1;
+            } else {
+                return 2;
+            }
+        } else if (typeof o == 'boolean') {
+            return 3;
+        } else {
+            return 4;
+        }
+    } else {
+        if (Object.prototype.toString.call(o) == '[object Array]') {
+            // it's an array
+            return 5;
+        } else if (!o) {
+            // null 
+            return 0;
+        } else {
+            // it's an object
+            return 6;
+        }
+    }
+}
+function h$listProps(o) {
+    if (!(o instanceof Object)) {
+        return [];
+    }
+    var l = [], i = 0;
+    for (var prop in o) {
+        l[i++] = prop;
+    }
+    return l;
+}
+function h$flattenObj(o) {
+    var l = [], i = 0;
+    for (var prop in o) {
+        l[i++] = [prop, o[prop]];
+    }
+    return l;
+}
+/*
+
+  build an object from key/value pairs:
+    var obj = h$buildObject(key1, val1, key2, val2, ...);
+
+  note: magic name:
+    invocations of this function are replaced by object literals wherever
+    possible
+
+ */
+function h$buildObject() {
+    var r = {}, l = arguments.length;
+    for(var i = 0; i < l; i += 2) {
+        var k = arguments[i], v = arguments[i+1];
+        r[k] = v;
+    }
+    return r;
+}
+// same as above, but from a list: [k1,v1,k2,v2,...]
+function h$buildObjectFromList(xs) {
+    var r = {}, k, v, t;
+    while(((xs).f === h$ghczmprimZCGHCziTypesziZC_con_e)) {
+        xs = ((xs).d2);
+        t = ((xs).d2);
+        if(((t).f === h$ghczmprimZCGHCziTypesziZC_con_e)) {
+            k = ((xs).d1);
+            v = ((t).d1);
+            xs = ((t).d2);
+            r[k] = v;
+        } else {
+            return r;
+        }
+    }
+    return r;
+}
+// same as above, but from a list of tuples [(k1,v1),(k2,v2),...]
+function h$buildObjectFromTupList(xs) {
+    var r = {};
+    while(((xs).f === h$ghczmprimZCGHCziTypesziZC_con_e)) {
+ var h = ((xs).d1);
+ xs = ((xs).d2);
+ r[((((h).d1)).d1)] = ((((h).d2)).d1);
+    }
+    return r;
 }
 /* Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
