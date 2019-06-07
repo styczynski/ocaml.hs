@@ -142,6 +142,10 @@ execExpression :: Expression -> Exec (RuntimeValue, Environment)
 execExpression (ExprRecord record) = execRecord record
 execExpression (ExprCompl expr) = execComplexExpression expr
 execExpression (ExprList list) = execList list
+execExpression (ExprSel expr name) = do
+  (val, env) <- execExpression expr
+  retVal <- valueSel val name
+  return (retVal, env)
 execExpression ast@(ExprCall name []) = do
   proceedD ast
   val <- ask >>= pullVariable name

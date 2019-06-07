@@ -52,6 +52,7 @@ ExprList.       Expression6         ::= DList ;
 ExprRecord.       Expression6         ::= DataRecord ;
 ExprConst.      Expression6         ::= Constant ;
 ExprCall.       Expression6         ::= Ident [SimpleExpression];
+ExprSel.       Expression6         ::= Expression6 "." Ident ;
 Expr6.          Expression5         ::= PrefixOperator Expression6 ;
 Expr5.          Expression4         ::= Expression4 InfixOperatorE Expression5 ;
 Expr4.          Expression3         ::= Expression3 InfixOperatorD Expression4 ;

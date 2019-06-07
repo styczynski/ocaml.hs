@@ -4,7 +4,9 @@ import Control.Monad.Except
 import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
+import qualified Data.Map as Map
 
+import AbsSyntax
 import Runtime
 
 valueEq :: RuntimeValue -> RuntimeValue -> Exec Bool
@@ -52,3 +54,14 @@ valueJoin (RList a) (RList b) = return $ RList $ a ++ b
 valueJoin x y = do
   env <- ask
   raise $ "Could not join (@) lists: " ++ (getTypeStr (x, env)) ++ " @ " ++ (getTypeStr (y, env))
+
+valueSel :: RuntimeValue -> Ident -> Exec RuntimeValue
+valueSel val@(RRecord _ fields) name = do
+  env <- ask
+  selVal <- return $ Map.findWithDefault RInvalid name fields
+  case selVal of
+    RInvalid -> raise $ "Could not get field " ++ (treeToStr name) ++ " of value of type " ++ (getTypeStr (val, env))
+    val -> return $ val
+valueSel val name = do
+  env <- ask
+  raise $ "Could not get field " ++ (treeToStr name) ++ " of value of type " ++ (getTypeStr (val, env))
