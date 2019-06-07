@@ -13,7 +13,7 @@ import AbsSyntax
 createVariant :: Ident -> Environment -> TDefVariant -> Exec Environment
 createVariant name env (TDefVarSimpl option) = do
   return $ setVariable option (RVariant name option $ REmpty) env
-createVariant name env (TDefVarCompl option _ _) = do
+createVariant name env (TDefVarCompl option _) = do
   fnBody <- return $ \[arg] -> do
     env <- ask
     return ((RVariant name option $ arg), env)

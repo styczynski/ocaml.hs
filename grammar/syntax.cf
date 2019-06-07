@@ -6,11 +6,20 @@ IPhrase.        ImplPhrase          ::= ComplexExpression ;
 IDefType.        ImplPhrase          ::= TypeDef ;
 
 
+TypeExprString.    TypeExpression2     ::= "string" ;
+TypeExprBool.      TypeExpression2     ::= "bool" ;
+TypeExprInt.       TypeExpression2     ::= "int" ;
+TypeExprList.      TypeExpression2     ::= "[" TypeExpression "]" ;
+TypeExprTuple.     TypeExpression1     ::= TypeExpression1 "*" TypeExpression2 ;
+TypeFun.           TypeExpression      ::= TypeExpression "->" TypeExpression1 ;
+
+coercions          TypeExpression      2 ;
+
 
 TypeDefVarP.       TypeDef             ::= "type" Ident "=" "|" [TDefVariant] ;
 TypeDefVar.        TypeDef             ::= "type" Ident "=" [TDefVariant] ;
 
-TDefVarCompl.       TDefVariant            ::= Ident "of" Ident [Ident] ;
+TDefVarCompl.       TDefVariant            ::= Ident "of" TypeExpression ;
 TDefVarSimpl.      TDefVariant            ::= Ident ;
 separator nonempty TDefVariant "|" ;
 
@@ -19,9 +28,11 @@ PListElement.     PListElement    ::= SimplePattern ;
 separator PListElement ";" ;
 
 PTuple. PTuple ::= PTupleElement "," [PTupleElement] ;
+
 PTupleElement. PTupleElement ::= SimplePattern1 ;
 separator nonempty PTupleElement "," ;
 
+PatConstr.      SimplePattern2     ::= "(" Ident SimplePattern2 ")" ;
 PatList.        SimplePattern2      ::= PList ;
 PatNone.        SimplePattern2      ::= "_" ;
 PatIdent.       SimplePattern2      ::= Ident ;
@@ -47,7 +58,7 @@ coercions Expression 6 ;
 
 ESConst.        SimpleExpression    ::= Constant ;
 ESIdent.        SimpleExpression    ::= Ident ;
-ESExpr.         SimpleExpression    ::= "(" Expression ")" ;
+ESExpr.         SimpleExpression    ::= "(" ComplexExpression ")" ;
 ESList.         SimpleExpression       ::= DList ;
 separator SimpleExpression "" ;
 

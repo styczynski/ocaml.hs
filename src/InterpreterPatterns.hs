@@ -21,6 +21,10 @@ getPatternMapping (PatTuple (PTuple firstElement tupleElements)) (RTuple vals) =
       let submap = getPatternMapping elem (head accVals) in
         ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) (firstElement : tupleElements)
 getPatternMapping (PatIdent name) val = Map.insert name val Map.empty
+getPatternMapping (PatConstr typeConstr patternOption) (RVariant _ option optionVal) =
+  if option == typeConstr then
+    getPatternMapping patternOption optionVal
+  else Map.empty
 getPatternMapping (PatList (PList elems)) (RList vals) =
   fst $ foldl (\(accMap,accVals) (PListElement elem) ->
     let submap = getPatternMapping elem (head accVals) in

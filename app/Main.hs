@@ -25,7 +25,7 @@ runBlock v s = do
                     hPutStrLn stderr s
                     exitFailure
      Executed v env -> do
-                    putStrLn $ "-: " ++ (getTypeStr (v,env)) ++ " " ++ (valueToStr v)
+                    putStrLn $ "- : " ++ (getTypeStr (v,env)) ++ " = " ++ (valueToStr v)
                     exitSuccess
 
 execContents v = getContents >>= runBlock v

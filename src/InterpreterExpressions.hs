@@ -83,7 +83,7 @@ execSimpleExpression (ESIdent name) = do
   val <- ask >>= pullVariable name
   env <- ask
   return (val, env)
-execSimpleExpression (ESExpr expr) = execExpression expr
+execSimpleExpression (ESExpr expr) = execComplexExpression expr
 execSimpleExpression (ESList list) = execList list
 
 execExprOn :: Expression -> (Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)) -> Exec (RuntimeValue, Environment)

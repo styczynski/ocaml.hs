@@ -76,18 +76,18 @@ getType ((RRef id), env) =
 
 typeToStr :: RuntimeType -> String
 typeToStr TEmpty = "()"
-typeToStr TInt = "Int"
-typeToStr TString = "String"
-typeToStr TBool = "Bool"
-typeToStr TInvalid = "Invalid"
+typeToStr TInt = "int"
+typeToStr TString = "string"
+typeToStr TBool = "bool"
+typeToStr TInvalid = "invalid"
 typeToStr (TVariant (Ident name) _ _) = name
 typeToStr (TTuple []) = "()"
-typeToStr (TTuple elems) = "(" ++ (foldl (\acc el ->
-   if (acc == "") then typeToStr el else acc ++ "," ++ (typeToStr el)
- ) "" elems) ++ ")"
+typeToStr (TTuple elems) = (foldl (\acc el ->
+   if (acc == "") then typeToStr el else acc ++ " * " ++ (typeToStr el)
+ ) "" elems)
 typeToStr TListEmpty = "[]"
 typeToStr (TList instype) = "[" ++ (typeToStr instype) ++ "]"
-typeToStr (TFun (RFunSig argsCount)) = "Function<" ++ (show argsCount) ++ ">"
+typeToStr (TFun (RFunSig argsCount)) = "function<" ++ (show argsCount) ++ ">"
 
 getTypeStr :: (RuntimeValue, Environment) -> String
 getTypeStr = typeToStr . getType

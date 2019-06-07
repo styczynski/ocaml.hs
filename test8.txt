@@ -1,4 +1,4 @@
 type bintree = 
 	| Leaf
-	| Tree of int
+	| Tree of int * int -> int
 ;; Leaf ;;
