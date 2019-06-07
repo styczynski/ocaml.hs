@@ -1,5 +1,2 @@
-type bintree =
-        | Leaf
-        | Tree of int
-;;
-let (Tree x) = (Leaf) in x ;;
+type record = { a: int; b: int };;
+{ a=2 };;

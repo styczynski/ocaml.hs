@@ -29,6 +29,18 @@ constructVariantType name variants = do
   newEnv <- foldM (createVariant name) (defEnv) variants
   return (REmpty, newEnv)
 
+createRecordField :: Ident -> Environment -> TDefRecord -> Exec Environment
+createRecordField name env (TDefRecord fieldName fieldType) = do
+  env1 <- return $ setDef fieldName (DRecord name fieldName) env
+  return env1
+
+constructRecordType :: Ident -> [TDefRecord] -> Exec (RuntimeValue, Environment)
+constructRecordType name fields = do
+  defEnv <- ask
+  newEnv <- foldM (createRecordField name) (defEnv) fields
+  return (REmpty, newEnv)
+
 execTypeDef :: TypeDef -> Exec (RuntimeValue, Environment)
 execTypeDef (TypeDefVar name variants) = constructVariantType name variants
 execTypeDef (TypeDefVarP name variants) = constructVariantType name variants
+execTypeDef (TypeDefRecord name fields) = constructRecordType name fields

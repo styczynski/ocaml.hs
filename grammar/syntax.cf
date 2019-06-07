@@ -18,10 +18,14 @@ coercions          TypeExpression      2 ;
 
 TypeDefVarP.       TypeDef             ::= "type" Ident "=" "|" [TDefVariant] ;
 TypeDefVar.        TypeDef             ::= "type" Ident "=" [TDefVariant] ;
+TypeDefRecord.     TypeDef             ::= "type" Ident "=" "{" [TDefRecord] "}" ;
 
 TDefVarCompl.       TDefVariant            ::= Ident "of" TypeExpression ;
 TDefVarSimpl.      TDefVariant            ::= Ident ;
 separator nonempty TDefVariant "|" ;
+
+TDefRecord.        TDefRecord   ::= Ident ":" TypeExpression ;
+separator nonempty TDefRecord ";" ;
 
 PList.          PList       ::= "[" [PListElement] "]" ;
 PListElement.     PListElement    ::= SimplePattern ;
@@ -45,6 +49,7 @@ separator       SimplePattern       "" ;
 
 ExprCompl.      Expression6         ::= "(" ComplexExpression ")" ;
 ExprList.       Expression6         ::= DList ;
+ExprRecord.       Expression6         ::= DataRecord ;
 ExprConst.      Expression6         ::= Constant ;
 ExprCall.       Expression6         ::= Ident [SimpleExpression];
 Expr6.          Expression5         ::= PrefixOperator Expression6 ;
@@ -60,6 +65,7 @@ ESConst.        SimpleExpression    ::= Constant ;
 ESIdent.        SimpleExpression    ::= Ident ;
 ESExpr.         SimpleExpression    ::= "(" ComplexExpression ")" ;
 ESList.         SimpleExpression       ::= DList ;
+ESRecord.       SimpleExpression   ::= DataRecord ;
 separator SimpleExpression "" ;
 
 ECExpr.          ComplexExpression       ::= Expression ;
@@ -73,6 +79,10 @@ ECFor.           ComplexExpression       ::= "for" Ident "=" ComplexExpression F
 
 MatchClause.     MatchClause  ::=  SimplePattern "->" ComplexExpression ;
 separator nonempty MatchClause "|" ;
+
+DataRecord.   DataRecord  ::= "{" [RecordElement] "}" ;
+RecordElement. RecordElement ::= Ident "=" ComplexExpression ;
+separator nonempty RecordElement ";" ;
 
 DList.          DList       ::= "[" [ListElement] "]" ;
 ListElement.     ListElement    ::= ComplexExpression ;

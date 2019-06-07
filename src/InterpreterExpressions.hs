@@ -10,8 +10,21 @@ import Runtime
 import Arithmetics
 import Environment
 import InterpreterPatterns
+import qualified Data.Map as Map
 
 import AbsSyntax
+
+execRecord :: DataRecord -> Exec (RuntimeValue, Environment)
+execRecord ast@(DataRecord recordElements) = do
+  proceedD ast
+  env <- ask
+  (recordFields, recordEnv, fieldNames) <- foldM (\(res, env, names) (RecordElement fieldName exp) -> do
+        (r, newEnv) <- local (\_ -> env) $ execComplexExpression exp
+        return ((Map.insert fieldName r res), newEnv, [fieldName] ++ names)) (Map.empty, env, []) recordElements
+  recordTypeName <- return $ findRecordDefByFieldNames fieldNames recordEnv
+  case recordTypeName of
+    DInvalid -> raise $ "Invalid field name was specified for record type: " ++ (treeToStr ast)
+    (DRecord name _) -> return $ ((RRecord name recordFields), recordEnv)
 
 execList :: DList -> Exec (RuntimeValue, Environment)
 execList ast@(DList listElements) = do
@@ -90,6 +103,7 @@ execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   return $ newFunction (RFunSig argsCount) fnBody env
 
 execSimpleExpression :: SimpleExpression -> Exec (RuntimeValue, Environment)
+execSimpleExpression (ESRecord record) = execRecord record
 execSimpleExpression (ESConst c) = execExpression $ ExprConst c
 execSimpleExpression (ESIdent name) = do
   val <- ask >>= pullVariable name
@@ -125,6 +139,7 @@ execExprOnUnpack2 exp1 exp2 fn = do
   return (r, env2)
 
 execExpression :: Expression -> Exec (RuntimeValue, Environment)
+execExpression (ExprRecord record) = execRecord record
 execExpression (ExprCompl expr) = execComplexExpression expr
 execExpression (ExprList list) = execList list
 execExpression ast@(ExprCall name []) = do

@@ -29,6 +29,17 @@ setVariable name val env =
 setVariables :: [Ident] -> [RuntimeValue] -> Environment -> Environment
 setVariables names vals env = foldl (\env (n,v) -> setVariable n v env) env (zip names vals)
 
+defContainsField :: Ident -> RuntimeDef -> Bool
+defContainsField name (DRecord _ fieldName) = fieldName == name
+defContainsField name _ = False
+
+findRecordDefByFieldNames :: [Ident] -> Environment -> RuntimeDef
+findRecordDefByFieldNames (name:_) env =
+  let Environment { defs = defs } = env in
+  case Map.elems (Map.filter (defContainsField name) defs) of
+    [] -> DInvalid
+    (h:t) -> h
+
 setDef :: Ident -> RuntimeDef -> Environment -> Environment
 setDef name def env =
   let Environment { defs = defs } = env in

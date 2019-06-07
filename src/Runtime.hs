@@ -41,6 +41,7 @@ data RuntimeValue
   | RString String
   | RBool Bool
   | RVariant Ident Ident RuntimeValue
+  | RRecord Ident (Map.Map Ident RuntimeValue)
   | RTuple [RuntimeValue]
   | RList [RuntimeValue]
   | RRef Integer
@@ -49,6 +50,7 @@ data RuntimeValue
 data RuntimeDef
   = DInvalid
   | DVariant Ident Ident
+  | DRecord Ident Ident
   deriving (Show, Eq)
 
 data RuntimeType
@@ -61,6 +63,7 @@ data RuntimeType
   | TList RuntimeType
   | TListEmpty
   | TVariant Ident Ident RuntimeType
+  | TRecord Ident
   | TFun RFunSig
   deriving (Show, Eq)
 
@@ -70,6 +73,7 @@ getType ((RInt _), _) = TInt
 getType ((RString _), _) = TString
 getType ((RBool _), _) = TBool
 getType (RInvalid, _) = TInvalid
+getType ((RRecord name _), env) = TRecord name
 getType ((RVariant name option val), env) = TVariant name option $ getType (val,env)
 getType ((RTuple elems), env) = TTuple $ map (\e -> getType (e,env)) elems
 getType ((RList []), _) = TListEmpty
@@ -86,6 +90,7 @@ typeToStr TInt = "int"
 typeToStr TString = "string"
 typeToStr TBool = "bool"
 typeToStr TInvalid = "invalid"
+typeToStr (TRecord (Ident name)) = name
 typeToStr (TVariant (Ident name) _ _) = name
 typeToStr (TTuple []) = "()"
 typeToStr (TTuple elems) = (foldl (\acc el ->
@@ -141,6 +146,9 @@ valueToStr (RString val) = show val
 valueToStr (RVariant _ (Ident option) val) = option ++ " " ++ (valueToStr val)
 valueToStr (RBool val) = show val
 valueToStr (RTuple []) = "()"
+valueToStr (RRecord _ fields) = " { " ++ (Map.foldlWithKey (\acc (Ident fieldName) fieldVal ->
+    if (acc == "") then fieldName ++ "=" ++ (valueToStr fieldVal) else acc ++ "; " ++ fieldName ++ "=" ++ (valueToStr fieldVal)
+  ) "" fields) ++ " }"
 valueToStr (RTuple vals) = "( " ++ (foldl (\acc el ->
     if (acc == "") then valueToStr el else acc ++ ", " ++ (valueToStr el)
   ) "" vals) ++ " )"
