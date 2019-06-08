@@ -22,6 +22,11 @@ interpreterStartupFn = do
   e <- ask
   (_,e) <- local (\_ -> e) $ setNativeVariable "failwith" failwith
   (_,e) <- local (\_ -> e) $ setNativeVariable "invalid_arg" invalid_arg
-  --valueEq
-  (_,e) <- local (\_ -> e) $ setNativeVariable "valueEq" valueEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_eq" valueEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt" valueLt
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt" valueGt
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt_eq" valueLtEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt_eq" valueGtEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_cons" valueCons
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_join" valueJoin
   return (REmpty, e)

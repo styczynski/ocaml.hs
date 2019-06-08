@@ -60,14 +60,14 @@ instance {-# OVERLAPS #-} (UnpackableValue a, PackableValue b) => PackableValue 
            ; local (\_ -> env1) $ packVal r }
     return $ newFunction (RFunSig 1) body env
 
-instance (PackableValue a) => PackableValue (IO a) where
+instance {-# OVERLAPS #-} (PackableValue a) => PackableValue (IO a) where
   packVal valIO = do
     r <- return $ unsafePerformIO $ try valIO
     case r of
       (Left (SomeException e)) -> raise $ show e
       (Right v) -> packVal v
 
-instance (PackableValue a) => PackableValue (Exec a) where
+instance {-# OVERLAPS #-} (PackableValue a) => PackableValue (Exec a) where
   packVal valExec = do
     valExec >>= packVal
 
