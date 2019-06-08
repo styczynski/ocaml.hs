@@ -41,7 +41,7 @@ getPatternMapping (PatConstr typeConstr patternOption) val@(RVariant optionVar o
       -- TODO: Fix This ugly error message
       if (optionVar == varName && optName == option && typeConstr == option) then
         getPatternMapping patternOption optionVal
-      else raise $ "Constructor type match failed. Tried to match " ++ (show dvar) ++ " with value of type " ++ (show val)
+      else raise $ "Constructor type match failed. Tried to match " ++ ("") ++ " with value of type " ++ (show val)
 getPatternMapping (PatList (PList elems)) (RList vals) = do
   (newEnv, _) <- foldM (\(accMap,accVals) (PListElement elem) -> do
     submap <- getPatternMapping elem (head accVals)

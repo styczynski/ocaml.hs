@@ -115,32 +115,6 @@ execSimpleExpression (ESIdent name) = do
 execSimpleExpression (ESExpr expr) = execComplexExpression expr
 execSimpleExpression (ESList list) = execList list
 
-execExprOn :: Expression -> (Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)) -> Exec (RuntimeValue, Environment)
-execExprOn exp fn = do
-  (val, env) <- execExpression exp
-  (valFn, valEnv) <- fn (return (val, env))
-  return (valFn, valEnv)
-
-execExprOn2 :: Expression -> Expression -> (Exec (RuntimeValue, Environment)-> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)) -> Exec (RuntimeValue, Environment)
-execExprOn2 exp1 exp2 fn = do
-  (val1, env1) <- execExpression exp1
-  (val2, env2) <- local (\_ -> env1) $ execExpression exp2
-  (valFn, valEnv) <- fn (return (val1,env1)) (return (val2,env2))
-  return (valFn, valEnv)
-
-execExprOnUnpack :: Expression -> (RuntimeValue -> Exec RuntimeValue) -> Exec (RuntimeValue, Environment)
-execExprOnUnpack exp fn = do
-  (val, env) <- execExpression exp
-  r <- fn val
-  return (r, env)
-
-execExprOnUnpack2 :: Expression -> Expression -> (RuntimeValue -> RuntimeValue -> Exec RuntimeValue) -> Exec (RuntimeValue, Environment)
-execExprOnUnpack2 exp1 exp2 fn = do
-  (val1, env1) <- execExpression exp1
-  (val2, env2) <- local (\_ -> env1) $ execExpression exp2
-  r <- fn val1 val2
-  return (r, env2)
-
 execExpression :: Expression -> Exec (RuntimeValue, Environment)
 execExpression (ExprRecord record) = execRecord record
 execExpression (ExprCompl expr) = execComplexExpression expr
@@ -177,18 +151,37 @@ execExpression ast@(ExprConst (CBool CBFalse)) = do
   proceedD ast
   env <- ask
   return ((RBool False), env)
-execExpression ast@(Expr6 OpNot exp) = proceedT ast $ execExprOn exp $ vmapBool (\x -> RBool $ not x)
-execExpression ast@(Expr6 OpNeg exp) = proceedT ast $ execExprOn exp $ vmapInt (\x -> RInt $ -x)
-execExpression ast@(Expr5 exp1 OpMul exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x*y)
-execExpression ast@(Expr5 exp1 OpDiv exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ div x y)
-execExpression ast@(Expr4 exp1 OpAdd exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x+y)
-execExpression ast@(Expr4 exp1 OpSub exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapInt2 (\x y -> RInt $ x-y)
-execExpression ast@(Expr3 exp1 OpEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueEq val1 val2 >>= \r -> return $ RBool r
-execExpression ast@(Expr3 exp1 OpLt exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLt val1 val2 >>= \r -> return $ RBool r
-execExpression ast@(Expr3 exp1 OpGt exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGt val1 val2 >>= \r -> return $ RBool r
-execExpression ast@(Expr3 exp1 OpLtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueLtEq val1 val2 >>= \r -> return $ RBool r
-execExpression ast@(Expr3 exp1 OpGtEq exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueGtEq val1 val2 >>= \r -> return $ RBool r
-execExpression ast@(Expr2 exp1 OpCons exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueCons val1 val2
-execExpression ast@(Expr2 exp1 OpJoin exp2) = proceedT ast $ execExprOnUnpack2 exp1 exp2 $ \val1 val2 -> valueJoin val1 val2
-execExpression ast@(Expr2 exp1 OpAnd exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x && y)
-execExpression ast@(Expr1 exp1 OpOr exp2) = proceedT ast $ execExprOn2 exp1 exp2 $ vmapBool2 (\x y -> RBool $ x || y)
+execExpression ast@(Expr6 op exp) = do
+  proceed ast
+  (val1,env1) <- execExpression exp
+  local (\_ -> env1) $ callOperatorF op val1
+execExpression ast@(Expr5 exp1 op exp2) = do
+  proceed ast
+  (val1,env1) <- execExpression exp1
+  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
+  local (\_ -> env2) $ callOperatorE op val1 val2
+execExpression ast@(Expr4 exp1 op exp2) = do
+  proceed ast
+  (val1,env1) <- execExpression exp1
+  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
+  local (\_ -> env2) $ callOperatorD op val1 val2
+execExpression ast@(Expr4S exp1 OperatorDS exp2) = do
+  proceed ast
+  (val1,env1) <- execExpression exp1
+  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
+  local (\_ -> env2) $ callOperatorDS val1 val2
+execExpression ast@(Expr3 exp1 op exp2) = do
+  proceed ast
+  (val1,env1) <- execExpression exp1
+  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
+  local (\_ -> env2) $ callOperatorC op val1 val2
+execExpression ast@(Expr2 exp1 op exp2) = do
+  proceed ast
+  (val1,env1) <- execExpression exp1
+  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
+  local (\_ -> env2) $ callOperatorB op val1 val2
+execExpression ast@(Expr1 exp1 op exp2) = do
+  proceed ast
+  (val1,env1) <- execExpression exp1
+  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
+  local (\_ -> env2) $ callOperatorA op val1 val2

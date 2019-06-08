@@ -48,11 +48,13 @@ coercions            SimplePattern       2 ;
 separator            SimplePattern       "" ;
 
 token OperatorF (["~!?"] (["~!?*%/-+^@$&|<>="])*) ;
+token OperatorD (["*%/"] (["~!?*%/-+^@$&|<>="])*) ;
 token OperatorE ({"**"} (["~!?*%/-+^@$&|<>="])*) ;
-token OperatorD (["*%/"] (["~!?%/-+^@$&|<>="]) (["~!?*%/-+^@$&|<>="])*) ;
 token OperatorC (["+-"] (["~!?*%/-+^@$&|<>="])*) ;
 token OperatorB (["@^"] (["~!?*%/-+^@$&|<>="])*) ;
 token OperatorA (["$&|<>="] (["~!?*%/-+^@$&|<>="])*) ;
+
+OperatorDS. OperatorDS ::= "*" ;
 
 ExprCompl.           Expression6         ::= "(" ComplexExpression ")" ;
 ExprList.            Expression6         ::= DList ;
@@ -62,6 +64,7 @@ ExprCall.            Expression6         ::= Ident [SimpleExpression];
 ExprSel.             Expression6         ::= Expression6 "." Ident ;
 Expr6.               Expression5         ::= OperatorF Expression6 ;
 Expr5.               Expression4         ::= Expression4 OperatorE Expression5 ;
+Expr4S.               Expression3         ::= Expression3 OperatorDS Expression4 ;
 Expr4.               Expression3         ::= Expression3 OperatorD Expression4 ;
 Expr3.               Expression2         ::= Expression2 OperatorC Expression3 ;
 Expr2.               Expression1         ::= Expression2 OperatorB Expression1 ;

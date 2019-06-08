@@ -51,7 +51,7 @@ data RuntimeDef
   = DInvalid
   | DVariant Ident Ident
   | DRecord Ident Ident
-  deriving (Show, Eq)
+  | DOperator Ident Integer RFunBody
 
 data RuntimeType
   = TEmpty
@@ -176,24 +176,24 @@ unpackString arg@(val, env) =
     RString v -> return (v, env)
     _ -> raise $ "Expected type: " ++ (typeToStr TString) ++ ", got: " ++ (getTypeStr arg)
 
-vmapBool :: (Bool -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
-vmapBool fn e1 = do
-  (val1, env) <- e1 >>= unpackBool
-  return ((fn val1), env)
-
-vmapBool2 :: (Bool -> Bool -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
-vmapBool2 fn e1 e2 = do
-  (val1, env1) <- e1 >>= unpackBool
-  (val2, env2) <- e2 >>= unpackBool
-  return ((fn val1 val2), env2)
-
-vmapInt :: (Integer -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
-vmapInt fn e1 = do
-  (val1, env1) <- e1 >>= unpackInt
-  return ((fn val1), env1)
-
-vmapInt2 :: (Integer -> Integer -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
-vmapInt2 fn e1 e2 = do
-  (val1, env1) <- e1 >>= unpackInt
-  (val2, env2) <- e2 >>= unpackInt
-  return ((fn val1 val2), env2)
+--vmapBool :: (Bool -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
+--vmapBool fn e1 = do
+--  (val1, env) <- e1 >>= unpackBool
+--  return ((fn val1), env)
+--
+--vmapBool2 :: (Bool -> Bool -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
+--vmapBool2 fn e1 e2 = do
+--  (val1, env1) <- e1 >>= unpackBool
+--  (val2, env2) <- e2 >>= unpackBool
+--  return ((fn val1 val2), env2)
+--
+--vmapInt :: (Integer -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
+--vmapInt fn e1 = do
+--  (val1, env1) <- e1 >>= unpackInt
+--  return ((fn val1), env1)
+--
+--vmapInt2 :: (Integer -> Integer -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
+--vmapInt2 fn e1 e2 = do
+--  (val1, env1) <- e1 >>= unpackInt
+--  (val2, env2) <- e2 >>= unpackInt
+--  return ((fn val1 val2), env2)

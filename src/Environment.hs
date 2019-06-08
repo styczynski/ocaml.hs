@@ -128,3 +128,35 @@ getProgramEnvironmentDefault :: ExecutionResult -> Environment -> Environment
 getProgramEnvironmentDefault (Executed _ env) _ = env
 getProgramEnvironmentDefault _ envDefault = envDefault
 
+callOperator :: Ident -> Integer -> [RuntimeValue] -> Exec (RuntimeValue, Environment)
+callOperator name@(Ident nameStr) priority args = do
+  env <- ask
+  opFn <- (case getDef name env of
+    DInvalid -> raise $ "Called operator do not exist: " ++ nameStr
+    (DOperator opName opPrio opBody) ->
+      if (opName == name && opPrio == priority) then
+      return $ opBody
+      else raise $ "Invalid operator called: " ++ nameStr
+    _ -> raise $ "Could not call: "++ nameStr ++ " it's not an operator. ")
+  opFn args
+
+callOperatorF :: OperatorF -> RuntimeValue -> Exec (RuntimeValue, Environment)
+callOperatorF (OperatorF op) arg1 = callOperator (Ident op) 5 [arg1]
+
+callOperatorE :: OperatorE -> RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
+callOperatorE (OperatorE op) arg1 arg2 = callOperator (Ident op) 4 [arg1, arg2]
+
+callOperatorD :: OperatorD -> RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
+callOperatorD (OperatorD op) arg1 arg2 = callOperator (Ident op) 3 [arg1, arg2]
+
+callOperatorDS :: RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
+callOperatorDS arg1 arg2 = callOperator (Ident "*") 3 [arg1, arg2]
+
+callOperatorC :: OperatorC -> RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
+callOperatorC (OperatorC op) arg1 arg2 = callOperator (Ident op) 2 [arg1, arg2]
+
+callOperatorB :: OperatorB -> RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
+callOperatorB (OperatorB op) arg1 arg2 = callOperator (Ident op) 1 [arg1, arg2]
+
+callOperatorA :: OperatorA -> RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
+callOperatorA (OperatorA op) arg1 arg2 = callOperator (Ident op) 0 [arg1, arg2]
