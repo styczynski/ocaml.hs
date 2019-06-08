@@ -13,7 +13,8 @@ import Data.Typeable
 import Runtime
 import Environment
 
-instance (UnpackableValue a, UnpackableValue b, UnpackableValue c, UnpackableValue d, PackableValue e) => PackableValue (a -> b -> c -> d -> e) where
+
+instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, UnpackableValue c, UnpackableValue d, PackableValue e) => PackableValue (a -> b -> c -> d -> e) where
   packVal innerFn = do
     env <- ask
     body <- return $ \[arg0, arg1, arg2, arg3] ->
@@ -26,7 +27,7 @@ instance (UnpackableValue a, UnpackableValue b, UnpackableValue c, UnpackableVal
            ; local (\_ -> env4) $ packVal r }
     return $ newFunction (RFunSig 4) body env
 
-instance (UnpackableValue a, UnpackableValue b, UnpackableValue c, PackableValue d) => PackableValue (a -> b -> c -> d) where
+instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, UnpackableValue c, PackableValue d) => PackableValue (a -> b -> c -> d) where
   packVal innerFn = do
     env <- ask
     body <- return $ \[arg0, arg1, arg2] ->
@@ -38,7 +39,7 @@ instance (UnpackableValue a, UnpackableValue b, UnpackableValue c, PackableValue
            ; local (\_ -> env3) $ packVal r }
     return $ newFunction (RFunSig 3) body env
 
-instance (UnpackableValue a, UnpackableValue b, PackableValue c) => PackableValue (a -> b -> c) where
+instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, PackableValue c) => PackableValue (a -> b -> c) where
   packVal innerFn = do
     env <- ask
     body <- return $ \[arg0, arg1] ->
@@ -49,7 +50,7 @@ instance (UnpackableValue a, UnpackableValue b, PackableValue c) => PackableValu
            ; local (\_ -> env2) $ packVal r }
     return $ newFunction (RFunSig 2) body env
 
-instance (UnpackableValue a, PackableValue b) => PackableValue (a -> b) where
+instance {-# OVERLAPS #-} (UnpackableValue a, PackableValue b) => PackableValue (a -> b) where
   packVal innerFn = do
     env <- ask
     body <- return $ \[arg0] ->
@@ -63,8 +64,17 @@ instance (PackableValue a) => PackableValue (IO a) where
   packVal valIO = do
     r <- return $ unsafePerformIO $ try valIO
     case r of
-      (Left (SomeException e)) -> raise $ "Error caused by inner IO exception" ++ (show (typeOf e))
+      (Left (SomeException e)) -> raise $ show e
       (Right v) -> packVal v
+
+instance (PackableValue a) => PackableValue (Exec a) where
+  packVal valExec = do
+    valExec >>= packVal
+
+instance PackableValue () where
+  packVal _ = do
+    env <- ask
+    return (REmpty, env)
 
 instance PackableValue (RuntimeValue, Environment) where
   packVal val = return val

@@ -8,16 +8,20 @@ import Control.Monad.Reader
 import Runtime
 import Environment
 import ExportUtils
+import Arithmetics
 
-myfun :: Integer -> Integer
-myfun a = a+7
+failwith :: String -> IO ()
+failwith str = error $ "Failed with: " ++ str
 
-myfunShow :: Integer -> String
-myfunShow a = show a
+invalid_arg :: String -> IO ()
+invalid_arg str = error $ "Invalid_argument: " ++ str
+
 
 interpreterStartupFn :: Exec (RuntimeValue, Environment)
 interpreterStartupFn = do
   e <- ask
-  (_,e) <- local (\_ -> e) $ setNativeVariable "myfun" myfun
-  (_,e) <- local (\_ -> e) $ setNativeVariable "myfunShow" myfunShow
+  (_,e) <- local (\_ -> e) $ setNativeVariable "failwith" failwith
+  (_,e) <- local (\_ -> e) $ setNativeVariable "invalid_arg" invalid_arg
+  --valueEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "valueEq" valueEq
   return (REmpty, e)

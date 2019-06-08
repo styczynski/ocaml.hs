@@ -1,1 +1,1 @@
-myfunShow 9 ;;
+valueEq "my message" 2 ;;
