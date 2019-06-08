@@ -1,1 +1,8 @@
-value_cons "ala" [] ;;
+let (==) a b = value_eq a b in
+let (<) a b = value_lt a b in
+let (>) a b = value_gt a b in
+let (<=) a b = value_lt_eq a b in
+let (>=) a b = value_gt_eq a b in
+let cons a b = value_cons a b in
+
+3 >= 1;;

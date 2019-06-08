@@ -80,6 +80,16 @@ execComplexExpression ast@(ECFunction matchClauses) = do
 execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   execExpression expr
+execComplexExpression ast@(ECLetOperator opAny pattern restPatterns letExpr expr) = do
+  proceed ast
+  argsCount <- return $ 1 + length restPatterns
+  fnBody <- return $ \args -> do
+    env <- ask
+    patEnv <- setPatterns ([pattern] ++ restPatterns) args env
+    local (\_ -> patEnv) $ (execComplexExpression letExpr)
+  (_, defEnv) <- createOperator opAny (RFunSig argsCount) fnBody
+  (val, valEnv) <- local (\_ -> defEnv) $ (execComplexExpression expr)
+  return $ (val, valEnv)
 execComplexExpression ast@(ECLet _ pattern [] letExpr expr) = do
   proceed ast
   (letVal, letEnv) <- execComplexExpression letExpr

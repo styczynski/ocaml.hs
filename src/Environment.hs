@@ -166,3 +166,18 @@ callOperatorB (OperatorB op) arg1 arg2 = callOperator (Ident op) 1 [arg1, arg2]
 
 callOperatorA :: OperatorA -> RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
 callOperatorA (OperatorA op) arg1 arg2 = callOperator (Ident op) 0 [arg1, arg2]
+
+createOperatorFunction :: Ident -> Integer -> RFunSig -> RFunBody -> Exec (RuntimeValue, Environment)
+createOperatorFunction name priority sig body = do
+  defEnv <- ask
+  (val, env1) <- return $ newFunction sig body defEnv
+  (env2) <- return $ setDef name (DOperator name priority body) env1
+  return (val, env2)
+
+createOperator :: OperatorAny -> RFunSig -> RFunBody -> Exec (RuntimeValue, Environment)
+createOperator (OperatorAnyF (OperatorF name)) sig body = createOperatorFunction (Ident name) 5 sig body
+createOperator (OperatorAnyE (OperatorE name)) sig body = createOperatorFunction (Ident name) 4 sig body
+createOperator (OperatorAnyD (OperatorD name)) sig body = createOperatorFunction (Ident name) 3 sig body
+createOperator (OperatorAnyC (OperatorC name)) sig body = createOperatorFunction (Ident name) 2 sig body
+createOperator (OperatorAnyB (OperatorB name)) sig body = createOperatorFunction (Ident name) 1 sig body
+createOperator (OperatorAnyA (OperatorA name)) sig body = createOperatorFunction (Ident name) 0 sig body

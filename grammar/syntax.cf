@@ -47,14 +47,21 @@ PatTuple.            SimplePattern       ::= PTuple ;
 coercions            SimplePattern       2 ;
 separator            SimplePattern       "" ;
 
-token OperatorF (["~!?"] (["~!?*%/-+^@$&|<>="])*) ;
-token OperatorD (["*%/"] (["~!?*%/-+^@$&|<>="])*) ;
-token OperatorE ({"**"} (["~!?*%/-+^@$&|<>="])*) ;
-token OperatorC (["+-"] (["~!?*%/-+^@$&|<>="])*) ;
-token OperatorB (["@^"] (["~!?*%/-+^@$&|<>="])*) ;
-token OperatorA (["$&|<>="] (["~!?*%/-+^@$&|<>="])*) ;
+token OperatorF (["~!?"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorD (["*%/"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorE ({"**"} (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorC (["+-"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorB (["@^"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorA (["$&|<>=:"] (["~!?*%/-+^@$&|<>=:"])*) ;
 
 OperatorDS. OperatorDS ::= "*" ;
+
+OperatorAnyF.  OperatorAny ::= OperatorF ;
+OperatorAnyE.  OperatorAny ::= OperatorE ;
+OperatorAnyD.  OperatorAny ::= OperatorD ;
+OperatorAnyC.  OperatorAny ::= OperatorC ;
+OperatorAnyB.  OperatorAny ::= OperatorB ;
+OperatorAnyA.  OperatorAny ::= OperatorA ;
 
 ExprCompl.           Expression6         ::= "(" ComplexExpression ")" ;
 ExprList.            Expression6         ::= DList ;
@@ -83,6 +90,7 @@ ECExpr.              ComplexExpression   ::= Expression ;
 ECTuple.             ComplexExpression   ::= DTuple ;
 ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
 ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
+ECLetOperator.       ComplexExpression   ::= "let" "(" OperatorAny ")" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
 ECFunction.          ComplexExpression   ::= "function" [MatchClause] ;
 ECMatch.             ComplexExpression   ::= "match" ComplexExpression "with" [MatchClause] ;
 ECIf.                ComplexExpression   ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
