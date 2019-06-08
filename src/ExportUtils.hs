@@ -13,6 +13,42 @@ import Data.Typeable
 import Runtime
 import Environment
 
+instance (UnpackableValue a, UnpackableValue b, UnpackableValue c, UnpackableValue d, PackableValue e) => PackableValue (a -> b -> c -> d -> e) where
+  packVal innerFn = do
+    env <- ask
+    body <- return $ \[arg0, arg1, arg2, arg3] ->
+        do { bodyEnv <- ask
+           ; (val1, env1) <- unpackVal arg0
+           ; (val2, env2) <- local (\_ -> env1) $ unpackVal arg1
+           ; (val3, env3) <- local (\_ -> env2) $ unpackVal arg2
+           ; (val4, env4) <- local (\_ -> env3) $ unpackVal arg3
+           ; r <- return $ innerFn val1 val2 val3 val4
+           ; local (\_ -> env4) $ packVal r }
+    return $ newFunction (RFunSig 4) body env
+
+instance (UnpackableValue a, UnpackableValue b, UnpackableValue c, PackableValue d) => PackableValue (a -> b -> c -> d) where
+  packVal innerFn = do
+    env <- ask
+    body <- return $ \[arg0, arg1, arg2] ->
+        do { bodyEnv <- ask
+           ; (val1, env1) <- unpackVal arg0
+           ; (val2, env2) <- local (\_ -> env1) $ unpackVal arg1
+           ; (val3, env3) <- local (\_ -> env2) $ unpackVal arg2
+           ; r <- return $ innerFn val1 val2 val3
+           ; local (\_ -> env3) $ packVal r }
+    return $ newFunction (RFunSig 3) body env
+
+instance (UnpackableValue a, UnpackableValue b, PackableValue c) => PackableValue (a -> b -> c) where
+  packVal innerFn = do
+    env <- ask
+    body <- return $ \[arg0, arg1] ->
+        do { bodyEnv <- ask
+           ; (val1, env1) <- unpackVal arg0
+           ; (val2, env2) <- local (\_ -> env1) $ unpackVal arg1
+           ; r <- return $ innerFn val1 val2
+           ; local (\_ -> env2) $ packVal r }
+    return $ newFunction (RFunSig 2) body env
+
 instance (UnpackableValue a, PackableValue b) => PackableValue (a -> b) where
   packVal innerFn = do
     env <- ask
@@ -29,3 +65,22 @@ instance (PackableValue a) => PackableValue (IO a) where
     case r of
       (Left (SomeException e)) -> raise $ "Error caused by inner IO exception" ++ (show (typeOf e))
       (Right v) -> packVal v
+
+instance PackableValue (RuntimeValue, Environment) where
+  packVal val = return val
+
+instance PackableValue RuntimeValue where
+  packVal val = do
+    env <- ask
+    return (val, env)
+
+instance UnpackableValue RuntimeValue where
+  unpackVal val = do
+    env <- ask
+    return (val, env)
+
+instance UnpackableValue (RuntimeValue, Environment) where
+  unpackVal val = do
+    env <- ask
+    return ((val, env), env)
+
