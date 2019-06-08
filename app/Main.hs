@@ -16,6 +16,7 @@ runFile v f = putStrLn f >> readFile f >>= runBlock v
 
 runBlock :: Verbosity -> String -> IO ()
 runBlock v s = do
+  initEnv <- runInitEmpty
   result <- run v s
   case result of
      FailedExecution s -> do

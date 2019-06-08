@@ -7,12 +7,23 @@ import SkelSyntax
 import AbsSyntax
 import ErrM
 
+import Startup
 import Runtime
 import Environment
 import InterpreterDefinitions
 import Interpreter
 
 type Verbosity = Int
+
+runInit :: Environment -> IO Environment
+runInit env = do
+  result <- runFn interpreterStartupFn env
+  case result of
+    (Executed _ newEnv) -> return newEnv
+    _ -> return env
+
+runInitEmpty :: IO Environment
+runInitEmpty = runInit emptyEnv
 
 runWith :: Verbosity -> String -> Environment -> IO ExecutionResult
 runWith v s env = let ts = myLexer s in case pImplementation ts of
@@ -22,4 +33,6 @@ runWith v s env = let ts = myLexer s in case pImplementation ts of
                         return res
 
 run :: Verbosity -> String -> IO ExecutionResult
-run v s = runWith v s emptyEnv
+run v s = do
+  initEnv <- runInitEmpty
+  runWith v s initEnv

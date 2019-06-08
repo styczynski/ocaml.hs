@@ -21,6 +21,12 @@ allocRef env =
   let Environment { nextFreeRef=freeRef } = env in
   (freeRef, (env { nextFreeRef = freeRef + 1 }))
 
+setNativeVariable :: (PackableValue a) => String -> a -> Exec (RuntimeValue, Environment)
+setNativeVariable name val = do
+  (val1, env1) <- packVal val
+  env2 <- return $ setVariable (Ident name) val1 env1
+  return (val1, env2)
+
 setVariable :: Ident -> RuntimeValue -> Environment -> Environment
 setVariable name val env =
   let Environment { variables = oldVariables } = delVariable name $ delDef name env in

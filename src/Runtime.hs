@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Runtime where
 
 import AbsSyntax
@@ -66,6 +68,42 @@ data RuntimeType
   | TRecord Ident
   | TFun RFunSig
   deriving (Show, Eq)
+
+class PackableValue a where
+  packVal :: a -> Exec (RuntimeValue, Environment)
+
+class UnpackableValue a where
+  unpackVal :: RuntimeValue -> Exec (a, Environment)
+
+instance PackableValue Integer where
+  packVal v = do
+    env <- ask
+    return ((RInt v), env)
+
+instance UnpackableValue Integer where
+  unpackVal (RInt v) = do
+    env <- ask
+    return (v, env)
+
+instance PackableValue String where
+  packVal v = do
+    env <- ask
+    return ((RString v), env)
+
+instance UnpackableValue String where
+  unpackVal (RString v) = do
+    env <- ask
+    return (v, env)
+
+instance PackableValue Bool where
+  packVal v = do
+    env <- ask
+    return ((RBool v), env)
+
+instance UnpackableValue Bool where
+  unpackVal (RBool v) = do
+    env <- ask
+    return (v, env)
 
 getType :: (RuntimeValue, Environment) -> RuntimeType
 getType (REmpty, _) = TEmpty
