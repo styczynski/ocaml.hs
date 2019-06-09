@@ -15,6 +15,8 @@ TypeFun.             TypeExpression      ::= TypeExpression "->" TypeExpression1
 
 coercions            TypeExpression      2 ;
 
+TypeConstrDef.      TypeConstraint      ::= ":" TypeExpression ;
+TypeConstrEmpty.    TypeConstraint      ::= "" ;
 
 TypeDefVarP.         TypeDef             ::= "type" Ident "=" "|" [TDefVariant] ;
 TypeDefVar.          TypeDef             ::= "type" Ident "=" [TDefVariant] ;
@@ -90,7 +92,7 @@ separator            SimpleExpression    "" ;
 ECExpr.              ComplexExpression   ::= Expression ;
 ECTuple.             ComplexExpression   ::= DTuple ;
 ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
-ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
+ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression "in" ComplexExpression ;
 ECLetOperator.       ComplexExpression   ::= "let" LetRecKeyword "(" OperatorAny ")" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
 ECFunction.          ComplexExpression   ::= "function" PipeKeyword [MatchClause] ;
 ECMatch.             ComplexExpression   ::= "match" ComplexExpression "with" PipeKeyword [MatchClause] ;

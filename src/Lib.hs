@@ -12,8 +12,14 @@ import Runtime
 import Environment
 import InterpreterDefinitions
 import Interpreter
+import Typechecking
 
 type Verbosity = Int
+
+runTIWith :: Verbosity -> String -> IO ()
+runTIWith v s = let ts = myLexer s in case pImplementation ts of
+          Bad s    -> putStrLn (show s)
+          Ok  tree -> runTypeInference tree
 
 runInit :: Environment -> IO Environment
 runInit env = do

@@ -97,14 +97,14 @@ execComplexExpression ast@(ECLetOperator _ opAny pattern restPatterns letExpr ex
   (_, defEnv) <- createOperator opAny (RFunSig argsCount) fnBody
   (val, valEnv) <- shadow env $ local (\_ -> defEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
-execComplexExpression ast@(ECLet _ pattern [] letExpr expr) = do
+execComplexExpression ast@(ECLet _ pattern [] typeAnnot letExpr expr) = do
   proceed ast
   env <- ask
   (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
   patEnv <- setPattern pattern letVal letEnv
   (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
-execComplexExpression ast@(ECLet _ (PatIdent name) restPatterns letExpr expr) = do
+execComplexExpression ast@(ECLet _ (PatIdent name) restPatterns typeAnnot letExpr expr) = do
   proceed ast
   env <- ask
   argsCount <- return $ length restPatterns

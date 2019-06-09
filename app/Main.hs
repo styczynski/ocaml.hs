@@ -14,20 +14,24 @@ import InterpreterDefinitions
 runFile :: Verbosity -> FilePath -> IO ()
 runFile v f = putStrLn f >> readFile f >>= runBlock v
 
+--runBlock :: Verbosity -> String -> IO ()
+--runBlock v s = do
+--  initEnv <- runInitEmpty
+--  result <- run v s
+--  case result of
+--     FailedExecution s -> do
+--                    hPutStrLn stderr s
+--                    exitFailure
+--     FailedParse s  -> do
+--                    hPutStrLn stderr s
+--                    exitFailure
+--     Executed v env -> do
+--                    putStrLn $ "- : " ++ (getTypeStr (v,env)) ++ " = " ++ (valueToStr v)
+--                    exitSuccess
+
 runBlock :: Verbosity -> String -> IO ()
-runBlock v s = do
-  initEnv <- runInitEmpty
-  result <- run v s
-  case result of
-     FailedExecution s -> do
-                    hPutStrLn stderr s
-                    exitFailure
-     FailedParse s  -> do
-                    hPutStrLn stderr s
-                    exitFailure
-     Executed v env -> do
-                    putStrLn $ "- : " ++ (getTypeStr (v,env)) ++ " = " ++ (valueToStr v)
-                    exitSuccess
+runBlock v s = runTIWith v s
+
 
 execContents v = getContents >>= runBlock v
 

@@ -60,6 +60,7 @@ data RuntimeDef
 
 data RuntimeType
   = TEmpty
+  | TVar String
   | TInvalid
   | TInt
   | TString
@@ -70,6 +71,7 @@ data RuntimeType
   | TVariant Ident Ident RuntimeType
   | TRecord Ident
   | TFun RFunSig
+  | TFunEx RuntimeType RuntimeType
   deriving (Show, Eq)
 
 class PackableValue a where
