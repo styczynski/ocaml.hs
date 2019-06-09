@@ -128,6 +128,7 @@ getType ((RRef id), env) =
       RfFun sig body -> TFun sig
 
 typeToStr :: RuntimeType -> String
+typeToStr (TVar name) = name ++ "'"
 typeToStr TEmpty = "()"
 typeToStr TInt = "int"
 typeToStr TString = "string"

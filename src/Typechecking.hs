@@ -9,6 +9,7 @@ import AbsSyntax
 import Runtime
 import Environment
 import TypecheckingUtils
+import TypecheckingPatterns
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -34,20 +35,6 @@ tiImpl env (IRoot (h:_)) = do
 tiPhrase :: TypeEnv -> ImplPhrase -> TI (Subst, RuntimeType)
 tiPhrase env (IPhrase expr) = do
   tiComplexExpression env expr
-
-tiPattern :: TypeEnv -> SimplePattern -> (Subst, RuntimeType) -> TI (Subst, TypeEnv)
-tiPattern env (PatIdent (Ident name)) (s1, t1) = do
-  (TypeEnv env2) <- return $ remove env name
-  t2 <- return $ generalize (apply s1 env) t1
-  env3 <- return $ TypeEnv (Map.insert name t2 env2)
-  return (s1, (apply s1 env3))
-tiPattern env (PatCons ph pt) val@(s1, t1) = do
-  (case t1 of
-    (TList innerType) -> do
-      (s1, TypeEnv e1) <- tiPattern env ph (s1, innerType)
-      (s2, TypeEnv e2) <- tiPattern env pt val
-      return ((s1 `composeSubst` s2), (TypeEnv (e1 `Map.union` e2)))
-    _ -> throwError $ "Incompotible types (::)")
 
 tiComplexExpression :: TypeEnv -> ComplexExpression -> TI (Subst, RuntimeType)
 tiComplexExpression env (ECExpr expr) = do
@@ -105,4 +92,4 @@ runTypeInference e = do
   (res, _) <- runTI (typeInference Map.empty e)
   case res of
     Left err -> putStrLn $ "error: " ++ err
-    Right t -> putStrLn $ show t
+    Right t -> putStrLn $ typeToStr t
