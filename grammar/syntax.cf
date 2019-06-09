@@ -92,14 +92,17 @@ ECTuple.             ComplexExpression   ::= DTuple ;
 ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
 ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
 ECLetOperator.       ComplexExpression   ::= "let" LetRecKeyword "(" OperatorAny ")" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
-ECFunction.          ComplexExpression   ::= "function" [MatchClause] ;
-ECMatch.             ComplexExpression   ::= "match" ComplexExpression "with" [MatchClause] ;
+ECFunction.          ComplexExpression   ::= "function" PipeKeyword [MatchClause] ;
+ECMatch.             ComplexExpression   ::= "match" ComplexExpression "with" PipeKeyword [MatchClause] ;
 ECIf.                ComplexExpression   ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
 ECWhile.             ComplexExpression   ::= "while" ComplexExpression "do" ComplexExpression "done" ;
 ECFor.               ComplexExpression   ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
 
 LetRecNo.            LetRecKeyword       ::= "" ;
 LetRecYes.           LetRecKeyword       ::= "rec" ;
+
+PipeKeywordYes.      PipeKeyword         ::= "|" ;
+PipeKeywordNo.      PipeKeyword          ::= "" ;
 
 MatchClause.         MatchClause         ::=  SimplePattern "->" ComplexExpression ;
 separator nonempty   MatchClause         "|" ;

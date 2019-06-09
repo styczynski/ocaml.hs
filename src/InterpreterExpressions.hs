@@ -19,7 +19,7 @@ execRecord ast@(DataRecord recordElements) = do
   proceedD ast
   env <- ask
   (recordFields, recordEnv, fieldNames) <- foldM (\(res, env, names) (RecordElement fieldName exp) -> do
-        (r, newEnv) <- local (\_ -> env) $ execComplexExpression exp
+        (r, newEnv) <- shadow env $ local (\_ -> env) $ execComplexExpression exp
         return ((Map.insert fieldName r res), newEnv, [fieldName] ++ names)) (Map.empty, env, []) recordElements
   recordTypeName <- return $ findRecordDefByFieldNames fieldNames recordEnv
   case recordTypeName of
@@ -31,7 +31,7 @@ execList ast@(DList listElements) = do
   proceedD ast
   env <- ask
   (listItems, listEnv) <- foldM (\(res, env) (ListElement exp) -> do
-      (r, newEnv) <- local (\_ -> env) $ execComplexExpression exp
+      (r, newEnv) <- shadow env $ local (\_ -> env) $ execComplexExpression exp
       return ((res ++ [r]), newEnv)) ([], env) listElements
   return $ ((RList listItems), listEnv)
 
@@ -40,7 +40,7 @@ execTuple ast@(DTuple firstElement tupleElements) = do
   proceedD ast
   env <- ask
   (tupleItems, tupleEnv) <- foldM (\(res, env) (DTupleElement exp) -> do
-      (r, newEnv) <- local (\_ -> env) $ execExpression exp
+      (r, newEnv) <- shadow env $ local (\_ -> env) $ execExpression exp
       return ((res ++ [r]), newEnv)) ([], env) (firstElement:tupleElements)
   return $ ((RTuple tupleItems), tupleEnv)
 
@@ -48,72 +48,81 @@ execComplexExpression :: ComplexExpression -> Exec (RuntimeValue, Environment)
 execComplexExpression (ECTuple tuple) = execTuple tuple
 execComplexExpression ast@(ECIf cond exp1 exp2) = do
   proceed ast
-  (condVal, condEnv) <- execComplexExpression cond >>= unpackBool
-  if condVal then (local (\_ -> condEnv) $ execComplexExpression exp1) else (local (\_ -> condEnv) $ execComplexExpression exp2)
+  env <- ask
+  (condVal, condEnv) <- shadow env $ execComplexExpression cond >>= unpackBool
+  if condVal then (shadow env $ local (\_ -> condEnv) $ execComplexExpression exp1) else (shadow env $ local (\_ -> condEnv) $ execComplexExpression exp2)
 execComplexExpression ast@(ECWhile cond exp) = do
   proceed ast
-  (condVal, condEnv) <- execComplexExpression cond >>= unpackBool
-  if condVal then (local (\_ -> condEnv) $ execComplexExpression (ECWhile cond exp)) else (return (REmpty, condEnv))
+  env <- ask
+  (condVal, condEnv) <- shadow env $ execComplexExpression cond >>= unpackBool
+  if condVal then (shadow env $ local (\_ -> condEnv) $ execComplexExpression (ECWhile cond exp)) else (return (REmpty, condEnv))
 execComplexExpression ast@(ECFor name expVal1 dir expVal2 exp) = do
   proceed ast
-  (val1, env1) <- execComplexExpression expVal1 >>= unpackInt
-  (val2, env2) <- local (\_ -> env1) $ execComplexExpression expVal2 >>= unpackInt
+  env <- ask
+  (val1, env1) <- shadow env $ execComplexExpression expVal1 >>= unpackInt
+  (val2, env2) <- shadow env $ local (\_ -> env1) $ execComplexExpression expVal2 >>= unpackInt
   case dir of
     ForDirTo -> if val1 < val2 then
-        local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 + 1) dir expVal2 exp)
+        shadow env $ local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 + 1) dir expVal2 exp)
       else
-        return $ (REmpty, env2)
+        shadow env $ return $ (REmpty, env2)
     ForDirDownTo -> if val1 > val2 then
-        local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
+        shadow env $ local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
       else
-        return $ (REmpty, env2)
-execComplexExpression ast@(ECMatch expr clauses) = do
-  (expVal, expEnv) <- execComplexExpression expr
+        shadow env $ return $ (REmpty, env2)
+execComplexExpression ast@(ECMatch expr _ clauses) = do
+  env <- ask
+  (expVal, expEnv) <- shadow env $ execComplexExpression expr
   (matchEnv, matchRes) <- setMatchPatterns (map (\(MatchClause pat patExp) -> (pat, patExp)) clauses) expVal expEnv
   case matchRes of
     Nothing -> raise $ "Not-exhaustive match exception"
     Just exp -> do
-      local (\_ -> matchEnv) $ execComplexExpression exp
-execComplexExpression ast@(ECFunction matchClauses) = do
+      shadow env $ local (\_ -> matchEnv) $ execComplexExpression exp
+execComplexExpression ast@(ECFunction bPip matchClauses) = do
   proceed ast
-  execComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprCall (Ident "x") []) matchClauses
+  env <- ask
+  shadow env $ execComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprCall (Ident "x") []) bPip matchClauses
 execComplexExpression ast@(ECExpr expr) = do
   proceed ast
-  execExpression expr
+  env <- ask
+  shadow env $ execExpression expr
 execComplexExpression ast@(ECLetOperator _ opAny pattern restPatterns letExpr expr) = do
   proceed ast
+  env <- ask
   argsCount <- return $ 1 + length restPatterns
   fnBody <- return $ \args -> do
-    env <- ask
-    patEnv <- setPatterns ([pattern] ++ restPatterns) args env
-    local (\_ -> patEnv) $ (execComplexExpression letExpr)
+    inEnv <- ask
+    patEnv <- setPatterns ([pattern] ++ restPatterns) args inEnv
+    shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
   (_, defEnv) <- createOperator opAny (RFunSig argsCount) fnBody
-  (val, valEnv) <- local (\_ -> defEnv) $ (execComplexExpression expr)
+  (val, valEnv) <- shadow env $ local (\_ -> defEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECLet _ pattern [] letExpr expr) = do
   proceed ast
-  (letVal, letEnv) <- execComplexExpression letExpr
+  env <- ask
+  (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
   patEnv <- setPattern pattern letVal letEnv
-  (val, valEnv) <- local (\_ -> patEnv) $ (execComplexExpression expr)
+  (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECLet _ (PatIdent name) restPatterns letExpr expr) = do
   proceed ast
+  env <- ask
   argsCount <- return $ length restPatterns
   fnBody <- return $ \args -> do
-    env <- ask
-    patEnv <- setPatterns restPatterns args env
-    local (\_ -> patEnv) $ (execComplexExpression letExpr)
-  (val, valEnv) <- local (createFunction name (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
+    inEnv <- ask
+    patEnv <- setPatterns restPatterns args inEnv
+    shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
+  (val, valEnv) <- shadow env $ local (createFunction name (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   proceed ast
+  env <- ask
   argsCount <- return $ 1 + (length restPatterns)
   fnBody <- return $ \args -> do
-    env <- ask
-    patEnv <- setPatterns ([pattern] ++ restPatterns) args env
-    local (\_ -> patEnv) $ (execComplexExpression bodyExpr)
-  env <- ask
-  return $ newFunction (RFunSig argsCount) fnBody env
+    inEnv <- ask
+    patEnv <- setPatterns ([pattern] ++ restPatterns) args inEnv
+    shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression bodyExpr)
+  shadow env $ return $ newFunction (RFunSig argsCount) fnBody env
 
 execSimpleExpression :: SimpleExpression -> Exec (RuntimeValue, Environment)
 execSimpleExpression (ESRecord record) = execRecord record
@@ -130,7 +139,8 @@ execExpression (ExprRecord record) = execRecord record
 execExpression (ExprCompl expr) = execComplexExpression expr
 execExpression (ExprList list) = execList list
 execExpression (ExprSel expr name) = do
-  (val, env) <- execExpression expr
+  env <- ask
+  (val, env) <- shadow env $ execExpression expr
   retVal <- valueSel val name
   return (retVal, env)
 execExpression ast@(ExprCall name []) = do
@@ -141,10 +151,10 @@ execExpression ast@(ExprCall name []) = do
 execExpression ast@(ExprCall name argsExprs) = do
   proceedD ast
   env <- ask
-  (args, argsEnv) <- foldM (\(res, env) exp -> do
-    (r, newEnv) <- local (\_ -> env) $ execSimpleExpression exp
+  (args, argsEnv) <- shadow env $ foldM (\(res, env) exp -> do
+    (r, newEnv) <- shadow env $ local (\_ -> env) $ execSimpleExpression exp
     return ((res ++ [r]), newEnv)) ([], env) argsExprs
-  callFunction name args argsEnv
+  shadow env $ callFunction name args argsEnv
 execExpression ast@(ExprConst (CInt value)) = do
   proceedD ast
   env <- ask
@@ -163,35 +173,42 @@ execExpression ast@(ExprConst (CBool CBFalse)) = do
   return ((RBool False), env)
 execExpression ast@(Expr6 op exp) = do
   proceed ast
-  (val1,env1) <- execExpression exp
-  local (\_ -> env1) $ callOperatorF op val1
+  env <- ask
+  (val1,env1) <- shadow env $ execExpression exp
+  shadow env $ local (\_ -> env1) $ callOperatorF op val1
 execExpression ast@(Expr5 exp1 op exp2) = do
   proceed ast
-  (val1,env1) <- execExpression exp1
-  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
-  local (\_ -> env2) $ callOperatorE op val1 val2
+  env <- ask
+  (val1,env1) <- shadow env $ execExpression exp1
+  (val2,env2) <- shadow env $ local (\_ -> env1) $ execExpression exp2
+  shadow env $ local (\_ -> env2) $ callOperatorE op val1 val2
 execExpression ast@(Expr4 exp1 op exp2) = do
   proceed ast
-  (val1,env1) <- execExpression exp1
-  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
-  local (\_ -> env2) $ callOperatorD op val1 val2
+  env <- ask
+  (val1,env1) <- shadow env $ execExpression exp1
+  (val2,env2) <- shadow env $ local (\_ -> env1) $ execExpression exp2
+  shadow env $ local (\_ -> env2) $ callOperatorD op val1 val2
 execExpression ast@(Expr4S exp1 OperatorDS exp2) = do
   proceed ast
-  (val1,env1) <- execExpression exp1
-  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
-  local (\_ -> env2) $ callOperatorDS val1 val2
+  env <- ask
+  (val1,env1) <- shadow env $ execExpression exp1
+  (val2,env2) <- shadow env $ local (\_ -> env1) $ execExpression exp2
+  shadow env $ local (\_ -> env2) $ callOperatorDS val1 val2
 execExpression ast@(Expr3 exp1 op exp2) = do
   proceed ast
+  env <- ask
   (val1,env1) <- execExpression exp1
-  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
-  local (\_ -> env2) $ callOperatorC op val1 val2
+  (val2,env2) <- shadow env $ local (\_ -> env1) $ execExpression exp2
+  shadow env $ local (\_ -> env2) $ callOperatorC op val1 val2
 execExpression ast@(Expr2 exp1 op exp2) = do
   proceed ast
+  env <- ask
   (val1,env1) <- execExpression exp1
-  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
-  local (\_ -> env2) $ callOperatorB op val1 val2
+  (val2,env2) <- shadow env $ local (\_ -> env1) $ execExpression exp2
+  shadow env $ local (\_ -> env2) $ callOperatorB op val1 val2
 execExpression ast@(Expr1 exp1 op exp2) = do
   proceed ast
-  (val1,env1) <- execExpression exp1
-  (val2,env2) <- local (\_ -> env1) $ execExpression exp2
-  local (\_ -> env2) $ callOperatorA op val1 val2
+  env <- ask
+  (val1,env1) <- shadow env $ execExpression exp1
+  (val2,env2) <- shadow env $ local (\_ -> env1) $ execExpression exp2
+  shadow env $ local (\_ -> env2) $ callOperatorA op val1 val2

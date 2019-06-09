@@ -55,7 +55,7 @@ valueNot x = do
   env <- ask
   raise $ "Could not negate (!) value: " ++ (getTypeStr (x, env))
 
-valueOr :: RuntimeValue -> RuntimeValue ->Exec Bool
+valueOr :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueOr (RBool a) (RBool b) = return $ a || b
 valueOr x y = do
   env <- ask

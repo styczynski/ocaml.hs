@@ -9,10 +9,20 @@ import Control.Monad.Reader
 import Control.Exception
 import System.IO.Unsafe
 import Data.Typeable
+import qualified Data.Map as Map
 
 import Runtime
 import Environment
 
+--instance (PackableValue a) => PackableValue [a] where
+--  packVal vals = do
+--    env <- ask
+--    return ((RList $ mapM packVal vals), env)
+--
+--instance (UnpackableValue a) => UnpackableValue [a] where
+--  unpackVal (RList vals) = do
+--    env <- ask
+--    (mapM unpackVal vals) >>= (\x -> return $ foldl (\(vals,oldEnv) (val,newEnv) -> (([val] ++ vals),(newEnv))) ([], env) x)
 
 instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, UnpackableValue c, UnpackableValue d, PackableValue e) => PackableValue (a -> b -> c -> d -> e) where
   packVal innerFn = do
@@ -24,8 +34,8 @@ instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, UnpackableValue
            ; (val3, env3) <- local (\_ -> env2) $ unpackVal arg2
            ; (val4, env4) <- local (\_ -> env3) $ unpackVal arg3
            ; r <- return $ innerFn val1 val2 val3 val4
-           ; local (\_ -> env4) $ packVal r }
-    return $ newFunction (RFunSig 4) body env
+           ; shadow bodyEnv $ local (\_ -> env4) $ packVal r }
+    shadow env $ return $ newFunction (RFunSig 4) body env
 
 instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, UnpackableValue c, PackableValue d) => PackableValue (a -> b -> c -> d) where
   packVal innerFn = do
@@ -36,8 +46,8 @@ instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, UnpackableValue
            ; (val2, env2) <- local (\_ -> env1) $ unpackVal arg1
            ; (val3, env3) <- local (\_ -> env2) $ unpackVal arg2
            ; r <- return $ innerFn val1 val2 val3
-           ; local (\_ -> env3) $ packVal r }
-    return $ newFunction (RFunSig 3) body env
+           ; shadow bodyEnv $ local (\_ -> env3) $ packVal r }
+    shadow env $ return $ newFunction (RFunSig 3) body env
 
 instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, PackableValue c) => PackableValue (a -> b -> c) where
   packVal innerFn = do
@@ -47,8 +57,8 @@ instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, PackableValue c
            ; (val1, env1) <- unpackVal arg0
            ; (val2, env2) <- local (\_ -> env1) $ unpackVal arg1
            ; r <- return $ innerFn val1 val2
-           ; local (\_ -> env2) $ packVal r }
-    return $ newFunction (RFunSig 2) body env
+           ; shadow bodyEnv $ local (\_ -> env2) $ packVal r }
+    shadow env $ return $ newFunction (RFunSig 2) body env
 
 instance {-# OVERLAPS #-} (UnpackableValue a, PackableValue b) => PackableValue (a -> b) where
   packVal innerFn = do
@@ -57,8 +67,8 @@ instance {-# OVERLAPS #-} (UnpackableValue a, PackableValue b) => PackableValue 
         do { bodyEnv <- ask
            ; (val1, env1) <- unpackVal arg0
            ; r <- return $ innerFn val1
-           ; local (\_ -> env1) $ packVal r }
-    return $ newFunction (RFunSig 1) body env
+           ; shadow bodyEnv $ local (\_ -> env1) $ packVal r }
+    shadow env $ return $ newFunction (RFunSig 1) body env
 
 instance {-# OVERLAPS #-} (PackableValue a) => PackableValue (IO a) where
   packVal valIO = do

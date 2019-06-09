@@ -1,6 +1,0 @@
-let (+) a b = value_add a b in
-
-let fn a b = a+b in
-let g = fn 1 2 in
- (fn,g,a,b)
-;;

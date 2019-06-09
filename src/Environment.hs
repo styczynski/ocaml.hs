@@ -16,6 +16,27 @@ emptyEnv = Environment {
   nextFreeRef = 0
 }
 
+mergeEnv :: Environment -> Environment -> Environment
+mergeEnv envA envB = envB
+
+shadowEnv :: Environment -> Environment -> Environment
+shadowEnv envA envB =
+  let Environment { nextFreeRef = nextFreeRef, refs = refs  } = envB in
+  envA { nextFreeRef = nextFreeRef, refs = refs }
+
+shadowM :: Environment -> Exec Environment -> Exec Environment
+shadowM envA v = do
+  envB <- v
+  return $ shadowEnv envA envB
+
+shadow :: Environment -> Exec (a, Environment) -> Exec (a, Environment)
+shadow envA v = do
+  (val, envB) <- v
+  return (val, (shadowEnv envA envB))
+
+(->>) :: Environment -> Exec (a, Environment) -> Exec (a, Environment)
+(->>) = shadow
+
 allocRef :: Environment -> (Integer, Environment)
 allocRef env =
   let Environment { nextFreeRef=freeRef } = env in
@@ -102,8 +123,9 @@ pullVariable name@(Ident nameStr) env =
     val -> return $ val
 
 execFunction :: RFunSig -> RFunBody -> [RuntimeValue] -> Exec (RuntimeValue, Environment)
-execFunction (RFunSig sig) body args =
-  body args
+execFunction (RFunSig sig) body args = do
+  env <- ask
+  shadow env $ body args
 
 callFunction :: Ident -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
 callFunction name@(Ident nameStr) args env = do
@@ -114,9 +136,9 @@ callFunction name@(Ident nameStr) args env = do
         if argsInCount < argsCount then
           let fnBody = \paramArgs -> execFunction (RFunSig argsCount) body (args ++ paramArgs) in
             -- throwError ("Create partially applied function " ++ (show argsInCount) ++ (show argsCount))
-            return $ newFunction (RFunSig (argsCount - argsInCount)) fnBody env
+            shadow env $ return $ newFunction (RFunSig (argsCount - argsInCount)) fnBody env
         else do
-          (val, valEnv) <- execFunction (RFunSig argsCount) body args
+          (val, valEnv) <- shadow env $ execFunction (RFunSig argsCount) body args
           return (val, valEnv)
       RfInvalid _ -> raise $ "Reference " ++ nameStr ++ " points nowhere"
 
@@ -144,7 +166,7 @@ callOperator name@(Ident nameStr) priority args = do
       return $ opBody
       else raise $ "Invalid operator called: " ++ nameStr
     _ -> raise $ "Could not call: "++ nameStr ++ " it's not an operator. ")
-  opFn args
+  shadow env $ opFn args
 
 callOperatorF :: OperatorF -> RuntimeValue -> Exec (RuntimeValue, Environment)
 callOperatorF (OperatorF op) arg1 = callOperator (Ident op) 5 [arg1]

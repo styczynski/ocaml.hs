@@ -1,0 +1,9 @@
+let (+) a b = value_add a b in
+let fn a b = a+b in
+let g x = fn 1 x in
+let val = if true then
+   let k = g 3 in k
+ else 69
+in
+val
+;;

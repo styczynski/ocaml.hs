@@ -13,6 +13,9 @@ import Data.Text.Internal.Search
 import qualified Data.Text as T
 import qualified Data.Map as Map
 
+import System.IO
+import System.IO.Unsafe
+
 data Environment = Environment {
   variables       :: (Map.Map Ident RuntimeValue),
   refs            :: (Map.Map Integer RuntimeRefValue),
@@ -148,13 +151,30 @@ instance Show RuntimeRefValue where
 treeToStr :: (Show a, Print a) => a -> String
 treeToStr tree = printTree tree
 
+runtimePrint :: String -> Exec ()
+runtimePrint str = do
+  lift $ lift $ lift $ putStrLn str
+
+envToStr :: Environment -> String
+envToStr env =
+  let Environment { variables = variables } = env in
+    " { " ++ (Map.foldlWithKey (\acc (Ident name) val ->
+       if (acc == "") then name ++ "=" ++ (valueToStr val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr val)
+     ) "" variables) ++ " }"
+
+debug ast = do
+  env <- ask
+  runtimePrint $ "Code: " ++ (treeToStr ast) ++ ", env: " ++ (envToStr env)
+
 proceedD :: (Show a, Print a) => a -> Exec ()
 proceedD a = do
+  --debug a
   state <- get
   put $ let InterpreterState { trace = trace } = state in state { lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)] ++ trace) }
 
 proceed :: (Show a, Print a) => a -> Exec ()
 proceed a = do
+  --debug a
   state <- get
   put $ let InterpreterState { trace = trace } = state in state { lastNode = (treeToStr a), lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)])  }
 
