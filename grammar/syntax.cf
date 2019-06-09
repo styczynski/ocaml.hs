@@ -58,6 +58,7 @@ OperatorDS. OperatorDS ::= "*" ;
 
 OperatorAnyF.  OperatorAny ::= OperatorF ;
 OperatorAnyE.  OperatorAny ::= OperatorE ;
+OperatorAnyDS.  OperatorAny ::= OperatorDS ;
 OperatorAnyD.  OperatorAny ::= OperatorD ;
 OperatorAnyC.  OperatorAny ::= OperatorC ;
 OperatorAnyB.  OperatorAny ::= OperatorB ;

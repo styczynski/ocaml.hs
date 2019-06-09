@@ -4,5 +4,39 @@ let (>) a b = value_gt a b in
 let (<=) a b = value_lt_eq a b in
 let (>=) a b = value_gt_eq a b in
 let cons a b = value_cons a b in
+let (||) a b = value_or a b in
+let (&&) a b = value_and a b in
+let (!) a = value_not a in
+let (-) a b = value_sub a b in
+let (+) a b = value_add a b in
+let (*) a b = value_mul a b in
+let (/) a b = value_div a b in
 
-3 >= 1;;
+let rec length_aux len = function
+    [] -> len
+  | _::l -> length_aux (len + 1) l
+in
+
+let tl = function
+    [] -> failwith "tl"
+  | _::l -> l
+in
+
+let hd = function
+    [] -> failwith "hd"
+  | a::_ -> a
+in
+
+let length l = length_aux 0 l in
+
+let nth l n =
+  if n < 0 then invalid_arg "List.nth" else
+  let nth_aux l n =
+    match l with
+      [] -> failwith "nth"
+    | a::l -> if n == 0 then (a,n,b) else nth_aux l (n-1)
+  in nth_aux l n
+in
+
+nth [1;2;3] 1
+;;

@@ -177,6 +177,7 @@ createOperatorFunction name priority sig body = do
 createOperator :: OperatorAny -> RFunSig -> RFunBody -> Exec (RuntimeValue, Environment)
 createOperator (OperatorAnyF (OperatorF name)) sig body = createOperatorFunction (Ident name) 5 sig body
 createOperator (OperatorAnyE (OperatorE name)) sig body = createOperatorFunction (Ident name) 4 sig body
+createOperator (OperatorAnyDS OperatorDS) sig body = createOperatorFunction (Ident "*") 3 sig body
 createOperator (OperatorAnyD (OperatorD name)) sig body = createOperatorFunction (Ident name) 3 sig body
 createOperator (OperatorAnyC (OperatorC name)) sig body = createOperatorFunction (Ident name) 2 sig body
 createOperator (OperatorAnyB (OperatorB name)) sig body = createOperatorFunction (Ident name) 1 sig body

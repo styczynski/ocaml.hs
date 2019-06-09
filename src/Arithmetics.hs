@@ -49,6 +49,54 @@ valueCons x y = do
   env <- ask
   raise $ "Could not append (::) element to list: " ++ (getTypeStr (x, env)) ++ " :: " ++ (getTypeStr (y, env))
 
+valueNot :: RuntimeValue -> Exec Bool
+valueNot (RBool a) = return $ not a
+valueNot x = do
+  env <- ask
+  raise $ "Could not negate (!) value: " ++ (getTypeStr (x, env))
+
+valueOr :: RuntimeValue -> RuntimeValue ->Exec Bool
+valueOr (RBool a) (RBool b) = return $ a || b
+valueOr x y = do
+  env <- ask
+  raise $ "Could not calculate alternative (or): " ++ (getTypeStr (x, env)) ++ " || " ++ (getTypeStr (y, env))
+
+valueAnd :: RuntimeValue -> RuntimeValue -> Exec Bool
+valueAnd (RBool a) (RBool b) = return $ a && b
+valueAnd x y = do
+  env <- ask
+  raise $ "Could not calculate logical and (and): " ++ (getTypeStr (x, env)) ++ " && " ++ (getTypeStr (y, env))
+
+valueSub :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueSub (RInt a) (RInt b) = return $ RInt $ a - b
+valueSub x y = do
+  env <- ask
+  raise $ "Could not substract values: " ++ (getTypeStr (x, env)) ++ " - " ++ (getTypeStr (y, env))
+
+valueAdd :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueAdd (RInt a) (RInt b) = return $ RInt $ a + b
+valueAdd x y = do
+  env <- ask
+  raise $ "Could not add values: " ++ (getTypeStr (x, env)) ++ " + " ++ (getTypeStr (y, env))
+
+valueMul :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueMul (RInt a) (RInt b) = return $ RInt $ a * b
+valueMul x y = do
+  env <- ask
+  raise $ "Could not multiply values: " ++ (getTypeStr (x, env)) ++ " * " ++ (getTypeStr (y, env))
+
+valueDiv :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueDiv (RInt a) (RInt b) = return $ RInt $ a `div` b
+valueDiv x y = do
+  env <- ask
+  raise $ "Could not divide values: " ++ (getTypeStr (x, env)) ++ " / " ++ (getTypeStr (y, env))
+
+valueMod :: RuntimeValue -> RuntimeValue -> Exec Integer
+valueMod (RInt a) (RInt b) = return $ mod a b
+valueMod x y = do
+  env <- ask
+  raise $ "Could not calculate modulo (mod) of value: " ++ (getTypeStr (x, env)) ++ " % " ++ (getTypeStr (y, env))
+
 valueJoin :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
 valueJoin (RList a) (RList b) = return $ RList $ a ++ b
 valueJoin x y = do

@@ -18,6 +18,7 @@ getPatternMapping (PatCons hPat tPat) (RList (h:t)) = do
    return $ Map.unionWith (\_ b -> b) e1 e2
 getPatternMapping PatNone _ = return $ Map.empty
 getPatternMapping (PatTuple (PTuple firstElement tupleElements)) (RTuple vals) = do
+  _ <- if (length vals) == 1+(length tupleElements) then return REmpty else raise $ "Matching failed. Length do not match."
   (newEnv, _) <- foldM (\(accMap,accVals) (PTupleElement elem) -> do
       submap <- getPatternMapping elem (head accVals)
       return $ ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) (firstElement : tupleElements)
@@ -43,6 +44,7 @@ getPatternMapping (PatConstr typeConstr patternOption) val@(RVariant optionVar o
         getPatternMapping patternOption optionVal
       else raise $ "Constructor type match failed. Tried to match " ++ ("") ++ " with value of type " ++ (show val)
 getPatternMapping (PatList (PList elems)) (RList vals) = do
+  _ <- if (length vals) == (length elems) then return REmpty else raise $ "Matching failed. Length do not match."
   (newEnv, _) <- foldM (\(accMap,accVals) (PListElement elem) -> do
     submap <- getPatternMapping elem (head accVals)
     return $ ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) elems

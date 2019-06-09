@@ -29,4 +29,12 @@ interpreterStartupFn = do
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt_eq" valueGtEq
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_cons" valueCons
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_join" valueJoin
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_and" valueAnd
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_or" valueOr
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_not" valueNot
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mod" valueMod
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" valueAdd
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_sub" valueSub
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mul" valueMul
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_div" valueDiv
   return (REmpty, e)
