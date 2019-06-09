@@ -80,7 +80,7 @@ execComplexExpression ast@(ECFunction matchClauses) = do
 execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   execExpression expr
-execComplexExpression ast@(ECLetOperator opAny pattern restPatterns letExpr expr) = do
+execComplexExpression ast@(ECLetOperator _ opAny pattern restPatterns letExpr expr) = do
   proceed ast
   argsCount <- return $ 1 + length restPatterns
   fnBody <- return $ \args -> do

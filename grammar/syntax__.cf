@@ -91,7 +91,7 @@ ECExpr.              ComplexExpression   ::= Expression ;
 ECTuple.             ComplexExpression   ::= DTuple ;
 ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
 ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
-ECLetOperator.       ComplexExpression   ::= "let" LetRecKeyword "(" OperatorAny ")" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
+ECLetOperator.       ComplexExpression   ::= "let" "(" OperatorAny ")" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
 ECFunction.          ComplexExpression   ::= "function" [MatchClause] ;
 ECMatch.             ComplexExpression   ::= "match" ComplexExpression "with" [MatchClause] ;
 ECIf.                ComplexExpression   ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
