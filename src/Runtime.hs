@@ -140,6 +140,7 @@ typeToStr (TTuple []) = "()"
 typeToStr (TTuple elems) = (foldl (\acc el ->
    if (acc == "") then typeToStr el else acc ++ " * " ++ (typeToStr el)
  ) "" elems)
+typeToStr (TFunEx a b) = (typeToStr a) ++ " -> " ++ (typeToStr b)
 typeToStr TListEmpty = "[]"
 typeToStr (TList instype) = "[" ++ (typeToStr instype) ++ "]"
 typeToStr (TFun (RFunSig argsCount)) = "function<" ++ (show argsCount) ++ ">"
