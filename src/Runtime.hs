@@ -26,7 +26,8 @@ data Environment = Environment {
 data InterpreterState = InterpreterState {
   trace           :: [String],
   lastNode        :: String,
-  lastNodeDetail  :: String
+  lastNodeDetail  :: String,
+  globalExportEnv :: (Maybe Environment)
 }
 
 data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Environment
@@ -37,6 +38,7 @@ data RFunSig = RFunSig Int deriving (Show, Eq)
 
 data RuntimeRefValue
   = RfFun RFunSig RFunBody
+  | RfVal RuntimeValue
   | RfInvalid RuntimeValue
 
 data RuntimeValue
@@ -63,6 +65,7 @@ data RuntimeType
   | TVar String
   | TInvalid
   | TInt
+  | TRef RuntimeType
   | TString
   | TBool
   | TTuple [RuntimeType]
@@ -126,6 +129,7 @@ getType ((RRef id), env) =
     case Map.findWithDefault (RfInvalid RInvalid) id refs of
       RfInvalid _ -> TInvalid
       RfFun sig body -> TFun sig
+      RfVal val -> TRef $ getType (val, env)
 
 typeToStr :: RuntimeType -> String
 typeToStr (TVar name) = name ++ "'"
@@ -134,6 +138,7 @@ typeToStr TInt = "int"
 typeToStr TString = "string"
 typeToStr TBool = "bool"
 typeToStr TInvalid = "invalid"
+typeToStr (TRef v) = "ref " ++ (typeToStr v)
 typeToStr (TRecord (Ident name)) = name
 typeToStr (TVariant (Ident name) _ _) = name
 typeToStr (TTuple []) = "()"

@@ -16,8 +16,10 @@ runFile v f = putStrLn f >> readFile f >>= runBlock v
 
 runBlockI :: Verbosity -> String -> IO ()
 runBlockI v s = do
-  initEnv <- runInitEmpty
-  result <- run v s
+  initEnv0 <- runInitEmpty
+  stdlibStr <- readFile "./init/init.ml"
+  (Executed _ initEnv) <- runWith v stdlibStr initEnv0
+  result <- runWith v s initEnv
   case result of
      FailedExecution s -> do
                     hPutStrLn stderr s

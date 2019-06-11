@@ -1,10 +1,11 @@
+comment "(*" "*)" ;
+
 IRoot.               Implementation      ::= [ImplPhrase] ;
 terminator           nonempty            ImplPhrase ";;" ;
 separator            Ident               "" ;
 
 IPhrase.             ImplPhrase          ::= ComplexExpression ;
 IDefType.            ImplPhrase          ::= TypeDef ;
-
 
 TypeExprString.      TypeExpression2     ::= "string" ;
 TypeExprBool.        TypeExpression2     ::= "bool" ;
@@ -83,6 +84,7 @@ Expr3.               Expression2         ::= Expression2 OperatorC Expression3 ;
 Expr2.               Expression1         ::= Expression2 OperatorB Expression1 ;
 Expr1.               Expression          ::= Expression1 OperatorA Expression ;
 
+ExprSemi.             Expression         ::= Expression1 "th" Expression ;
 coercions            Expression          7 ;
 
 ESConst.             SimpleExpression    ::= Constant ;

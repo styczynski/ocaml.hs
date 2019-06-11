@@ -59,19 +59,25 @@ execComplexExpression ast@(ECWhile cond exp) = do
   proceed ast
   env <- ask
   (condVal, condEnv) <- shadow env $ execComplexExpression cond >>= unpackBool
-  if condVal then (shadow env $ local (\_ -> condEnv) $ execComplexExpression (ECWhile cond exp)) else (return (REmpty, condEnv))
+  if condVal then do
+    (_, stEnv) <- shadow env $ local (\_ -> condEnv) $ execComplexExpression exp
+    (shadow env $ local (\_ -> stEnv) $ execComplexExpression (ECWhile cond exp))
+  else (return (REmpty, condEnv))
 execComplexExpression ast@(ECFor name expVal1 dir expVal2 exp) = do
   proceed ast
   env <- ask
   (val1, env1) <- shadow env $ execComplexExpression expVal1 >>= unpackInt
   (val2, env2) <- shadow env $ local (\_ -> env1) $ execComplexExpression expVal2 >>= unpackInt
+  env2i <- return $ setVariable name (RInt val1) env2
   case dir of
-    ForDirTo -> if val1 < val2 then
-        shadow env $ local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 + 1) dir expVal2 exp)
+    ForDirTo -> if val1 < val2 then do
+        (_, env3) <- shadow env $ local (\_ -> env2i) $ execComplexExpression exp
+        shadow env $ local (\_ -> env3) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 + 1) dir expVal2 exp)
       else
         shadow env $ return $ (REmpty, env2)
-    ForDirDownTo -> if val1 > val2 then
-        shadow env $ local (\_ -> env2) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
+    ForDirDownTo -> if val1 > val2 then do
+        (_, env3) <- shadow env $ local (\_ -> env2i) $ execComplexExpression exp
+        shadow env $ local (\_ -> env3) $ execComplexExpression (ECFor name (ECExpr $ ExprConst $ CInt $ val1 - 1) dir expVal2 exp)
       else
         shadow env $ return $ (REmpty, env2)
 execComplexExpression ast@(ECMatch expr _ clauses) = do
@@ -114,7 +120,6 @@ execComplexExpression ast@(ECLetOperator r opAny restPatterns letExpr expr) = do
   proceed ast
   env <- ask
   (valFnRef, env2) <- shadow env $ execComplexExpression (ECLet r (PatIdent $ Ident "_OP_") restPatterns TypeConstrEmpty letExpr (ECExpr $ ExprVar $ Ident "_OP_"))
-  lift $ lift $ lift $ putStrLn $ show $ getRefStorage valFnRef env2
   (RfFun fnSig fnBody) <- return $ getRefStorage valFnRef env2
   (_, defEnv) <- local (\_ -> env2) $ createOperator opAny fnSig fnBody
   (val, valEnv) <- shadow env $ local (\_ -> defEnv) $ (execComplexExpression expr)
@@ -154,6 +159,11 @@ execSimpleExpression (ESExpr expr) = execComplexExpression expr
 execSimpleExpression (ESList list) = execList list
 
 execExpression :: Expression -> Exec (RuntimeValue, Environment)
+execExpression (ExprSemi action1 action2) = do
+  env <- ask
+  (_, env2) <- shadow env $ execExpression action1
+  (val, env3) <- shadow env $ local (\_ -> env2) $ execExpression action2
+  return (val, env3)
 execExpression (ExprRecord record) = execRecord record
 execExpression (ExprCompl expr) = execComplexExpression expr
 execExpression (ExprList list) = execList list

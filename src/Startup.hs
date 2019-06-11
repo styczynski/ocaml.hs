@@ -16,6 +16,9 @@ failwith str = error $ "Failed with: " ++ str
 invalid_arg :: String -> IO ()
 invalid_arg str = error $ "Invalid_argument: " ++ str
 
+print_str :: RuntimeValue -> IO ()
+print_str v = putStrLn $ valueToStr v
+
 print_env :: RuntimeValue -> Exec String
 print_env _ = do
   env <- ask
@@ -25,7 +28,12 @@ print_env _ = do
 interpreterStartupFn :: Exec (RuntimeValue, Environment)
 interpreterStartupFn = do
   e <- ask
+  (_,e) <- local (\_ -> e) $ setNativeVariable "export_env" valueExportEnv
+  (_,e) <- local (\_ -> e) $ setNativeVariable "print" print_str
   (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" print_env
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_create_ref" valueCreateRef
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_set_ref" valueSetRef
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_get_ref" valueGetRef
   (_,e) <- local (\_ -> e) $ setNativeVariable "failwith" failwith
   (_,e) <- local (\_ -> e) $ setNativeVariable "invalid_arg" invalid_arg
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_eq" valueEq

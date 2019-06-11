@@ -8,6 +8,7 @@ import qualified Data.Map as Map
 
 import AbsSyntax
 import Runtime
+import Environment
 
 valueEq :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueEq (RInt a) (RInt b) = return $ a == b
@@ -49,8 +50,11 @@ valueCons x y = do
   env <- ask
   raise $ "Could not append (::) element to list: " ++ (getTypeStr (x, env)) ++ " :: " ++ (getTypeStr (y, env))
 
-valueNot :: RuntimeValue -> Exec Bool
-valueNot (RBool a) = return $ not a
+valueNot :: RuntimeValue -> Exec RuntimeValue
+valueNot (RBool a) = return $ RBool $ not a
+valueNot val@(RRef _) = do
+  (refVal, _) <- valueGetRef val
+  return refVal
 valueNot x = do
   env <- ask
   raise $ "Could not negate (!) value: " ++ (getTypeStr (x, env))
@@ -113,3 +117,28 @@ valueSel val@(RRecord _ fields) name = do
 valueSel val name = do
   env <- ask
   raise $ "Could not get field " ++ (treeToStr name) ++ " of value of type " ++ (getTypeStr (val, env))
+
+valueCreateRef :: RuntimeValue -> Exec (RuntimeValue, Environment)
+valueCreateRef v = do
+  env <- ask
+  (fr, frEnv) <- return $ allocRef env
+  return ((RRef fr), (setRefStorage fr (RfVal v) frEnv))
+
+valueGetRef :: RuntimeValue -> Exec (RuntimeValue, Environment)
+valueGetRef p = do
+  env <- ask
+  (RfVal v) <- return $ getRefStorage p env
+  return (v, env)
+
+valueSetRef :: RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
+valueSetRef (RRef fr) v = do
+  env <- ask
+  env2 <- return $ setRefStorage fr (RfVal v) env
+  return (v, env2)
+
+valueExportEnv :: RuntimeValue -> Exec (RuntimeValue, Environment)
+valueExportEnv _ = do
+  state <- get
+  env <- ask
+  put $ state { globalExportEnv = (Just env) }
+  return (REmpty, env)
