@@ -19,6 +19,20 @@ emptyEnv = Environment {
 mergeEnv :: Environment -> Environment -> Environment
 mergeEnv envA envB = envB
 
+importEnvRef :: (Integer, Environment) -> Ident -> Environment -> Environment -> Environment
+importEnvRef (fr, _) name envA envB = importEnv name (RRef fr) envA envB
+
+importEnv :: Ident -> RuntimeValue -> Environment -> Environment -> Environment
+importEnv name val envA envB =
+  let Environment { variables = variables  } = envA in
+  envA { variables = (variables `Map.union` (Map.singleton name val)) }
+
+importVRef :: (Integer, Environment) -> Ident -> Environment -> Exec (a, Environment) -> Exec (a, Environment)
+importVRef fr name envA v = do
+  (val, envB) <- v
+  return (val, (importEnvRef fr name envA envB))
+
+
 shadowEnv :: Environment -> Environment -> Environment
 shadowEnv envA envB =
   let Environment { nextFreeRef = nextFreeRef, refs = refs  } = envB in
@@ -127,19 +141,36 @@ execFunction (RFunSig sig) body args = do
   env <- ask
   shadow env $ body args
 
+callFunctionF :: RuntimeRefValue -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
+callFunctionF (RfFun (RFunSig argsCount) body) args env =
+  let argsInCount = length args in
+    if (argsCount > 0) && (argsInCount < argsCount) then
+      let fnBody = \paramArgs -> execFunction (RFunSig argsCount) body (args ++ paramArgs) in
+        shadow env $ return $ newFunction (RFunSig (argsCount - argsInCount)) fnBody env
+    else
+      if argsInCount > argsCount then do
+        (val, valEnv) <- execFunction (RFunSig argsCount) body (take argsCount args)
+        fnCont <- return $ getRefStorage val valEnv
+        (val, valEnv) <- local (\_ -> valEnv) $ callFunctionF fnCont (drop (argsInCount - argsCount) args) valEnv
+        return (val, valEnv)
+      else do
+        (val, valEnv) <- shadow env $ execFunction (RFunSig argsCount) body args
+        return (val, valEnv)
+
+callFunctionR :: RuntimeValue -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
+callFunctionR val args env = do
+  def <- return $ getRefStorage val env
+  let argsInCount = length args in
+    case def of
+      RfFun sig body -> callFunctionF (RfFun sig body) args env
+      RfInvalid _ -> raise $ "Reference points nowhere"
+
 callFunction :: Ident -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
 callFunction name@(Ident nameStr) args env = do
   def <- pullRefStorage name env
   let argsInCount = length args in
     case def of
-      RfFun (RFunSig argsCount) body ->
-        if argsInCount < argsCount then
-          let fnBody = \paramArgs -> execFunction (RFunSig argsCount) body (args ++ paramArgs) in
-            -- throwError ("Create partially applied function " ++ (show argsInCount) ++ (show argsCount))
-            shadow env $ return $ newFunction (RFunSig (argsCount - argsInCount)) fnBody env
-        else do
-          (val, valEnv) <- shadow env $ execFunction (RFunSig argsCount) body args
-          return (val, valEnv)
+      RfFun sig body -> callFunctionF (RfFun sig body) args env
       RfInvalid _ -> raise $ "Reference " ++ nameStr ++ " points nowhere"
 
 newFunction :: RFunSig -> RFunBody -> Environment -> (RuntimeValue, Environment)
@@ -147,10 +178,13 @@ newFunction sig body env =
   let (fr, frEnv) = allocRef env in
   ((RRef fr), (setRefStorage fr (RfFun sig body) frEnv))
 
-createFunction :: Ident -> RFunSig -> RFunBody -> Environment -> Environment
-createFunction name sig body env =
-  let (fr, frEnv) = allocRef env in
-  setVariable name (RRef fr) $ setRefStorage fr (RfFun sig body) frEnv
+createFunction :: Ident -> Maybe (Integer, Environment) -> RFunSig -> RFunBody -> Environment -> Environment
+createFunction name (Just newRef) sig body env =
+  let (fr, frEnv) = newRef in
+  setVariable name (RRef fr) $ setRefStorage fr (RfFun sig (\args -> do
+    local (\e -> setVariable name (RRef fr) e) $ body args)) frEnv
+createFunction name Nothing sig body env = do
+ let newRef = allocRef env in createFunction name (Just newRef) sig body env
 
 getProgramEnvironmentDefault :: ExecutionResult -> Environment -> Environment
 getProgramEnvironmentDefault (Executed _ env) _ = env
@@ -159,14 +193,13 @@ getProgramEnvironmentDefault _ envDefault = envDefault
 callOperator :: Ident -> Integer -> [RuntimeValue] -> Exec (RuntimeValue, Environment)
 callOperator name@(Ident nameStr) priority args = do
   env <- ask
-  opFn <- (case getDef name env of
+  (case getDef name env of
     DInvalid -> raise $ "Called operator do not exist: " ++ nameStr
     (DOperator opName opPrio opBody) ->
       if (opName == name && opPrio == priority) then
-      return $ opBody
+         callFunctionF (RfFun (RFunSig $ length args) opBody) args env
       else raise $ "Invalid operator called: " ++ nameStr
     _ -> raise $ "Could not call: "++ nameStr ++ " it's not an operator. ")
-  shadow env $ opFn args
 
 callOperatorF :: OperatorF -> RuntimeValue -> Exec (RuntimeValue, Environment)
 callOperatorF (OperatorF op) arg1 = callOperator (Ident op) 5 [arg1]

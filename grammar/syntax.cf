@@ -66,11 +66,14 @@ OperatorAnyC.  OperatorAny ::= OperatorC ;
 OperatorAnyB.  OperatorAny ::= OperatorB ;
 OperatorAnyA.  OperatorAny ::= OperatorA ;
 
-ExprCompl.           Expression6         ::= "(" ComplexExpression ")" ;
-ExprList.            Expression6         ::= DList ;
-ExprRecord.          Expression6         ::= DataRecord ;
-ExprConst.           Expression6         ::= Constant ;
-ExprCall.            Expression6         ::= Ident [SimpleExpression];
+ExprCompl.           Expression7         ::= "(" ComplexExpression ")" ;
+ExprList.            Expression7         ::= DList ;
+ExprRecord.          Expression7         ::= DataRecord ;
+ExprConst.           Expression7         ::= Constant ;
+ExprVar.             Expression7         ::= Ident ;
+
+ExprCall.            Expression6       ::= Expression7 SimpleExpression [SimpleExpression] ;
+
 ExprSel.             Expression6         ::= Expression6 "." Ident ;
 Expr6.               Expression5         ::= OperatorF Expression6 ;
 Expr5.               Expression4         ::= Expression4 OperatorE Expression5 ;
@@ -80,7 +83,7 @@ Expr3.               Expression2         ::= Expression2 OperatorC Expression3 ;
 Expr2.               Expression1         ::= Expression2 OperatorB Expression1 ;
 Expr1.               Expression          ::= Expression1 OperatorA Expression ;
 
-coercions            Expression          6 ;
+coercions            Expression          7 ;
 
 ESConst.             SimpleExpression    ::= Constant ;
 ESIdent.             SimpleExpression    ::= Ident ;
@@ -93,7 +96,7 @@ ECExpr.              ComplexExpression   ::= Expression ;
 ECTuple.             ComplexExpression   ::= DTuple ;
 ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
 ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression "in" ComplexExpression ;
-ECLetOperator.       ComplexExpression   ::= "let" LetRecKeyword "(" OperatorAny ")" SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
+ECLetOperator.       ComplexExpression   ::= "let" LetRecKeyword "(" OperatorAny ")" [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
 ECFunction.          ComplexExpression   ::= "function" PipeKeyword [MatchClause] ;
 ECMatch.             ComplexExpression   ::= "match" ComplexExpression "with" PipeKeyword [MatchClause] ;
 ECIf.                ComplexExpression   ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;

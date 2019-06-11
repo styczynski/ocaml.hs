@@ -14,6 +14,10 @@ import qualified Data.Map as Map
 
 import AbsSyntax
 
+isRec :: LetRecKeyword -> Bool
+isRec LetRecYes = True
+isRec LetRecNo = False
+
 execRecord :: DataRecord -> Exec (RuntimeValue, Environment)
 execRecord ast@(DataRecord recordElements) = do
   proceedD ast
@@ -81,22 +85,11 @@ execComplexExpression ast@(ECMatch expr _ clauses) = do
 execComplexExpression ast@(ECFunction bPip matchClauses) = do
   proceed ast
   env <- ask
-  shadow env $ execComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprCall (Ident "x") []) bPip matchClauses
+  shadow env $ execComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprVar (Ident "x")) bPip matchClauses
 execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   env <- ask
   shadow env $ execExpression expr
-execComplexExpression ast@(ECLetOperator _ opAny pattern restPatterns letExpr expr) = do
-  proceed ast
-  env <- ask
-  argsCount <- return $ 1 + length restPatterns
-  fnBody <- return $ \args -> do
-    inEnv <- ask
-    patEnv <- setPatterns ([pattern] ++ restPatterns) args inEnv
-    shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
-  (_, defEnv) <- createOperator opAny (RFunSig argsCount) fnBody
-  (val, valEnv) <- shadow env $ local (\_ -> defEnv) $ (execComplexExpression expr)
-  return $ (val, valEnv)
 execComplexExpression ast@(ECLet _ pattern [] typeAnnot letExpr expr) = do
   proceed ast
   env <- ask
@@ -104,15 +97,40 @@ execComplexExpression ast@(ECLet _ pattern [] typeAnnot letExpr expr) = do
   patEnv <- setPattern pattern letVal letEnv
   (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
-execComplexExpression ast@(ECLet _ (PatIdent name) restPatterns typeAnnot letExpr expr) = do
+execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExpr expr) = do
   proceed ast
   env <- ask
   argsCount <- return $ length restPatterns
+  newRef <- return $ allocRef env
   fnBody <- return $ \args -> do
     inEnv <- ask
+    inEnv <- return $ shadowEnv env inEnv
+    inEnv <- return $ if isRec r then importEnvRef newRef name inEnv env else inEnv
     patEnv <- setPatterns restPatterns args inEnv
     shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
-  (val, valEnv) <- shadow env $ local (createFunction name (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
+  (val, valEnv) <- shadow env $ local (createFunction name (Just newRef) (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
+  return $ (val, valEnv)
+execComplexExpression ast@(ECLetOperator r opAny restPatterns letExpr expr) = do
+  proceed ast
+  env <- ask
+  (valFnRef, env2) <- shadow env $ execComplexExpression (ECLet r (PatIdent $ Ident "_OP_") restPatterns TypeConstrEmpty letExpr (ECExpr $ ExprVar $ Ident "_OP_"))
+  lift $ lift $ lift $ putStrLn $ show $ getRefStorage valFnRef env2
+  (RfFun fnSig fnBody) <- return $ getRefStorage valFnRef env2
+  (_, defEnv) <- local (\_ -> env2) $ createOperator opAny fnSig fnBody
+  (val, valEnv) <- shadow env $ local (\_ -> defEnv) $ (execComplexExpression expr)
+  return $ (val, valEnv)
+execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExpr expr) = do
+  proceed ast
+  env <- ask
+  newRef <- return $ allocRef env
+  argsCount <- return $ length restPatterns
+  fnBody <- return $ \args -> do
+    inEnv <- ask
+    inEnv <- return $ shadowEnv env inEnv
+    inEnv <- return $ if isRec r then importEnvRef newRef name inEnv env else inEnv
+    patEnv <- setPatterns restPatterns args inEnv
+    shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
+  (val, valEnv) <- shadow env $ local (createFunction name (Just newRef) (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   proceed ast
@@ -120,6 +138,7 @@ execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   argsCount <- return $ 1 + (length restPatterns)
   fnBody <- return $ \args -> do
     inEnv <- ask
+    inEnv <- return $ shadowEnv env inEnv
     patEnv <- setPatterns ([pattern] ++ restPatterns) args inEnv
     shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression bodyExpr)
   shadow env $ return $ newFunction (RFunSig argsCount) fnBody env
@@ -143,18 +162,20 @@ execExpression (ExprSel expr name) = do
   (val, env) <- shadow env $ execExpression expr
   retVal <- valueSel val name
   return (retVal, env)
-execExpression ast@(ExprCall name []) = do
+execExpression ast@(ExprVar name) = do
   proceedD ast
   val <- ask >>= pullVariable name
   env <- ask
   return (val, env)
-execExpression ast@(ExprCall name argsExprs) = do
+execExpression ast@(ExprCall expr1 argFirst argsRest) = do
   proceedD ast
   env <- ask
-  (args, argsEnv) <- shadow env $ foldM (\(res, env) exp -> do
+  argsExprs <- return $ [argFirst] ++ argsRest
+  (fn, fnEnv) <- shadow env $ execExpression expr1
+  (args, argsEnv) <- shadow env $ local (\_ -> fnEnv) $ foldM (\(res, env) exp -> do
     (r, newEnv) <- shadow env $ local (\_ -> env) $ execSimpleExpression exp
     return ((res ++ [r]), newEnv)) ([], env) argsExprs
-  shadow env $ callFunction name args argsEnv
+  shadow env $ callFunctionR fn args argsEnv
 execExpression ast@(ExprConst (CInt value)) = do
   proceedD ast
   env <- ask

@@ -1,0 +1,15 @@
+let (==) = value_eq in
+let (<) = value_lt in
+let (>) = value_gt in
+let (<=) = value_lt_eq in
+let (>=) = value_gt_eq in
+let cons = value_cons in
+let (||) = value_or in
+let (&&) = value_and in
+let (+) = value_add in
+let (-) = value_sub in
+let (*) = value_mul in
+let (/) = value_div in
+
+
+;;

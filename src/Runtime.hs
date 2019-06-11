@@ -192,9 +192,10 @@ raise errorText = do
   state <- get
   let InterpreterState { lastNode = lastNode, lastNodeDetail = lastNodeDetail, trace = trace } = state in
     let traceStr = foldl (\acc el -> acc ++ "     | Execute: " ++ el ++ "\n") "" trace in
-      let (fInd : _) = indices (T.pack lastNodeDetail) (T.pack lastNode) in
-        let pointerText = (T.unpack (T.replicate fInd (T.pack " "))) ++ "^" in
+      case indices (T.pack lastNodeDetail) (T.pack lastNode) of
+        (fInd : _) -> let pointerText = (T.unpack (T.replicate fInd (T.pack " "))) ++ "^" in
           throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n   " ++ pointerText ++ "\n    " ++ errorText ++ "\n" ++ traceStr
+        _ -> throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n    " ++ errorText ++ "\n" ++ traceStr
 
 resultToStr :: ExecutionResult -> String
 resultToStr (Executed val _) = valueToStr val

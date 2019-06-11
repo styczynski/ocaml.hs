@@ -55,17 +55,17 @@ tiSimpleExpression :: TypeEnv -> SimpleExpression -> TI (Subst, RuntimeType)
 tiSimpleExpression env (ESConst const) = tiLit env const
 tiSimpleExpression env (ESList list) = tiList env list
 tiSimpleExpression env (ESExpr expr) = tiComplexExpression env expr
-tiSimpleExpression env (ESIdent name) = tiExpression env (ExprCall name [])
+--tiSimpleExpression env (ESIdent name) = tiExpression env (ExprCall name [])
 
 tiExpression :: TypeEnv -> Expression -> TI (Subst, RuntimeType)
 tiExpression env (ExprConst const) = tiLit env const
 tiExpression env (ExprList list) = tiList env list
-tiExpression (TypeEnv env) (ExprCall (Ident name) []) =
-  case Map.lookup name env of
-    Nothing -> throwError $ "unbound variable: " ++ name
-    Just sigma -> do
-      t <- instantiate sigma
-      return (nullSubst, t)
+--tiExpression (TypeEnv env) (ExprCall (Ident name) []) =
+--  case Map.lookup name env of
+--    Nothing -> throwError $ "unbound variable: " ++ name
+--    Just sigma -> do
+--      t <- instantiate sigma
+--      return (nullSubst, t)
 
 tiList :: TypeEnv -> DList -> TI (Subst, RuntimeType)
 tiList env (DList elems) = do

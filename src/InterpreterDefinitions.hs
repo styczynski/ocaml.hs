@@ -19,7 +19,7 @@ createVariant name env (TDefVarCompl option _) = do
   fnBody <- return $ \[arg] -> do
     env <- ask
     return ((RVariant name option $ arg), env)
-  env1 <- return $ createFunction option (RFunSig 1) fnBody env
+  env1 <- return $ createFunction option Nothing (RFunSig 1) fnBody env
   env2 <- return $ setDef option (DVariant name option) env1
   return env2
 

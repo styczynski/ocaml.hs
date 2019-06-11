@@ -1,16 +1,16 @@
-let (==) a b = value_eq a b in
-let (<) a b = value_lt a b in
-let (>) a b = value_gt a b in
-let (<=) a b = value_lt_eq a b in
-let (>=) a b = value_gt_eq a b in
-let cons a b = value_cons a b in
-let (||) a b = value_or a b in
-let (&&) a b = value_and a b in
-let (!) a = value_not a in
-let (-) a b = value_sub a b in
-let (+) a b = value_add a b in
-let (*) a b = value_mul a b in
-let (/) a b = value_div a b in
+let (==) = value_eq in
+let (<) = value_lt in
+let (>) = value_gt in
+let (<=) = value_lt_eq in
+let (>=) = value_gt_eq in
+let cons = value_cons in
+let (||) = value_or in
+let (&&) = value_and in
+let (!) = value_not in
+let (-) = value_sub in
+let (+) = value_add in
+let (*) = value_mul in
+let (/) = value_div in
 
 let rec length_aux len = function
     [] -> len
@@ -51,7 +51,7 @@ let rec append l1 l2 =
   | a :: l -> cons a (append l l2)
 in
 
-let (@) l1 l2 = append l1 l2 in
+let (@) = append in
 
-[1;3] @ [4;5]
+append [1,2] [3,4]
 ;;
