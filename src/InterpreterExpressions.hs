@@ -142,8 +142,7 @@ execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   env <- ask
   argsCount <- return $ 1 + (length restPatterns)
   fnBody <- return $ \args -> do
-    inEnv <- ask
-    inEnv <- return $ shadowEnv env inEnv
+    inEnv <- return $ env
     patEnv <- setPatterns ([pattern] ++ restPatterns) args inEnv
     shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression bodyExpr)
   shadow env $ return $ newFunction (RFunSig argsCount) fnBody env
@@ -184,7 +183,7 @@ execExpression ast@(ExprCall expr1 argFirst argsRest) = do
   (fn, fnEnv) <- shadow env $ execExpression expr1
   (args, argsEnv) <- shadow env $ local (\_ -> fnEnv) $ foldM (\(res, env) exp -> do
     (r, newEnv) <- shadow env $ local (\_ -> env) $ execSimpleExpression exp
-    return ((res ++ [r]), newEnv)) ([], env) argsExprs
+    return ((res ++ [r]), newEnv)) ([], fnEnv) argsExprs
   shadow env $ callFunctionR fn args argsEnv
 execExpression ast@(ExprConst (CInt value)) = do
   proceedD ast
