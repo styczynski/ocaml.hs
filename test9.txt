@@ -1,4 +1,0 @@
-type bintree = 
-	| Leaf
-	| Tree of int
-;; let fn a = a in fn (4,5);;

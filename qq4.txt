@@ -1,2 +1,0 @@
-let (+) = value_add in 1 + 2
-;;

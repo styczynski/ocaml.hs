@@ -1,7 +1,0 @@
-let ref = value_create_ref in
-let (:=) a b = value_set_ref a b in
-let (!) = value_not in
-
-let x = ref 3 in
-value_set_ref x 5; print (x)
-;;

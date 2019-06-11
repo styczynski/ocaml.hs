@@ -1,2 +1,0 @@
-let f u = fun x -> u in
-f 5 3 ;;

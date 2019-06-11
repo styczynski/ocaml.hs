@@ -1,4 +1,0 @@
-let sum x y = value_add x y in
-let fn x = sum x in
-
-let g = fn 4 in fn 1 2 ;;

@@ -1,2 +1,0 @@
-let (+) x y = value_add x y in 
-let fn x y : int -> int -> int = x+y in fn 3 4 ;;
