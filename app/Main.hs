@@ -34,7 +34,7 @@ runBlockI v s = do
 runBlockT :: Verbosity -> String -> IO ()
 runBlockT v s = runTIWith v s
 
-runBlock = runBlockI
+runBlock = runBlockT
 
 execContents v = getContents >>= runBlock v
 
