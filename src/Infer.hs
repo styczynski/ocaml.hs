@@ -59,12 +59,16 @@ instance Substitutable Type where
   apply _ (TCon a)       = TCon a
   apply (Subst s) t@(TVar a) = Map.findWithDefault t a s
   apply s (t1 `TArr` t2) = apply s t1 `TArr` apply s t2
+  apply s (t1 `TTuple` t2) = apply s t1 `TTuple` apply s t2
   apply s (TList a) = TList $ apply s a
+  apply s TUnit = TUnit
 
   ftv TCon{}         = Set.empty
   ftv (TVar a)       = Set.singleton a
   ftv (TList a)      = ftv a
   ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
+  ftv (t1 `TTuple` t2) = ftv t1 `Set.union` ftv t2
+  ftv TUnit = Set.empty
 
 instance Substitutable Scheme where
   apply (Subst s) (Forall as t)   = Forall as $ apply s' t
@@ -164,6 +168,11 @@ ops Eql = return $ typeInt `TArr` (typeInt `TArr` typeBool)
 ops OpCons = do
   tv <- fresh
   return $ (tv) `TArr` ((TList tv) `TArr` (TList tv) )
+ops OpTupleCons = do
+  tv <- fresh
+  tv2 <- fresh
+  tv3 <- fresh
+  return $ (tv) `TArr` ((TTuple tv2 tv3) `TArr` (TTuple tv (TTuple tv2 tv3)))
 
 opsUni :: Uniop -> Infer Type
 opsUni OpHead = do
@@ -176,6 +185,14 @@ opsUni OpEmptyList = do
   tv <- fresh
   tv2 <- fresh
   return $ tv `TArr` (TList tv2)
+opsUni OpEmptyTuple = do
+  tv <- fresh
+  return $ tv `TArr` (TTuple TUnit TUnit)
+opsUni (OpTupleNth index len) = do
+  (tupleType, elsTypes) <- foldrM (\_ (tup, tvs) -> do
+    tv <- fresh
+    return $ ((TTuple tv tup), [tv] ++ tvs)) ((TTuple TUnit TUnit), []) (replicate len 0)
+  return $ (tupleType) `TArr` (elsTypes !! index)
 
 inferImplementation :: Implementation -> Infer (Type, [Constraint])
 inferImplementation (IRoot [phr0]) = inferPhrase phr0
@@ -186,13 +203,19 @@ simplifyPhrase (IPhrase expr) = simplifyComplexExpression expr
 simplifyPattern :: SimplePattern -> Expr -> Expr -> Infer Expr
 simplifyPattern (PatIdent name) letExpr expr =
   return $ Let name letExpr expr
-
 simplifyPattern (PatCons hPat tPat) letExpr expr = do
   hSimpl <- simplifyPattern hPat (UniOp OpHead letExpr) expr
   tSimpl <- simplifyPattern tPat (UniOp OpTails letExpr) hSimpl
   return tSimpl
+simplifyPattern (PatTuple (PTuple el restEls)) letExpr expr = do
+  tupleCount <- return $ 1 + length restEls
+  (tSimpl, _) <- foldrM (\(PTupleElement el) (expr, k) -> do
+    pSimpl <- simplifyPattern el (UniOp (OpTupleNth k tupleCount) letExpr) expr
+    return (pSimpl, k+1)) (expr, 0) ([el] ++ restEls)
+  return tSimpl
 
 simplifyComplexExpression :: ComplexExpression -> Infer Expr
+simplifyComplexExpression (ECTuple tuple) = simplifyTuple tuple
 simplifyComplexExpression (ECExpr expr) = simplifyExpression expr
 simplifyComplexExpression (ECLet _ pat [] _ letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
@@ -205,6 +228,13 @@ simplifyComplexExpression (ECLet _ pat argsPats _ letExpr expr) = do
     s <- simplifyPattern pat (Var $ Ident "x") expr
     return $ Lam (Ident "x") s) letSimpl argsPats
   simplifyPattern pat letSimplAcc exprSimpl
+
+simplifyTuple :: DTuple -> Infer Expr
+simplifyTuple (DTuple firstElem elems) = do
+  elemsSimpl <- foldM (\expr (DTupleElement el) -> do
+    k <- simplifyExpression el
+    return $ Op OpTupleCons k expr) (UniOp OpEmptyTuple Skip) ([firstElem] ++ elems)
+  return $ elemsSimpl
 
 simplifyList :: DList -> Infer Expr
 simplifyList (DList elems) = do
@@ -293,9 +323,13 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
     fv (TVar a)   = [a]
     fv (TArr a b) = fv a ++ fv b
     fv (TList a)  = fv a
+    fv (TTuple a b) = fv a ++ fv b
+    fv TUnit = []
     fv (TCon _)   = []
 
+    normtype TUnit = TUnit
     normtype (TArr a b) = TArr (normtype a) (normtype b)
+    normtype (TTuple a b) = TTuple (normtype a) (normtype b)
     normtype (TList a) = TList (normtype a)
     normtype (TCon a)   = TCon a
     normtype (TVar a)   =
@@ -333,6 +367,7 @@ unifies t1 t2 | t1 == t2 = return emptySubst
 unifies (TVar v) t = v `bind` t
 unifies t (TVar v) = v `bind` t
 unifies (TList t1) (TList t2) = unifyMany [t1] [t2]
+unifies (TTuple t1 t2) (TTuple t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TArr t1 t2) (TArr t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies t1 t2 = throwError $ UnificationFail t1 t2
 

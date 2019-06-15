@@ -20,10 +20,10 @@ data Lit
   | LBool Bool
   deriving (Show, Eq, Ord)
 
-data Binop = Add | Sub | Mul | Eql | OpCons
+data Binop = Add | Sub | Mul | Eql | OpCons | OpTupleCons
   deriving (Eq, Ord, Show)
 
-data Uniop = OpHead | OpTails | OpEmptyList
+data Uniop = OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int
   deriving (Eq, Ord, Show)
 
 data Program = Program [Decl] Expr deriving Eq
