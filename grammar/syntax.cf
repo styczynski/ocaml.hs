@@ -7,9 +7,10 @@ separator            Ident               "" ;
 IPhrase.             ImplPhrase          ::= ComplexExpression ;
 IDefType.            ImplPhrase          ::= TypeDef ;
 
-TypeExprString.      TypeExpression2     ::= "string" ;
-TypeExprBool.        TypeExpression2     ::= "bool" ;
-TypeExprInt.         TypeExpression2     ::= "int" ;
+token TypeIdentAbstract (["abcdefghijklmnopqrstuvwxyz"] ["'"]) ;
+
+TypeExprAbstract.    TypeExpression2     ::= TypeIdentAbstract;
+TypeExprIdent.    TypeExpression2     ::= Ident;
 TypeExprList.        TypeExpression2     ::= "[" TypeExpression "]" ;
 TypeExprTuple.       TypeExpression1     ::= TypeExpression1 "*" TypeExpression2 ;
 TypeFun.             TypeExpression      ::= TypeExpression "->" TypeExpression1 ;
