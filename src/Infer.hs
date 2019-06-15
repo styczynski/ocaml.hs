@@ -13,6 +13,7 @@ import Control.Monad.Except
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Identity
+import Data.Foldable
 
 import System.IO.Unsafe
 
@@ -197,6 +198,13 @@ simplifyComplexExpression (ECLet _ pat [] _ letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
   simplifyPattern pat letSimpl exprSimpl
+simplifyComplexExpression (ECLet _ pat argsPats _ letExpr expr) = do
+  letSimpl <- simplifyComplexExpression letExpr
+  exprSimpl <- simplifyComplexExpression expr
+  letSimplAcc <- foldrM (\pat expr -> do
+    s <- simplifyPattern pat (Var $ Ident "x") expr
+    return $ Lam (Ident "x") s) letSimpl argsPats
+  simplifyPattern pat letSimplAcc exprSimpl
 
 simplifyList :: DList -> Infer Expr
 simplifyList (DList elems) = do

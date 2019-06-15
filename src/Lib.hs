@@ -26,7 +26,7 @@ runTIWith v s = let ts = myLexer s in case pImplementation ts of
           Ok  tree -> do
             r <- return $ inferAST empty tree
             case r of
-              (Right r) -> putStrLn (show r)
+              (Right r) -> putStrLn (schemeToStr r)
               (Left mes) -> putStrLn $ show mes
 
 runInit :: Environment -> IO Environment
