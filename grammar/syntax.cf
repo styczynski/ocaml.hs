@@ -12,7 +12,8 @@ token TypeIdentAbstract (["abcdefghijklmnopqrstuvwxyz"] ["'"]) ;
 TypeExprAbstract.    TypeExpression2     ::= TypeIdentAbstract;
 TypeExprIdent.    TypeExpression2     ::= Ident;
 TypeExprList.        TypeExpression2     ::= "[" TypeExpression "]" ;
-TypeExprTuple.       TypeExpression1     ::= TypeExpression1 "*" TypeExpression2 ;
+TypeExprTuple.       TypeExpression1     ::= TypeExpression2 "*" [TypeExpression2] ;
+separator nonempty TypeExpression2 "*" ;
 TypeFun.             TypeExpression      ::= TypeExpression "->" TypeExpression1 ;
 
 coercions            TypeExpression      2 ;

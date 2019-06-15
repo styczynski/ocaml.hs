@@ -194,8 +194,52 @@ opsUni (OpTupleNth index len) = do
     return $ ((TTuple tv tup), [tv] ++ tvs)) ((TTuple TUnit TUnit), []) (replicate len 0)
   return $ (tupleType) `TArr` (elsTypes !! index)
 
+withTypeAnnot :: TypeConstraint -> Expr -> Infer Expr
+withTypeAnnot TypeConstrEmpty e = return e
+withTypeAnnot (TypeConstrDef texpr) e = do
+  s <- resolveTypeExpression texpr
+  return $ Check e s
+
 inferImplementation :: Implementation -> Infer (Type, [Constraint])
 inferImplementation (IRoot [phr0]) = inferPhrase phr0
+
+getTypeExpressionFV :: TypeExpression -> Set.Set String
+getTypeExpressionFV (TypeExprAbstract (TypeIdentAbstract name)) = Set.singleton name
+getTypeExpressionFV (TypeExprList listType) = getTypeExpressionFV listType
+getTypeExpressionFV (TypeFun a b) = (getTypeExpressionFV a) `Set.union` (getTypeExpressionFV b)
+getTypeExpressionFV (TypeExprTuple fstEl restEls) =
+  foldr (\el acc -> acc `Set.union` (getTypeExpressionFV el)) Set.empty ([fstEl] ++ restEls)
+getTypeExpressionFV _ = Set.empty
+
+resolveTypeExpressionRec :: (Set.Set String) -> TypeExpression -> Infer Type
+resolveTypeExpressionRec fvs (TypeExprIdent (Ident name)) = return $ TCon name
+resolveTypeExpressionRec fvs (TypeExprList expr) = do
+  t <- resolveTypeExpressionRec fvs expr
+  return $ TList t
+resolveTypeExpressionRec fvs (TypeFun a b) = do
+  t1 <- resolveTypeExpressionRec fvs a
+  t2 <- resolveTypeExpressionRec fvs b
+  return $ TArr t1 t2
+resolveTypeExpressionRec fvs (TypeExprTuple fstEl restEls) = do
+  tupleT <- foldrM (\expr acc -> do
+    t <- resolveTypeExpressionRec fvs expr
+    return $ TTuple t acc) (TTuple TUnit TUnit) ([fstEl] ++ restEls)
+  return tupleT
+resolveTypeExpressionRec fvs (TypeExprAbstract (TypeIdentAbstract name)) = do
+  parsedName <- return $ [ x | x <- name, not (x `elem` "'") ]
+  validFvs <- return $ name `Set.member` fvs
+  tv <- fresh
+  if not validFvs then
+    throwError $ Debug $ "Type name " ++ name ++ " is not a valid polymorhic type name"
+  else
+    return $ tv
+
+resolveTypeExpression :: TypeExpression -> Infer Scheme
+resolveTypeExpression exp = do
+  fvs <- return $ getTypeExpressionFV exp
+  t <- resolveTypeExpressionRec fvs exp
+  fvsT <- return $ map (\e -> TV e) $ Set.elems fvs
+  return $ Forall fvsT t
 
 simplifyPhrase :: ImplPhrase -> Infer Expr
 simplifyPhrase (IPhrase expr) = simplifyComplexExpression expr
@@ -217,17 +261,21 @@ simplifyPattern (PatTuple (PTuple el restEls)) letExpr expr = do
 simplifyComplexExpression :: ComplexExpression -> Infer Expr
 simplifyComplexExpression (ECTuple tuple) = simplifyTuple tuple
 simplifyComplexExpression (ECExpr expr) = simplifyExpression expr
-simplifyComplexExpression (ECLet _ pat [] _ letExpr expr) = do
+simplifyComplexExpression (ECLet _ pat [] typeAnnot letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
-  simplifyPattern pat letSimpl exprSimpl
-simplifyComplexExpression (ECLet _ pat argsPats _ letExpr expr) = do
+  r <- simplifyPattern pat letSimpl exprSimpl
+  r <- withTypeAnnot typeAnnot r
+  return r
+simplifyComplexExpression (ECLet _ pat argsPats typeAnnot letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
   letSimplAcc <- foldrM (\pat expr -> do
     s <- simplifyPattern pat (Var $ Ident "x") expr
     return $ Lam (Ident "x") s) letSimpl argsPats
-  simplifyPattern pat letSimplAcc exprSimpl
+  r <- simplifyPattern pat letSimplAcc exprSimpl
+  r <- withTypeAnnot typeAnnot r
+  return r
 
 simplifyTuple :: DTuple -> Infer Expr
 simplifyTuple (DTuple firstElem elems) = do
@@ -263,6 +311,10 @@ infer expr = case expr of
   Skip -> return (typeInt, [])
   Lit (LInt _)  -> return (typeInt, [])
   Lit (LBool _) -> return (typeBool, [])
+
+  Check e (Forall _ t) -> do
+    (t1, c1) <- infer e
+    return (t1, c1 ++ [(t1, t)])
 
   Var x -> do
       t <- lookupEnv x

@@ -1,6 +1,7 @@
 module Syntax where
 
 import AbsSyntax
+import Type
 
 data Expr
   = Var Ident
@@ -13,6 +14,7 @@ data Expr
   | Op Binop Expr Expr
   | UniOp Uniop Expr
   | Skip
+  | Check Expr Scheme
   deriving (Show, Eq, Ord)
 
 data Lit
