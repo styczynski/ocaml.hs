@@ -156,6 +156,7 @@ callFunctionF (RfFun (RFunSig argsCount) body) args env =
       else do
         (val, valEnv) <- shadow env $ execFunction (RFunSig argsCount) body args
         return (val, valEnv)
+callFunctionF _ _ _ = raise $ "Could not call non-functional value"
 
 callFunctionR :: RuntimeValue -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
 callFunctionR val args env = do

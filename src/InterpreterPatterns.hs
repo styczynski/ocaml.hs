@@ -5,6 +5,7 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Data.Map as Map
+import Data.Foldable
 
 import Runtime
 import Environment
@@ -19,7 +20,7 @@ getPatternMapping (PatCons hPat tPat) (RList (h:t)) = do
 getPatternMapping PatNone _ = return $ Map.empty
 getPatternMapping (PatTuple (PTuple firstElement tupleElements)) (RTuple vals) = do
   _ <- if (length vals) == 1+(length tupleElements) then return REmpty else raise $ "Matching failed. Length do not match."
-  (newEnv, _) <- foldM (\(accMap,accVals) (PTupleElement elem) -> do
+  (newEnv, _) <- foldlM (\(accMap,accVals) (PTupleElement elem)-> do
       submap <- getPatternMapping elem (head accVals)
       return $ ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) (firstElement : tupleElements)
   return newEnv
@@ -45,7 +46,7 @@ getPatternMapping (PatConstr typeConstr patternOption) val@(RVariant optionVar o
       else raise $ "Constructor type match failed. Tried to match " ++ ("") ++ " with value of type " ++ (show val)
 getPatternMapping (PatList (PList elems)) (RList vals) = do
   _ <- if (length vals) == (length elems) then return REmpty else raise $ "Matching failed. Length do not match."
-  (newEnv, _) <- foldM (\(accMap,accVals) (PListElement elem) -> do
+  (newEnv, _) <- foldrM (\(PListElement elem) (accMap,accVals) -> do
     submap <- getPatternMapping elem (head accVals)
     return $ ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) elems
   return newEnv
@@ -57,7 +58,7 @@ setPattern pattern val env = do
   return $ Map.foldrWithKey (\name val env -> setVariable name val env) env pm
 
 setPatterns :: [SimplePattern] -> [RuntimeValue] -> Environment -> Exec Environment
-setPatterns patterns vals env = foldM (\env (p,v) -> setPattern p v env) env (zip patterns vals)
+setPatterns patterns vals env = foldrM (\(p,v) env -> setPattern p v env) env (zip patterns vals)
 
 --setPatternsIfCan :: [SimplePattern] -> [RuntimeValue] -> Environment -> Exec (Environment, SimplePattern, Bool)
 --setPatternsIfCan patterns vals env = do {
@@ -67,7 +68,7 @@ setPatterns patterns vals env = foldM (\env (p,v) -> setPattern p v env) env (zi
 
 setMatchPatterns :: [(SimplePattern, a)] -> RuntimeValue -> Environment -> Exec (Environment, Maybe a)
 setMatchPatterns patterns val env = do
-  (newEnv, selVal) <- foldM (\(env, sel) (pat, selVal) -> do {
+  (newEnv, selVal) <- foldrM (\(pat, selVal) (env, sel) -> do {
       newEnv <- setPattern pat val env ;
       return (newEnv, Just selVal)
     } `catchError` (\err -> return (env, sel))) (env, Nothing) patterns
