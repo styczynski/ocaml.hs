@@ -9,6 +9,7 @@ terminator           nonempty            ImplPhrase "" ;
 separator            Ident               "" ;
 
 IGlobalLet.          ImplPhrase          ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression ;
+IGlobalLetOperator.  ImplPhrase    ::= "let" LetRecKeyword "(" OperatorAny ")" [SimplePattern] "=" ComplexExpression ;
 IDefType.            ImplPhrase          ::= TypeDef ;
 
 token TypeIdentAbstract (["abcdefghijklmnopqrstuvwxyz"] ["'"]) ;
@@ -79,6 +80,7 @@ ExprList.            Expression7         ::= DList ;
 ExprRecord.          Expression7         ::= DataRecord ;
 ExprConst.           Expression7         ::= Constant ;
 ExprVar.             Expression7         ::= Ident ;
+ExprOp.              Expression7         ::= "(" OperatorAny ")" ;
 
 ExprCall.            Expression6       ::= Expression7 SimpleExpression [SimpleExpression] ;
 
@@ -99,6 +101,7 @@ ESIdent.             SimpleExpression    ::= Ident ;
 ESExpr.              SimpleExpression    ::= "(" ComplexExpression ")" ;
 ESList.              SimpleExpression    ::= DList ;
 ESRecord.            SimpleExpression    ::= DataRecord ;
+ESOp.                SimpleExpression    ::= "(" OperatorAny ")" ;
 separator            SimpleExpression    "" ;
 
 internal ECExportEnv. ComplexExpression   ::= "%export_env" ;

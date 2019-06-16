@@ -189,10 +189,6 @@ generalize env t  = Forall as t
     where as = Set.toList $ ftv t `Set.difference` ftv env
 
 ops :: Binop -> Infer Type
-ops Add = return $ typeInt `TArr` (typeInt `TArr` typeInt)
-ops Mul = return $ typeInt `TArr` (typeInt `TArr` typeInt)
-ops Sub = return $ typeInt `TArr` (typeInt `TArr` typeInt)
-ops Eql = return $ typeInt `TArr` (typeInt `TArr` typeBool)
 ops OpCons = do
   tv <- fresh
   return $ (tv) `TArr` ((TList tv) `TArr` (TList tv) )
@@ -247,6 +243,9 @@ inferImplementationCore (IRootDef phrases) = do
     return i) (env, TUnit, []) phrases
 
 inferImplementationPhrase :: ImplPhrase -> Infer (Env, Type, [Constraint])
+inferImplementationPhrase (IGlobalLetOperator recK opName restPatterns letExpr) = do
+  (t, c) <- inferComplexExpression (ECLetOperator recK opName restPatterns letExpr $ ECExportEnv)
+  return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
 inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
   (t, c) <- inferComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExportEnv)
   return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
@@ -296,6 +295,16 @@ getConstScheme (CInt _) = Forall [] (TCon "Int")
 getConstScheme (CBool _) = Forall [] (TCon "Bool")
 getConstScheme (CString _) = Forall [] (TCon "String")
 
+getOperatorName :: OperatorAny -> String
+getOperatorName (OperatorAnyA (OperatorA name)) = name
+getOperatorName (OperatorAnyB (OperatorB name)) = name
+getOperatorName (OperatorAnyC (OperatorC name)) = name
+getOperatorName (OperatorAnyD (OperatorD name)) = name
+getOperatorName (OperatorAnyDS (OperatorDS)) = "*"
+getOperatorName (OperatorAnyE (OperatorE name)) = name
+getOperatorName (OperatorAnyF (OperatorF name)) = name
+
+
 resolveTypeExpression :: TypeExpression -> Infer Scheme
 resolveTypeExpression exp = do
   fvs <- getTypeExpressionFV exp
@@ -340,6 +349,9 @@ simplifyComplexExpression (ECFunction bPip matchClauses) = do
   simplifyComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprVar (Ident "x")) bPip matchClauses
 simplifyComplexExpression (ECFun pat argsPat expr) = do
   simplifyComplexExpression (ECLet LetRecNo (PatIdent $ Ident "x") ([pat] ++ argsPat) TypeConstrEmpty expr (ECExpr $ ExprVar $ Ident "x"))
+simplifyComplexExpression (ECLetOperator recK opName patArgs letExpr expr) = do
+  --Ident $ getOperatorName opName
+  simplifyComplexExpression (ECLet recK (PatIdent $ Ident $ getOperatorName opName) patArgs TypeConstrEmpty letExpr expr)
 simplifyComplexExpression (ECLet _ pat [] typeAnnot letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
@@ -371,6 +383,35 @@ simplifyList (DList elems) = do
   return $ elemsSimpl
 
 simplifyExpression :: Expression -> Infer Expr
+simplifyExpression (ExprOp opName) = do
+  return $ Var $ Ident $ getOperatorName opName
+simplifyExpression (Expr1 expA (OperatorA name) expB) = do
+  simplA <- simplifyExpression expA
+  simplB <- simplifyExpression expB
+  return $ Op (OpCustom name) simplA simplB
+simplifyExpression (Expr2 expA (OperatorB name) expB) = do
+  simplA <- simplifyExpression expA
+  simplB <- simplifyExpression expB
+  return $ Op (OpCustom name) simplA simplB
+simplifyExpression (Expr3 expA (OperatorC name) expB) = do
+  simplA <- simplifyExpression expA
+  simplB <- simplifyExpression expB
+  return $ Op (OpCustom name) simplA simplB
+simplifyExpression (Expr4 expA (OperatorD name) expB) = do
+  simplA <- simplifyExpression expA
+  simplB <- simplifyExpression expB
+  return $ Op (OpCustom name) simplA simplB
+simplifyExpression (Expr4S expA OperatorDS expB) = do
+  simplA <- simplifyExpression expA
+  simplB <- simplifyExpression expB
+  return $ Op (OpCustom "*") simplA simplB
+simplifyExpression (Expr5 expA (OperatorE name) expB) = do
+  simplA <- simplifyExpression expA
+  simplB <- simplifyExpression expB
+  return $ Op (OpCustom name) simplA simplB
+simplifyExpression (Expr6 (OperatorF name) exp) = do
+  simpl <- simplifyExpression exp
+  return $ UniOp (OpCustomUni name) simpl
 simplifyExpression (ExprVar name) = return $ Var name
 simplifyExpression (ExprConst (CInt val)) = return $ Lit $ LInt val
 simplifyExpression (ExprConst (CString val)) = return $ Lit $ LString val
@@ -385,6 +426,7 @@ simplifyExpression (ExprCall exp firstArg restArgs) = do
     return $ App simpl argSimpl) (fnExpr) ([firstArg] ++ restArgs)
 
 simplifySimpleExpression :: SimpleExpression -> Infer Expr
+simplifySimpleExpression (ESOp opName) = simplifyExpression $ ExprOp opName
 simplifySimpleExpression (ESConst const) = simplifyExpression $ ExprConst const
 simplifySimpleExpression (ESIdent name) = simplifyExpression $ ExprVar name
 simplifySimpleExpression (ESExpr expr) = simplifyComplexExpression expr
@@ -447,12 +489,18 @@ infer expr = case expr of
     tv <- fresh
     return (tv, c1 ++ [(tv `TArr` tv, t1)])
 
+  UniOp (OpCustomUni name) e1 -> do
+    infer (App (Var $ Ident name) e1)
+
   UniOp op e1 -> do
     (t1, c1) <- infer e1
     tv <- fresh
     u1 <- return $ t1 `TArr` tv
     u2 <- opsUni op
     return (tv, c1 ++ [(u1, u2)])
+
+  Op (OpCustom name) e1 e2 -> do
+    infer (App (App (Var $ Ident name) e1) e2)
 
   Op op e1 e2 -> do
     (t1, c1) <- infer e1

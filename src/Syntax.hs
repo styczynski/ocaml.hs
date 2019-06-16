@@ -25,10 +25,10 @@ data Lit
   | LString String
   deriving (Show, Eq)
 
-data Binop = Add | Sub | Mul | Eql | OpCons | OpTupleCons
+data Binop = OpCustom String | OpCons | OpTupleCons
   deriving (Eq, Ord, Show)
 
-data Uniop = OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int
+data Uniop = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int
   deriving (Eq, Ord, Show)
 
 data Program = Program [Decl] Expr deriving Eq

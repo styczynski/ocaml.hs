@@ -151,6 +151,7 @@ execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   shadow env $ return $ newFunction (RFunSig argsCount) fnBody env
 
 execSimpleExpression :: SimpleExpression -> Exec (RuntimeValue, Environment)
+execSimpleExpression (ESOp opName) = execExpression $ ExprOp opName
 execSimpleExpression (ESRecord record) = execRecord record
 execSimpleExpression (ESConst c) = execExpression $ ExprConst c
 execSimpleExpression (ESIdent name) = do
@@ -160,12 +161,26 @@ execSimpleExpression (ESIdent name) = do
 execSimpleExpression (ESExpr expr) = execComplexExpression expr
 execSimpleExpression (ESList list) = execList list
 
+getOperatorName :: OperatorAny -> String
+getOperatorName (OperatorAnyA (OperatorA name)) = name
+getOperatorName (OperatorAnyB (OperatorB name)) = name
+getOperatorName (OperatorAnyC (OperatorC name)) = name
+getOperatorName (OperatorAnyD (OperatorD name)) = name
+getOperatorName (OperatorAnyDS (OperatorDS)) = "*"
+getOperatorName (OperatorAnyE (OperatorE name)) = name
+getOperatorName (OperatorAnyF (OperatorF name)) = name
+
+
 execExpression :: Expression -> Exec (RuntimeValue, Environment)
 execExpression (ExprSemi action1 action2) = do
   env <- ask
   (_, env2) <- shadow env $ execExpression action1
   (val, env3) <- shadow env $ local (\_ -> env2) $ execExpression action2
   return (val, env3)
+execExpression (ExprOp opName) = do
+  env <- ask
+  val <- return $ getVariable (Ident $ getOperatorName opName) env
+  return (val, env)
 execExpression (ExprRecord record) = execRecord record
 execExpression (ExprCompl expr) = execComplexExpression expr
 execExpression (ExprList list) = execList list
@@ -249,5 +264,8 @@ execExpression ast@(Expr1 exp1 op exp2) = do
 execPhrase :: ImplPhrase -> Exec (RuntimeValue, Environment)
 execPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
   (r, _) <- execComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExportEnv)
+  return $ let (RExport env) = r in (REmpty, env)
+execPhrase (IGlobalLetOperator recK opName restPatterns letExpr) = do
+  (r, _) <- execComplexExpression (ECLetOperator recK opName restPatterns letExpr $ ECExportEnv)
   return $ let (RExport env) = r in (REmpty, env)
 execPhrase (IDefType typeDef) = execTypeDef typeDef

@@ -249,6 +249,7 @@ createOperatorFunction name priority sig body = do
   defEnv <- ask
   (val, env1) <- return $ newFunction sig body defEnv
   (env2) <- return $ setDef name (DOperator name priority body) env1
+  (env2) <- return $ setVariable name val env2
   return (val, env2)
 
 createOperator :: OperatorAny -> RFunSig -> RFunBody -> Exec (RuntimeValue, Environment)
