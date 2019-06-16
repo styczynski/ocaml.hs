@@ -2,6 +2,7 @@ module Syntax where
 
 import AbsSyntax
 import Type
+import Env
 
 data Expr
   = Var Ident
@@ -15,13 +16,14 @@ data Expr
   | UniOp Uniop Expr
   | Skip
   | Check Expr Scheme
-  deriving (Show, Eq, Ord)
+  | Export
+  deriving (Show, Eq)
 
 data Lit
   = LInt Integer
   | LBool Bool
   | LString String
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 data Binop = Add | Sub | Mul | Eql | OpCons | OpTupleCons
   deriving (Eq, Ord, Show)

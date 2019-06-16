@@ -28,8 +28,6 @@ import qualified Data.Map as Map
 -- Typing Environment
 -------------------------------------------------------------------------------
 
-data Env = TypeEnv { types :: Map.Map Ident Scheme }
-  deriving (Eq, Show)
 
 empty :: Env
 empty = TypeEnv Map.empty

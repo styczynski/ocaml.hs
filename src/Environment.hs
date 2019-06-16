@@ -209,7 +209,7 @@ createFunction name Nothing sig body env = do
  let newRef = allocRef env in createFunction name (Just newRef) sig body env
 
 getProgramEnvironmentDefault :: ExecutionResult -> Environment -> Environment
-getProgramEnvironmentDefault (Executed _ env) _ = env
+getProgramEnvironmentDefault (Executed _ _ env) _ = env
 getProgramEnvironmentDefault _ envDefault = envDefault
 
 callOperator :: Ident -> Integer -> [RuntimeValue] -> Exec (RuntimeValue, Environment)

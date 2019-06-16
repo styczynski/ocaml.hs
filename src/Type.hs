@@ -1,7 +1,13 @@
 module Type where
 
+import AbsSyntax
+import qualified Data.Map as Map
+
 newtype TVar = TV String
   deriving (Show, Eq, Ord)
+
+data Env = TypeEnv { types :: Map.Map Ident Scheme }
+  deriving (Eq, Show)
 
 data Type
   = TVar TVar
@@ -10,10 +16,11 @@ data Type
   | TList Type
   | TTuple Type Type
   | TUnit
-  deriving (Show, Eq, Ord)
+  | TExport Env
+  deriving (Show, Eq)
 
 data Scheme = Forall [TVar] Type
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 typeInt, typeBool, typeString :: Type
 typeInt  = TCon "Int"
@@ -22,6 +29,7 @@ typeString = TCon "String"
 
 typeToStr :: [TVar] -> Type -> String
 typeToStr vars TUnit = "()"
+typeToStr vars (TExport v) = "export{ " ++ (show v) ++" }"
 typeToStr vars (TList t) = "[" ++ (typeToStr vars t) ++ "]"
 typeToStr vars (TArr a b) = "(" ++ (typeToStr vars a) ++ ") -> " ++ (typeToStr vars b)
 typeToStr vars (TVar (TV name)) = name ++ "'"

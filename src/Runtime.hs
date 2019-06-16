@@ -19,6 +19,8 @@ import Infer
 import System.IO
 import System.IO.Unsafe
 
+import qualified Type as Type
+
 data Environment = Environment {
   variables       :: (Map.Map Ident RuntimeValue),
   refs            :: (Map.Map Integer RuntimeRefValue),
@@ -35,7 +37,7 @@ data InterpreterState = InterpreterState {
   globalExportEnv :: (Maybe Environment)
 }
 
-data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Environment
+data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Type.Type Environment | FailedTypechecking TypeError
 type Exec = StateT (InterpreterState) (ReaderT (Environment) (ExceptT String IO))
 
 type RFunBody = [RuntimeValue] -> Exec (RuntimeValue, Environment)
@@ -46,8 +48,15 @@ data RuntimeRefValue
   | RfVal RuntimeValue
   | RfInvalid RuntimeValue
 
+instance Eq Environment where
+  a == b = False
+
+instance Show Environment where
+  show a = "<env>"
+
 data RuntimeValue
   = REmpty
+  | RExport Environment
   | RInvalid
   | RInt Integer
   | RString String
@@ -120,6 +129,7 @@ instance UnpackableValue Bool where
 
 getType :: (RuntimeValue, Environment) -> RuntimeType
 getType (REmpty, _) = TEmpty
+getType ((RExport _), _) = TEmpty
 getType ((RInt _), _) = TInt
 getType ((RString _), _) = TString
 getType ((RBool _), _) = TBool
@@ -208,12 +218,14 @@ raise errorText = do
         _ -> throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n    " ++ errorText ++ "\n" ++ traceStr
 
 resultToStr :: ExecutionResult -> String
-resultToStr (Executed val _) = valueToStr val
+resultToStr (Executed val _ _) = valueToStr val
 resultToStr (FailedParse err) = err
 resultToStr (FailedExecution err) = err
+resultToStr (FailedTypechecking err) = show err
 
 valueToStr :: RuntimeValue -> String
 valueToStr REmpty = "()"
+valueToStr (RExport _) = "%export"
 valueToStr (RInt val) = show val
 valueToStr (RString val) = show val
 valueToStr (RVariant _ (Ident option) val) = option ++ " " ++ (valueToStr val)

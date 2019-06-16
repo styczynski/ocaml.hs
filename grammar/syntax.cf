@@ -101,6 +101,7 @@ ESList.              SimpleExpression    ::= DList ;
 ESRecord.            SimpleExpression    ::= DataRecord ;
 separator            SimpleExpression    "" ;
 
+internal ECExportEnv. ComplexExpression   ::= "%export_env" ;
 ECExpr.              ComplexExpression   ::= Expression ;
 ECTuple.             ComplexExpression   ::= DTuple ;
 ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;

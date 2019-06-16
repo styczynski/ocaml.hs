@@ -49,7 +49,7 @@ type Unifier = (Subst, [Constraint])
 type Solve a = ExceptT TypeError Identity a
 
 newtype Subst = Subst (Map.Map TVar Type)
-  deriving (Eq, Ord, Show, Monoid, Semigroup)
+  deriving (Eq, Show, Monoid, Semigroup)
 
 class Substitutable a where
   apply :: Subst -> a -> a
@@ -62,6 +62,7 @@ instance Substitutable Type where
   apply s (t1 `TTuple` t2) = apply s t1 `TTuple` apply s t2
   apply s (TList a) = TList $ apply s a
   apply s TUnit = TUnit
+  apply s (TExport v) = (TExport v)
 
   ftv TCon{}         = Set.empty
   ftv (TVar a)       = Set.singleton a
@@ -69,6 +70,7 @@ instance Substitutable Type where
   ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
   ftv (t1 `TTuple` t2) = ftv t1 `Set.union` ftv t2
   ftv TUnit = Set.empty
+  ftv (TExport _) = Set.empty
 
 instance Substitutable Scheme where
   apply (Subst s) (Forall as t)   = Forall as $ apply s' t
@@ -229,7 +231,7 @@ withTypeAnnot (TypeConstrDef texpr) e = do
 inferImplementation :: Implementation -> Infer (Env, Type, [Constraint])
 inferImplementation (IRoot cores) = do
   env <- ask
-  foldrM (\core (envAcc, _, _) -> do
+  foldlM (\(envAcc, _, _) core -> do
     i <- local (\_ -> envAcc) $ inferImplementationCore core
     return i) (env, TUnit, []) cores
 
@@ -240,16 +242,14 @@ inferImplementationCore (IRootExpr expr) = do
   return (env, t, c)
 inferImplementationCore (IRootDef phrases) = do
   env <- ask
-  foldrM (\phrase (envAcc, _, _) -> do
+  foldlM (\(envAcc, _, _) phrase -> do
     i <- local (\_ -> envAcc) $ inferImplementationPhrase phrase
     return i) (env, TUnit, []) phrases
 
 inferImplementationPhrase :: ImplPhrase -> Infer (Env, Type, [Constraint])
 inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
-  -- TODO Return env
-  e <- ask
-  (t, c) <- inferComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExpr $ ExprConst $ CInt $ 0)
-  return (e, t, c)
+  (t, c) <- inferComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExportEnv)
+  return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
 
 getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TVar)
 getTypeExpressionFV TypeExprEmpty = return Map.empty
@@ -321,6 +321,7 @@ simplifyPattern (PatTuple (PTuple el restEls)) letExpr expr = do
   return tSimpl
 
 simplifyComplexExpression :: ComplexExpression -> Infer Expr
+simplifyComplexExpression ECExportEnv = return Export
 simplifyComplexExpression (ECTuple tuple) = simplifyTuple tuple
 simplifyComplexExpression (ECExpr expr) = simplifyExpression expr
 simplifyComplexExpression (ECIf cond exprThen exprElse) = do
@@ -408,6 +409,10 @@ infer expr = case expr of
   Lit (LBool _) -> return (typeBool, [])
   Lit (LString _) -> return (typeString, [])
 
+  Export -> do
+    env <- ask
+    return (TExport env, [])
+
   Check e (Forall _ t) -> do
     (t1, c1) <- infer e
     return (t1, c1 ++ [(t1, t)])
@@ -473,9 +478,11 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
     fv (TList a)  = fv a
     fv (TTuple a b) = fv a ++ fv b
     fv TUnit = []
+    fv (TExport _) = []
     fv (TCon _)   = []
 
     normtype TUnit = TUnit
+    normtype (TExport v) = (TExport v)
     normtype (TArr a b) = TArr (normtype a) (normtype b)
     normtype (TTuple a b) = TTuple (normtype a) (normtype b)
     normtype (TList a) = TList (normtype a)

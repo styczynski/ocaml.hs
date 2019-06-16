@@ -39,14 +39,25 @@ runInit :: Environment -> IO Environment
 runInit env = do
   result <- runFn interpreterStartupFn env
   case result of
-    (Executed _ newEnv) -> return newEnv
+    (Executed _ _ newEnv) -> return newEnv
     _ -> return env
 
 runInitEmpty :: IO Environment
 runInitEmpty = runInit emptyEnv
 
 runWith :: Verbosity -> String -> Environment -> IO ExecutionResult
-runWith v s env = let ts = myLexer s in case pImplementation ts of
+runWith v s env = do
+  i <- return $ runTIWith v s env
+  (case i of
+    (Left e) -> return $ FailedTypechecking e
+    (Right ((Forall _ inferType), initEnv)) -> do
+      r <- runIWith v s initEnv
+      return $ case r of
+        (Executed v _ env) -> Executed v inferType env
+        other -> other)
+
+runIWith :: Verbosity -> String -> Environment -> IO ExecutionResult
+runIWith v s env = let ts = myLexer s in case pImplementation ts of
           Bad s    -> return $ FailedParse $ show s
           Ok  tree -> do
                         res <- runAST tree env

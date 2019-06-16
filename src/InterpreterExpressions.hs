@@ -49,6 +49,9 @@ execTuple ast@(DTuple firstElement tupleElements) = do
   return $ ((RTuple tupleItems), tupleEnv)
 
 execComplexExpression :: ComplexExpression -> Exec (RuntimeValue, Environment)
+execComplexExpression ECExportEnv = do
+  env <- ask
+  return (RExport env, env)
 execComplexExpression (ECTuple tuple) = execTuple tuple
 execComplexExpression ast@(ECIf cond exp1 exp2) = do
   proceed ast
@@ -245,5 +248,6 @@ execExpression ast@(Expr1 exp1 op exp2) = do
 
 execPhrase :: ImplPhrase -> Exec (RuntimeValue, Environment)
 execPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
-  execComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExpr $ ExprConst $ CInt $ 0)
+  (r, _) <- execComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExportEnv)
+  return $ let (RExport env) = r in (REmpty, env)
 execPhrase (IDefType typeDef) = execTypeDef typeDef

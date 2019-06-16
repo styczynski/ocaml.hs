@@ -18,15 +18,9 @@ runFile v f = putStrLn f >> readFile f >>= runBlock v
 runBlockI :: Verbosity -> String -> IO ()
 runBlockI v s = do
   initEnv0 <- runInitEmpty
-  --stdlibStr <- readFile "./init/init.ml"
-  --(Executed _ initEnv) <- runWith v stdlibStr initEnv0
-  i <- return $ runTIWith v s initEnv0
-  _ <- (case i of
-    (Left e) -> putStrLn $ "- infer error: " ++ (show e)
-    _ -> do return ())
-  (Right (inferScheme, initEnv)) <- return $ i
-  _ <- putStrLn $ "- infer : " ++ (schemeToStr inferScheme)
-  result <- runWith v s initEnv
+  -- stdlibStr <- readFile "./init/init.ml"
+  -- (Executed _ _ initEnv) <- runWith v stdlibStr initEnv0
+  result <- runWith v s initEnv0
   case result of
      FailedExecution s -> do
                     hPutStrLn stderr s
@@ -34,8 +28,8 @@ runBlockI v s = do
      FailedParse s  -> do
                     hPutStrLn stderr s
                     exitFailure
-     Executed v env -> do
-                    putStrLn $ "- : " ++ (getTypeStr (v,env)) ++ " = " ++ (valueToStr v)
+     Executed v t env -> do
+                    putStrLn $ "- : " ++ (Type.typeToStr [] t) ++ " = " ++ (valueToStr v)
                     exitSuccess
 
 runBlock = runBlockI
