@@ -102,7 +102,11 @@ data TypeError
 
 -- | Run the inference monad
 runInfer :: Env -> Infer (Type, [Constraint]) -> Either TypeError (Type, [Constraint])
-runInfer env m = runExcept $ evalStateT (runReaderT m env) initInfer 
+runInfer env m =
+  let v = runExcept $ runStateT (runReaderT m env) initInfer in
+  case v of
+    (Left e) -> Left e
+    (Right (val, e)) -> Right val
 
 -- | Solve for the toplevel type of an expression in a given environment
 inferAST :: Env -> Implementation -> Either TypeError Scheme
@@ -201,7 +205,17 @@ withTypeAnnot (TypeConstrDef texpr) e = do
   return $ Check e s
 
 inferImplementation :: Implementation -> Infer (Type, [Constraint])
-inferImplementation (IRoot [phr0]) = inferPhrase phr0
+inferImplementation (IRoot cores) =
+  foldrM (\core _ -> inferImplementationCore core) (TUnit, []) cores
+
+inferImplementationCore :: ImplementationCore -> Infer (Type, [Constraint])
+inferImplementationCore (IRootExpr expr) = inferComplexExpression expr
+inferImplementationCore (IRootDef phrases) = do
+  foldrM (\phrase _ -> inferImplementationPhrase phrase) (TUnit, []) phrases
+
+inferImplementationPhrase :: ImplPhrase -> Infer (Type, [Constraint])
+inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
+  inferComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExpr $ ExprConst $ CInt $ 0)
 
 getTypeExpressionFV :: TypeExpression -> Set.Set String
 getTypeExpressionFV (TypeExprAbstract (TypeIdentAbstract name)) = Set.singleton name
@@ -246,9 +260,6 @@ resolveTypeExpression exp = do
   fvsT <- return $ map (\e -> TV e) $ Set.elems fvs
   return $ Forall fvsT t
 
-simplifyPhrase :: ImplPhrase -> Infer Expr
-simplifyPhrase (IPhrase expr) = simplifyComplexExpression expr
-
 simplifyPattern :: SimplePattern -> Expr -> Expr -> Infer Expr
 simplifyPattern PatNone _ expr = return expr
 simplifyPattern (PatConst const) letExpr expr =
@@ -269,7 +280,11 @@ simplifyPattern (PatTuple (PTuple el restEls)) letExpr expr = do
 simplifyComplexExpression :: ComplexExpression -> Infer Expr
 simplifyComplexExpression (ECTuple tuple) = simplifyTuple tuple
 simplifyComplexExpression (ECExpr expr) = simplifyExpression expr
-
+simplifyComplexExpression (ECIf cond exprThen exprElse) = do
+  condSimpl <- simplifyComplexExpression cond
+  thenSimpl <- simplifyComplexExpression exprThen
+  elseSimpl <- simplifyComplexExpression exprElse
+  return $ If condSimpl thenSimpl elseSimpl
 simplifyComplexExpression (ECMatch expr _ clauses) = do
   clausesList <- foldrM (\(MatchClause pat clauseExpr) acc -> do
     r <- return $ ListElement $ ECLet LetRecNo pat [] TypeConstrEmpty expr clauseExpr
@@ -320,10 +335,9 @@ simplifyExpression (ExprList list) = simplifyList list
 simplifyExpression (ExprCompl expr) = simplifyComplexExpression expr
 
 
-inferPhrase :: ImplPhrase -> Infer (Type, [Constraint])
-inferPhrase ast = do
-  tree <- simplifyPhrase ast
-  --throwError $ Debug $ (show tree)
+inferComplexExpression :: ComplexExpression -> Infer (Type, [Constraint])
+inferComplexExpression ast = do
+  tree <- simplifyComplexExpression ast
   infer tree
 
 infer :: Expr -> Infer (Type, [Constraint])

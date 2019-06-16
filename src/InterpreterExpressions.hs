@@ -242,3 +242,8 @@ execExpression ast@(Expr1 exp1 op exp2) = do
   (val1,env1) <- shadow env $ execExpression exp1
   (val2,env2) <- shadow env $ local (\_ -> env1) $ execExpression exp2
   shadow env $ local (\_ -> env2) $ callOperatorA op val1 val2
+
+execPhrase :: ImplPhrase -> Exec (RuntimeValue, Environment)
+execPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
+  execComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExpr $ ExprConst $ CInt $ 0)
+execPhrase (IDefType typeDef) = execTypeDef typeDef

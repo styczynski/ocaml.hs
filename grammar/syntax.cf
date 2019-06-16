@@ -1,10 +1,14 @@
 comment "(*" "*)" ;
 
-IRoot.               Implementation      ::= [ImplPhrase] ;
-terminator           nonempty            ImplPhrase ";;" ;
+IRoot.               Implementation          ::= [ImplementationCore] ;
+separator nonempty ImplementationCore ";;" ;
+
+IRootDef.            ImplementationCore      ::= [ImplPhrase] ;
+IRootExpr.           ImplementationCore      ::= ComplexExpression ;
+terminator           nonempty            ImplPhrase "" ;
 separator            Ident               "" ;
 
-IPhrase.             ImplPhrase          ::= ComplexExpression ;
+IGlobalLet.          ImplPhrase          ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression ;
 IDefType.            ImplPhrase          ::= TypeDef ;
 
 token TypeIdentAbstract (["abcdefghijklmnopqrstuvwxyz"] ["'"]) ;
