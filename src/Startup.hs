@@ -28,27 +28,27 @@ print_env _ = do
 interpreterStartupFn :: Exec (RuntimeValue, Environment)
 interpreterStartupFn = do
   e <- ask
-  (_,e) <- local (\_ -> e) $ setNativeVariable "export_env" valueExportEnv
-  (_,e) <- local (\_ -> e) $ setNativeVariable "print" print_str
-  (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" print_env
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_create_ref" valueCreateRef
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_set_ref" valueSetRef
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_get_ref" valueGetRef
-  (_,e) <- local (\_ -> e) $ setNativeVariable "failwith" failwith
-  (_,e) <- local (\_ -> e) $ setNativeVariable "invalid_arg" invalid_arg
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_eq" valueEq
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt" valueLt
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt" valueGt
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt_eq" valueLtEq
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt_eq" valueGtEq
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_cons" valueCons
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_join" valueJoin
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_and" valueAnd
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_or" valueOr
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_not" valueNot
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mod" valueMod
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" valueAdd
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_sub" valueSub
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mul" valueMul
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_div" valueDiv
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" "a' -> a' -> a'" valueAdd
+  (_,e) <- local (\_ -> e) $ setNativeVariable "print" "a' -> unit" print_str
+--  (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" print_env
+--  (_,e) <- local (\_ -> e) $ setNativeVariable "value_create_ref" valueCreateRef
+--  (_,e) <- local (\_ -> e) $ setNativeVariable "value_set_ref" valueSetRef
+--  (_,e) <- local (\_ -> e) $ setNativeVariable "value_get_ref" valueGetRef
+  (_,e) <- local (\_ -> e) $ setNativeVariable "failwith" "String -> unit" failwith
+  (_,e) <- local (\_ -> e) $ setNativeVariable "invalid_arg" "String -> unit" invalid_arg
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_eq" "a' -> a' -> Bool" valueEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt" "a' -> a' -> Bool" valueLt
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt" "a' -> a' -> Bool" valueGt
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt_eq" "a' -> a' -> Bool" valueLtEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt_eq" "a' -> a' -> Bool" valueGtEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_cons" "a' -> [a'] -> [a']" valueCons
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_join" "[a'] -> [a'] -> [a']" valueJoin
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_and" "Bool -> Bool -> Bool" valueAnd
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_or" "Bool -> Bool -> Bool" valueOr
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_not" "Bool -> Bool" valueNot
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mod" "a' -> a' -> a'" valueMod
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" "a' -> a' -> a'" valueAdd
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_sub" "a' -> a' -> a'" valueSub
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mul" "a' -> a' -> a'" valueMul
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_div" "a' -> a' -> a'" valueDiv
   return (REmpty, e)

@@ -101,26 +101,48 @@ data TypeError
 -------------------------------------------------------------------------------
 
 -- | Run the inference monad
-runInfer :: Env -> Infer (Type, [Constraint]) -> Either TypeError (Type, [Constraint])
-runInfer env m =
-  let v = runExcept $ runStateT (runReaderT m env) initInfer in
+runInfer :: Env -> InferState -> Infer (Env, Type, [Constraint]) -> Either TypeError ((Env, Type, [Constraint]), InferState)
+runInfer env state m =
+  let v = runExcept $ runStateT (runReaderT m env) state in
   case v of
     (Left e) -> Left e
-    (Right (val, e)) -> Right val
+    (Right ((env, t, c), state)) -> Right ((env, t, c), state)
 
--- | Solve for the toplevel type of an expression in a given environment
-inferAST :: Env -> Implementation -> Either TypeError Scheme
-inferAST env ex = case runInfer env (inferImplementation ex) of
+solve :: Either TypeError (Type, [Constraint]) -> Either TypeError Scheme
+solve r = case r of
   Left err -> Left err
   Right (ty, cs) -> case runSolve cs of
     Left err -> Left err
     Right subst -> Right $ closeOver $ apply subst ty
 
+unpackEnvTypeContraints :: Either TypeError ((Env, Type, [Constraint]), InferState) -> Either TypeError (Type, [Constraint])
+unpackEnvTypeContraints (Left r) = Left r
+unpackEnvTypeContraints (Right ((_, t, c),_)) = Right (t, c)
+
+retrieveEnv :: Either TypeError ((Env, Type, [Constraint]), InferState) -> Env
+retrieveEnv (Left r) = empty
+retrieveEnv (Right ((e,_,_),_)) = e
+
+retrieveState :: Either TypeError ((Env, Type, [Constraint]), InferState) -> InferState
+retrieveState (Left r) = initInfer
+retrieveState (Right (_,state)) = state
+
+-- | Solve for the toplevel type of an expression in a given environment
+inferAST :: Env -> InferState -> Implementation -> Either TypeError (Scheme, Env, InferState)
+inferAST env state ex =
+  let i = runInfer env state (inferImplementation ex) in
+  let env = retrieveEnv i in
+  let state = retrieveState i in
+  let scheme = solve $ unpackEnvTypeContraints i in
+  case scheme of
+    Left e -> Left e
+    Right s -> Right (s, env, state)
+
 -- | Return the internal constraints used in solving for the type of an expression
-constraintsExpr :: Env -> Expr -> Either TypeError ([Constraint], Subst, Type, Scheme)
-constraintsExpr env ex = case runInfer env (infer ex) of
+constraintsExpr :: Env -> InferState -> Expr -> Either TypeError ([Constraint], Subst, Type, Scheme)
+constraintsExpr env state ex = case runInfer env state (inferE ex) of
   Left err -> Left err
-  Right (ty, cs) -> case runSolve cs of
+  Right ((_, ty, cs), state) -> case runSolve cs of
     Left err -> Left err
     Right subst -> Right (cs, subst, ty, sc)
       where
@@ -204,28 +226,49 @@ withTypeAnnot (TypeConstrDef texpr) e = do
   s <- resolveTypeExpression texpr
   return $ Check e s
 
-inferImplementation :: Implementation -> Infer (Type, [Constraint])
-inferImplementation (IRoot cores) =
-  foldrM (\core _ -> inferImplementationCore core) (TUnit, []) cores
+inferImplementation :: Implementation -> Infer (Env, Type, [Constraint])
+inferImplementation (IRoot cores) = do
+  env <- ask
+  foldrM (\core (envAcc, _, _) -> do
+    i <- local (\_ -> envAcc) $ inferImplementationCore core
+    return i) (env, TUnit, []) cores
 
-inferImplementationCore :: ImplementationCore -> Infer (Type, [Constraint])
-inferImplementationCore (IRootExpr expr) = inferComplexExpression expr
+inferImplementationCore :: ImplementationCore -> Infer (Env, Type, [Constraint])
+inferImplementationCore (IRootExpr expr) = do
+  env <- ask
+  (t, c) <- inferComplexExpression expr
+  return (env, t, c)
 inferImplementationCore (IRootDef phrases) = do
-  foldrM (\phrase _ -> inferImplementationPhrase phrase) (TUnit, []) phrases
+  env <- ask
+  foldrM (\phrase (envAcc, _, _) -> do
+    i <- local (\_ -> envAcc) $ inferImplementationPhrase phrase
+    return i) (env, TUnit, []) phrases
 
-inferImplementationPhrase :: ImplPhrase -> Infer (Type, [Constraint])
+inferImplementationPhrase :: ImplPhrase -> Infer (Env, Type, [Constraint])
 inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
-  inferComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExpr $ ExprConst $ CInt $ 0)
+  -- TODO Return env
+  e <- ask
+  (t, c) <- inferComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExpr $ ExprConst $ CInt $ 0)
+  return (e, t, c)
 
-getTypeExpressionFV :: TypeExpression -> Set.Set String
-getTypeExpressionFV (TypeExprAbstract (TypeIdentAbstract name)) = Set.singleton name
+getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TVar)
+getTypeExpressionFV TypeExprEmpty = return Map.empty
+getTypeExpressionFV (TypeExprAbstract (TypeIdentAbstract name)) = do
+  tvv <- fresh
+  return $ let (TVar tv) = tvv in Map.singleton name tv
 getTypeExpressionFV (TypeExprList listType) = getTypeExpressionFV listType
-getTypeExpressionFV (TypeFun a b) = (getTypeExpressionFV a) `Set.union` (getTypeExpressionFV b)
+getTypeExpressionFV (TypeFun a b) = do
+  t1 <- (getTypeExpressionFV a)
+  t2 <- (getTypeExpressionFV b)
+  return $ t1 `Map.union` t2
 getTypeExpressionFV (TypeExprTuple fstEl restEls) =
-  foldr (\el acc -> acc `Set.union` (getTypeExpressionFV el)) Set.empty ([fstEl] ++ restEls)
-getTypeExpressionFV _ = Set.empty
+  foldrM (\el acc -> do
+    t <- (getTypeExpressionFV el)
+    return $ acc `Map.union` t) Map.empty ([fstEl] ++ restEls)
+getTypeExpressionFV _ = return Map.empty
 
-resolveTypeExpressionRec :: (Set.Set String) -> TypeExpression -> Infer Type
+resolveTypeExpressionRec :: (Map.Map String TVar) -> TypeExpression -> Infer Type
+resolveTypeExpressionRec fvs TypeExprEmpty = return TUnit
 resolveTypeExpressionRec fvs (TypeExprIdent (Ident name)) = return $ TCon name
 resolveTypeExpressionRec fvs (TypeExprList expr) = do
   t <- resolveTypeExpressionRec fvs expr
@@ -241,12 +284,12 @@ resolveTypeExpressionRec fvs (TypeExprTuple fstEl restEls) = do
   return tupleT
 resolveTypeExpressionRec fvs (TypeExprAbstract (TypeIdentAbstract name)) = do
   parsedName <- return $ [ x | x <- name, not (x `elem` "'") ]
-  validFvs <- return $ name `Set.member` fvs
-  tv <- fresh
+  validFvs <- return $ name `Map.member` fvs
   if not validFvs then
     throwError $ Debug $ "Type name " ++ name ++ " is not a valid polymorhic type name"
   else
-    return $ tv
+    let (Just tv) = Map.lookup name fvs in
+    return $ TVar tv
 
 getConstScheme :: Constant -> Scheme
 getConstScheme (CInt _) = Forall [] (TCon "Int")
@@ -255,9 +298,9 @@ getConstScheme (CString _) = Forall [] (TCon "String")
 
 resolveTypeExpression :: TypeExpression -> Infer Scheme
 resolveTypeExpression exp = do
-  fvs <- return $ getTypeExpressionFV exp
+  fvs <- getTypeExpressionFV exp
   t <- resolveTypeExpressionRec fvs exp
-  fvsT <- return $ map (\e -> TV e) $ Set.elems fvs
+  fvsT <- return $ Map.elems fvs
   return $ Forall fvsT t
 
 simplifyPattern :: SimplePattern -> Expr -> Expr -> Infer Expr
@@ -329,10 +372,22 @@ simplifyList (DList elems) = do
 simplifyExpression :: Expression -> Infer Expr
 simplifyExpression (ExprVar name) = return $ Var name
 simplifyExpression (ExprConst (CInt val)) = return $ Lit $ LInt val
+simplifyExpression (ExprConst (CString val)) = return $ Lit $ LString val
 simplifyExpression (ExprConst (CBool CBTrue)) = return $ Lit $ LBool True
 simplifyExpression (ExprConst (CBool CBFalse)) = return $ Lit $ LBool False
 simplifyExpression (ExprList list) = simplifyList list
 simplifyExpression (ExprCompl expr) = simplifyComplexExpression expr
+simplifyExpression (ExprCall exp firstArg restArgs) = do
+  fnExpr <- simplifyExpression exp
+  foldlM (\simpl argExp -> do
+    argSimpl <- simplifySimpleExpression argExp
+    return $ App simpl argSimpl) (fnExpr) ([firstArg] ++ restArgs)
+
+simplifySimpleExpression :: SimpleExpression -> Infer Expr
+simplifySimpleExpression (ESConst const) = simplifyExpression $ ExprConst const
+simplifySimpleExpression (ESIdent name) = simplifyExpression $ ExprVar name
+simplifySimpleExpression (ESExpr expr) = simplifyComplexExpression expr
+simplifySimpleExpression (ESList list) = simplifyList list
 
 
 inferComplexExpression :: ComplexExpression -> Infer (Type, [Constraint])
@@ -340,11 +395,18 @@ inferComplexExpression ast = do
   tree <- simplifyComplexExpression ast
   infer tree
 
+inferE :: Expr -> Infer (Env, Type, [Constraint])
+inferE expr = do
+  env <- ask
+  (t, c) <- infer expr
+  return $ (env, t, c)
+
 infer :: Expr -> Infer (Type, [Constraint])
 infer expr = case expr of
   Skip -> return (typeInt, [])
   Lit (LInt _)  -> return (typeInt, [])
   Lit (LBool _) -> return (typeBool, [])
+  Lit (LString _) -> return (typeString, [])
 
   Check e (Forall _ t) -> do
     (t1, c1) <- infer e

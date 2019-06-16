@@ -13,6 +13,34 @@ import qualified Data.Map as Map
 
 import Runtime
 import Environment
+import Env
+import PrintSyntax
+import LexSyntax
+import ParSyntax
+import SkelSyntax
+import AbsSyntax
+import ErrM
+import Infer
+
+setNativeVariable :: (PackableValue a) => String -> String -> a -> Exec (RuntimeValue, Environment)
+setNativeVariable name typeExpr val = do
+  (_, env) <- setNativeUntypedVariable name val
+  local (\_ -> env) $ exportGlobalVariableType name typeExpr
+
+exportGlobalVariableType :: String -> String -> Exec (RuntimeValue, Environment)
+exportGlobalVariableType name typeExpr = do
+  env <- ask
+  (envT, envS) <- return $ annotateGlobalVariableTypeEnv (getTypesEnv env) (getTypesState env) name typeExpr
+  return (REmpty, (setTypesState envS (setTypesEnv envT env)))
+
+annotateGlobalVariableTypeEnv :: Env -> InferState -> String -> String -> (Env, InferState)
+annotateGlobalVariableTypeEnv env state name typeExpr = let ts = myLexer typeExpr in case pTypeExpression ts of
+  Ok  tree -> do
+    let v = runExcept $ runStateT (runReaderT (resolveTypeExpression tree) env) state in
+      case v of
+        (Right (scheme, newState)) ->
+          ( (extend env ((Ident name), scheme)), (newState) )
+
 
 --instance (PackableValue a) => PackableValue [a] where
 --  packVal vals = do

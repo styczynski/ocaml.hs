@@ -15,13 +15,15 @@ data Type
 data Scheme = Forall [TVar] Type
   deriving (Show, Eq, Ord)
 
-typeInt, typeBool :: Type
+typeInt, typeBool, typeString :: Type
 typeInt  = TCon "Int"
 typeBool = TCon "Bool"
+typeString = TCon "String"
 
 typeToStr :: [TVar] -> Type -> String
+typeToStr vars TUnit = "()"
 typeToStr vars (TList t) = "[" ++ (typeToStr vars t) ++ "]"
-typeToStr vars (TArr a b) = (typeToStr vars a) ++ " -> " ++ (typeToStr vars b)
+typeToStr vars (TArr a b) = "(" ++ (typeToStr vars a) ++ ") -> " ++ (typeToStr vars b)
 typeToStr vars (TVar (TV name)) = name ++ "'"
 typeToStr vars (TCon name) = name
 typeToStr vars (TTuple TUnit TUnit) = "()"

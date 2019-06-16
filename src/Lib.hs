@@ -1,5 +1,10 @@
 module Lib where
 
+import Control.Monad.Except
+import Control.Monad.State
+import Control.Monad.Identity
+import Control.Monad.Reader
+
 import PrintSyntax
 import LexSyntax
 import ParSyntax
@@ -17,17 +22,18 @@ import Infer
 import Syntax
 import Type
 import Env
+import Environment
 
 type Verbosity = Int
 
-runTIWith :: Verbosity -> String -> IO ()
-runTIWith v s = let ts = myLexer s in case pImplementation ts of
-          Bad s    -> putStrLn (show s)
-          Ok  tree -> do
-            r <- return $ inferAST empty tree
-            case r of
-              (Right r) -> putStrLn (schemeToStr r)
-              (Left mes) -> putStrLn $ show mes
+runTIWith :: Verbosity -> String -> Environment -> Either TypeError (Scheme, Environment)
+runTIWith v s e = let state = getTypesState e in let env = getTypesEnv e in let ts = myLexer s in case pImplementation ts of
+          Bad s    -> Left $ Debug $ show s
+          Ok  tree ->
+            case inferAST env state tree of
+              (Left e) -> Left e
+              (Right (r, env, state)) -> Right (r, (setTypesState state (setTypesEnv env e)))
+              --(Left mes) -> putStrLn $ show mes
 
 runInit :: Environment -> IO Environment
 runInit env = do

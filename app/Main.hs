@@ -10,6 +10,7 @@ import System.Exit ( exitFailure, exitSuccess )
 import Lib
 import Runtime
 import InterpreterDefinitions
+import Type
 
 runFile :: Verbosity -> FilePath -> IO ()
 runFile v f = putStrLn f >> readFile f >>= runBlock v
@@ -17,8 +18,14 @@ runFile v f = putStrLn f >> readFile f >>= runBlock v
 runBlockI :: Verbosity -> String -> IO ()
 runBlockI v s = do
   initEnv0 <- runInitEmpty
-  stdlibStr <- readFile "./init/init.ml"
-  (Executed _ initEnv) <- runWith v stdlibStr initEnv0
+  --stdlibStr <- readFile "./init/init.ml"
+  --(Executed _ initEnv) <- runWith v stdlibStr initEnv0
+  i <- return $ runTIWith v s initEnv0
+  _ <- (case i of
+    (Left e) -> putStrLn $ "- infer error: " ++ (show e)
+    _ -> do return ())
+  (Right (inferScheme, initEnv)) <- return $ i
+  _ <- putStrLn $ "- infer : " ++ (schemeToStr inferScheme)
   result <- runWith v s initEnv
   case result of
      FailedExecution s -> do
@@ -31,10 +38,7 @@ runBlockI v s = do
                     putStrLn $ "- : " ++ (getTypeStr (v,env)) ++ " = " ++ (valueToStr v)
                     exitSuccess
 
-runBlockT :: Verbosity -> String -> IO ()
-runBlockT v s = runTIWith v s
-
-runBlock = runBlockT
+runBlock = runBlockI
 
 execContents v = getContents >>= runBlock v
 

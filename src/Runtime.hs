@@ -13,6 +13,9 @@ import Data.Text.Internal.Search
 import qualified Data.Text as T
 import qualified Data.Map as Map
 
+import Env
+import Infer
+
 import System.IO
 import System.IO.Unsafe
 
@@ -20,7 +23,9 @@ data Environment = Environment {
   variables       :: (Map.Map Ident RuntimeValue),
   refs            :: (Map.Map Integer RuntimeRefValue),
   defs            :: (Map.Map Ident RuntimeDef),
-  nextFreeRef     :: Integer
+  nextFreeRef     :: Integer,
+  itypes           :: Env,
+  stypes           :: InferState
 }
 
 data InterpreterState = InterpreterState {

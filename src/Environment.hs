@@ -6,14 +6,18 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Data.Map as Map
 
+import Env
 import AbsSyntax
 import Runtime
+import Infer
 
 emptyEnv = Environment {
   variables = Map.empty,
   refs = Map.empty,
   defs = Map.empty,
-  nextFreeRef = 0
+  nextFreeRef = 0,
+  itypes = empty,
+  stypes = initInfer
 }
 
 mergeEnv :: Environment -> Environment -> Environment
@@ -32,10 +36,27 @@ importVRef fr name envA v = do
   (val, envB) <- v
   return (val, (importEnvRef fr name envA envB))
 
+setTypesState :: InferState -> Environment -> Environment
+setTypesState e env =
+  env { stypes = e }
+
+getTypesState :: Environment -> InferState
+getTypesState env =
+  let Environment { stypes = stypes } = env in
+  stypes
+
+setTypesEnv :: Env -> Environment -> Environment
+setTypesEnv e env =
+  env { itypes = e }
+
+getTypesEnv :: Environment -> Env
+getTypesEnv env =
+  let Environment { itypes = itypes } = env in
+  itypes
 
 shadowEnv :: Environment -> Environment -> Environment
 shadowEnv envA envB =
-  let Environment { nextFreeRef = nextFreeRef, refs = refs  } = envB in
+  let Environment { nextFreeRef = nextFreeRef, refs = refs } = envB in
   envA { nextFreeRef = nextFreeRef, refs = refs }
 
 shadowM :: Environment -> Exec Environment -> Exec Environment
@@ -56,8 +77,8 @@ allocRef env =
   let Environment { nextFreeRef=freeRef } = env in
   (freeRef, (env { nextFreeRef = freeRef + 1 }))
 
-setNativeVariable :: (PackableValue a) => String -> a -> Exec (RuntimeValue, Environment)
-setNativeVariable name val = do
+setNativeUntypedVariable :: (PackableValue a) => String -> a -> Exec (RuntimeValue, Environment)
+setNativeUntypedVariable name val = do
   (val1, env1) <- packVal val
   env2 <- return $ setVariable (Ident name) val1 env1
   return (val1, env2)

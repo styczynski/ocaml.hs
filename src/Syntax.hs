@@ -20,6 +20,7 @@ data Expr
 data Lit
   = LInt Integer
   | LBool Bool
+  | LString String
   deriving (Show, Eq, Ord)
 
 data Binop = Add | Sub | Mul | Eql | OpCons | OpTupleCons

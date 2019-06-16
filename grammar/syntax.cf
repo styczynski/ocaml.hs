@@ -13,12 +13,13 @@ IDefType.            ImplPhrase          ::= TypeDef ;
 
 token TypeIdentAbstract (["abcdefghijklmnopqrstuvwxyz"] ["'"]) ;
 
+TypeExprEmpty.    TypeExpression1     ::= "unit" ;
 TypeExprAbstract.    TypeExpression2     ::= TypeIdentAbstract;
 TypeExprIdent.    TypeExpression2     ::= Ident;
 TypeExprList.        TypeExpression2     ::= "[" TypeExpression "]" ;
 TypeExprTuple.       TypeExpression1     ::= TypeExpression2 "*" [TypeExpression2] ;
 separator nonempty TypeExpression2 "*" ;
-TypeFun.             TypeExpression      ::= TypeExpression "->" TypeExpression1 ;
+TypeFun.             TypeExpression      ::= TypeExpression1 "->" TypeExpression ;
 
 coercions            TypeExpression      2 ;
 
