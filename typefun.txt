@@ -1,0 +1,1 @@
+let k = fun x -> 4 in k ;;

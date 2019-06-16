@@ -234,6 +234,11 @@ resolveTypeExpressionRec fvs (TypeExprAbstract (TypeIdentAbstract name)) = do
   else
     return $ tv
 
+getConstScheme :: Constant -> Scheme
+getConstScheme (CInt _) = Forall [] (TCon "Int")
+getConstScheme (CBool _) = Forall [] (TCon "Bool")
+getConstScheme (CString _) = Forall [] (TCon "String")
+
 resolveTypeExpression :: TypeExpression -> Infer Scheme
 resolveTypeExpression exp = do
   fvs <- return $ getTypeExpressionFV exp
@@ -245,6 +250,9 @@ simplifyPhrase :: ImplPhrase -> Infer Expr
 simplifyPhrase (IPhrase expr) = simplifyComplexExpression expr
 
 simplifyPattern :: SimplePattern -> Expr -> Expr -> Infer Expr
+simplifyPattern PatNone _ expr = return expr
+simplifyPattern (PatConst const) letExpr expr =
+  return $ Let (Ident "x") (Check letExpr $ getConstScheme const) expr
 simplifyPattern (PatIdent name) letExpr expr =
   return $ Let name letExpr expr
 simplifyPattern (PatCons hPat tPat) letExpr expr = do
@@ -261,6 +269,18 @@ simplifyPattern (PatTuple (PTuple el restEls)) letExpr expr = do
 simplifyComplexExpression :: ComplexExpression -> Infer Expr
 simplifyComplexExpression (ECTuple tuple) = simplifyTuple tuple
 simplifyComplexExpression (ECExpr expr) = simplifyExpression expr
+
+simplifyComplexExpression (ECMatch expr _ clauses) = do
+  clausesList <- foldrM (\(MatchClause pat clauseExpr) acc -> do
+    r <- return $ ListElement $ ECLet LetRecNo pat [] TypeConstrEmpty expr clauseExpr
+    return $ [r] ++ acc) [] clauses
+  r <- simplifyComplexExpression $ ECExpr $ ExprList $ DList clausesList
+  return $ UniOp OpHead r
+
+simplifyComplexExpression (ECFunction bPip matchClauses) = do
+  simplifyComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprVar (Ident "x")) bPip matchClauses
+simplifyComplexExpression (ECFun pat argsPat expr) = do
+  simplifyComplexExpression (ECLet LetRecNo (PatIdent $ Ident "x") ([pat] ++ argsPat) TypeConstrEmpty expr (ECExpr $ ExprVar $ Ident "x"))
 simplifyComplexExpression (ECLet _ pat [] typeAnnot letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
