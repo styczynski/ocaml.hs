@@ -270,6 +270,7 @@ inferVariantOption typeVars typeName (TDefVarCompl name typeExpr) = do
 typeParamsToList :: TypeParam -> [String]
 typeParamsToList TypeParamNone = []
 typeParamsToList (TypeParamJust names) = map (\(TypeIdentAbstract name) -> name) names
+typeParamsToList (TypeParamJustOne (TypeIdentAbstract name)) = [name]
 
 inferTypeDef :: TypeDef -> Infer (Env, Type, [Constraint])
 inferTypeDef (TypeDefVar typeParams name options) = do

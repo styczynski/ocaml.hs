@@ -15,6 +15,7 @@ IDefType.            ImplPhrase          ::= TypeDef ;
 token TypeIdentAbstract (["'"] ["abcdefghijklmnopqrstuvwxyz"]) ;
 
 TypeParamJust. TypeParam ::= "(" [TypeIdentAbstract] ")" ;
+TypeParamJustOne. TypeParam ::= TypeIdentAbstract ;
 TypeParamNone. TypeParam ::= "" ;
 separator nonempty TypeIdentAbstract "," ;
 

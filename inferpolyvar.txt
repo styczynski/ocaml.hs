@@ -1,3 +1,3 @@
-type ('a) Test = Nope1 | Nope2 of 'a * ('a Test)
+type ('a,'b) Test = Nope1 of 'b | Nope2 of 'a * (('a,'b) Test)
 ;;
-let ii = Nope2 (true, Nope2 (9, Nope1)) in ii
+let ii = Nope2 (8, Nope2 (9, Nope1 false)) in ii

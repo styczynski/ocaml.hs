@@ -231,15 +231,15 @@ valueToStr (RString val) = show val
 valueToStr (RVariant _ (Ident option) val) = option ++ " " ++ (valueToStr val)
 valueToStr (RBool val) = show val
 valueToStr (RTuple []) = "()"
-valueToStr (RRecord _ fields) = " { " ++ (Map.foldlWithKey (\acc (Ident fieldName) fieldVal ->
+valueToStr (RRecord _ fields) = "{ " ++ (Map.foldlWithKey (\acc (Ident fieldName) fieldVal ->
     if (acc == "") then fieldName ++ "=" ++ (valueToStr fieldVal) else acc ++ "; " ++ fieldName ++ "=" ++ (valueToStr fieldVal)
-  ) "" fields) ++ " }"
-valueToStr (RTuple vals) = "( " ++ (foldl (\acc el ->
+  ) "" fields) ++ "}"
+valueToStr (RTuple vals) = "(" ++ (foldl (\acc el ->
     if (acc == "") then valueToStr el else acc ++ ", " ++ (valueToStr el)
-  ) "" vals) ++ " )"
-valueToStr (RList vals) = "[ " ++ (foldl (\acc el ->
+  ) "" vals) ++ ")"
+valueToStr (RList vals) = "[" ++ (foldl (\acc el ->
     if (acc == "") then valueToStr el else acc ++ "; " ++ (valueToStr el)
-  ) "" vals) ++ " ]"
+  ) "" vals) ++ "]"
 valueToStr (RRef _) = "<ref>"
 valueToStr (RInvalid) = "Invalid"
 

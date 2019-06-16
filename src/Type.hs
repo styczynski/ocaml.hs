@@ -30,12 +30,12 @@ typeString = TCon "String"
 
 typeToStr :: [TVar] -> Type -> String
 typeToStr vars TUnit = "()"
-typeToStr vars (TExport v) = "export{ " ++ (show v) ++" }"
+typeToStr vars (TExport v) = "export{" ++ (show v) ++"}"
 typeToStr vars (TList t) = "[" ++ (typeToStr vars t) ++ "]"
 typeToStr vars (TArr a b) = "(" ++ (typeToStr vars a) ++ ") -> " ++ (typeToStr vars b)
 typeToStr vars (TVar (TV name)) = name ++ "'"
 typeToStr vars (TCon name) = name
-typeToStr vars (TDep name deps) = name ++ " " ++ (foldr (\el acc -> acc ++ (typeToStr vars el)) "" deps)
+typeToStr vars (TDep name deps) = name ++ " (" ++ (foldl (\acc el -> acc ++ (if length acc <= 0 then "" else ", ") ++ (typeToStr vars el)) "" deps) ++ ")"
 typeToStr vars (TTuple TUnit TUnit) = "()"
 typeToStr vars (TTuple a (TTuple TUnit TUnit)) = typeToStr vars a
 typeToStr vars (TTuple a b) = (typeToStr vars a) ++ " * " ++ (typeToStr vars b)
