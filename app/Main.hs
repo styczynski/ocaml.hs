@@ -22,6 +22,9 @@ runBlockI v s = do
   -- (Executed _ _ initEnv) <- runWith v stdlibStr initEnv0
   result <- runWith v s initEnv0
   case result of
+     FailedTypechecking s -> do
+                    hPutStrLn stderr $ show s
+                    exitFailure
      FailedExecution s -> do
                     hPutStrLn stderr s
                     exitFailure

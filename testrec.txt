@@ -1,0 +1,1 @@
+let rec fn x = if value_lt x 1 then 1 else value_mul x (fn (value_sub x 1)) in fn

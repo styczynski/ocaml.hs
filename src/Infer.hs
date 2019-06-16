@@ -224,6 +224,10 @@ withTypeAnnot (TypeConstrDef texpr) e = do
   s <- resolveTypeExpression texpr
   return $ Check e s
 
+isRec :: LetRecKeyword -> Bool
+isRec LetRecYes = True
+isRec LetRecNo = False
+
 inferImplementation :: Implementation -> Infer (Env, Type, [Constraint])
 inferImplementation (IRoot cores) = do
   env <- ask
@@ -312,20 +316,22 @@ resolveTypeExpression exp = do
   fvsT <- return $ Map.elems fvs
   return $ Forall fvsT t
 
-simplifyPattern :: SimplePattern -> Expr -> Expr -> Infer Expr
-simplifyPattern PatNone _ expr = return expr
-simplifyPattern (PatConst const) letExpr expr =
+simplifyPattern :: Bool -> SimplePattern -> Expr -> Expr -> Infer Expr
+simplifyPattern _ PatNone _ expr = return expr
+simplifyPattern _ (PatConst const) letExpr expr =
   return $ Let (Ident "x") (Check letExpr $ getConstScheme const) expr
-simplifyPattern (PatIdent name) letExpr expr =
+simplifyPattern False (PatIdent name) letExpr expr =
   return $ Let name letExpr expr
-simplifyPattern (PatCons hPat tPat) letExpr expr = do
-  hSimpl <- simplifyPattern hPat (UniOp OpHead letExpr) expr
-  tSimpl <- simplifyPattern tPat (UniOp OpTails letExpr) hSimpl
+simplifyPattern True (PatIdent name) letExpr expr =
+  return $ Let name (Fix (Lam name letExpr)) expr
+simplifyPattern recMode (PatCons hPat tPat) letExpr expr = do
+  hSimpl <- simplifyPattern recMode hPat (UniOp OpHead letExpr) expr
+  tSimpl <- simplifyPattern recMode tPat (UniOp OpTails letExpr) hSimpl
   return tSimpl
-simplifyPattern (PatTuple (PTuple el restEls)) letExpr expr = do
+simplifyPattern recMode (PatTuple (PTuple el restEls)) letExpr expr = do
   tupleCount <- return $ 1 + length restEls
   (tSimpl, _) <- foldrM (\(PTupleElement el) (expr, k) -> do
-    pSimpl <- simplifyPattern el (UniOp (OpTupleNth k tupleCount) letExpr) expr
+    pSimpl <- simplifyPattern recMode el (UniOp (OpTupleNth k tupleCount) letExpr) expr
     return (pSimpl, k+1)) (expr, 0) ([el] ++ restEls)
   return tSimpl
 
@@ -352,19 +358,19 @@ simplifyComplexExpression (ECFun pat argsPat expr) = do
 simplifyComplexExpression (ECLetOperator recK opName patArgs letExpr expr) = do
   --Ident $ getOperatorName opName
   simplifyComplexExpression (ECLet recK (PatIdent $ Ident $ getOperatorName opName) patArgs TypeConstrEmpty letExpr expr)
-simplifyComplexExpression (ECLet _ pat [] typeAnnot letExpr expr) = do
+simplifyComplexExpression (ECLet recK pat [] typeAnnot letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
-  r <- simplifyPattern pat letSimpl exprSimpl
+  r <- simplifyPattern (isRec recK) pat letSimpl exprSimpl
   r <- withTypeAnnot typeAnnot r
   return r
-simplifyComplexExpression (ECLet _ pat argsPats typeAnnot letExpr expr) = do
+simplifyComplexExpression (ECLet recK pat argsPats typeAnnot letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
   letSimplAcc <- foldrM (\pat expr -> do
-    s <- simplifyPattern pat (Var $ Ident "x") expr
+    s <- simplifyPattern False pat (Var $ Ident "x") expr
     return $ Lam (Ident "x") s) letSimpl argsPats
-  r <- simplifyPattern pat letSimplAcc exprSimpl
+  r <- simplifyPattern (isRec recK) pat letSimplAcc exprSimpl
   r <- withTypeAnnot typeAnnot r
   return r
 
