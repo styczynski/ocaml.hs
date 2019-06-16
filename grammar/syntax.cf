@@ -14,22 +14,34 @@ IDefType.            ImplPhrase          ::= TypeDef ;
 
 token TypeIdentAbstract (["'"] ["abcdefghijklmnopqrstuvwxyz"]) ;
 
-TypeExprEmpty.    TypeExpression1     ::= "unit" ;
-TypeExprAbstract.    TypeExpression2     ::= TypeIdentAbstract;
-TypeExprIdent.    TypeExpression2     ::= Ident;
-TypeExprList.        TypeExpression2     ::= "[" TypeExpression "]" ;
+TypeParamJust. TypeParam ::= "(" [TypeIdentAbstract] ")" ;
+TypeParamNone. TypeParam ::= "" ;
+separator nonempty TypeIdentAbstract "," ;
+
+TypeArgEl. TypeArgEl ::= TypeExpression ;
+separator nonempty TypeArgEl "," ;
+TypeArgJust. TypeArg ::= "(" TypeArgEl "," [TypeArgEl] ")" ;
+TypeArgJustOne. TypeArg ::= TypeSimpleExpression ;
+
+TypeSExprEmpty. TypeSimpleExpression ::= "unit" ;
+TypeSExprAbstract.    TypeSimpleExpression  ::= TypeIdentAbstract;
+TypeSExprIdent.       TypeSimpleExpression  ::= Ident ;
+TypeSExprList.        TypeSimpleExpression     ::= "[" TypeExpression "]" ;
+
+TypeExprSimple.  TypeExpression4      ::= TypeSimpleExpression ;
+TypeExprIdent.    TypeExpression3     ::= TypeArg Ident ;
 TypeExprTuple.       TypeExpression1     ::= TypeExpression2 "*" [TypeExpression2] ;
 separator nonempty TypeExpression2 "*" ;
 TypeFun.             TypeExpression      ::= TypeExpression1 "->" TypeExpression ;
 
-coercions            TypeExpression      2 ;
+coercions            TypeExpression      5 ;
 
 TypeConstrDef.      TypeConstraint      ::= ":" TypeExpression ;
 TypeConstrEmpty.    TypeConstraint      ::= "" ;
 
-TypeDefVarP.         TypeDef             ::= "type" Ident "=" "|" [TDefVariant] ;
-TypeDefVar.          TypeDef             ::= "type" Ident "=" [TDefVariant] ;
-TypeDefRecord.       TypeDef             ::= "type" Ident "=" "{" [TDefRecord] "}" ;
+TypeDefVarP.         TypeDef             ::= "type" TypeParam Ident "=" "|" [TDefVariant] ;
+TypeDefVar.          TypeDef             ::= "type" TypeParam Ident "=" [TDefVariant] ;
+TypeDefRecord.       TypeDef             ::= "type" TypeParam Ident "=" "{" [TDefRecord] "}" ;
 
 TDefVarCompl.        TDefVariant         ::= Ident "of" TypeExpression ;
 TDefVarSimpl.        TDefVariant         ::= Ident ;

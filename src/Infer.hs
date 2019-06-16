@@ -57,7 +57,7 @@ class Substitutable a where
 
 instance Substitutable Type where
   apply _ (TCon a)       = TCon a
-  apply s (TVariant name a) = TVariant name $ apply s a
+  apply s (TDep name deps) = TDep name $ map (\a -> apply s a) deps
   apply (Subst s) t@(TVar a) = Map.findWithDefault t a s
   apply s (t1 `TArr` t2) = apply s t1 `TArr` apply s t2
   apply s (t1 `TTuple` t2) = apply s t1 `TTuple` apply s t2
@@ -68,7 +68,7 @@ instance Substitutable Type where
   ftv TCon{}         = Set.empty
   ftv (TVar a)       = Set.singleton a
   ftv (TList a)      = ftv a
-  ftv (TVariant name a) = ftv a
+  ftv (TDep name deps) = foldl (\acc el -> acc `Set.union` (ftv el)) (Set.empty) deps
   ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
   ftv (t1 `TTuple` t2) = ftv t1 `Set.union` ftv t2
   ftv TUnit = Set.empty
@@ -248,17 +248,39 @@ inferImplementationCore (IRootDef phrases) = do
     i <- local (\_ -> envAcc) $ inferImplementationPhrase phrase
     return i) (env, TUnit, []) phrases
 
-inferVariantOption :: Ident -> TDefVariant -> Infer (Env, Type, [Constraint])
-inferVariantOption typeName (TDefVarSimpl name) = do
-  inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped $ TypeExprIdent $ typeName
-inferVariantOption typeName (TDefVarCompl name typeExpr) = do
-  inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [(PatCheck (Ident "x") typeExpr)] TypeConstrEmpty $ ECTyped $ TypeExprIdent $ typeName
+createTypeExpressionAbstractArgConstructor :: [String] -> TypeArg
+createTypeExpressionAbstractArgConstructor names =
+  let (identHead:identTail) = map (\e -> TypeArgEl $ TypeExprSimple $ TypeSExprAbstract $ TypeIdentAbstract $ e) names in
+  TypeArgJust identHead identTail
+
+inferVariantOption :: [String] -> Ident -> TDefVariant -> Infer (Env, Type, [Constraint])
+inferVariantOption typeVars typeName (TDefVarSimpl name) = do
+  retType <- return $ TypeExprIdent (createTypeExpressionAbstractArgConstructor typeVars) typeName
+  r <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped retType
+  return r
+inferVariantOption typeVars typeName (TDefVarCompl name typeExpr) = do
+  fvsNames <- resolveTypeExpressionFVNames typeExpr
+  _ <- if fvsNames `Set.isSubsetOf` (Set.fromList typeVars) then return 0 else throwError $ Debug $ "Invalid abstract variable used in type definition."
+  -- [(PatCheck (Ident "x") typeExpr)]
+  retType <- return $ TypeExprIdent (createTypeExpressionAbstractArgConstructor typeVars) typeName
+  selType <- return $ TypeFun (typeExpr) retType
+  r <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped selType
+  return r
+
+typeParamsToList :: TypeParam -> [String]
+typeParamsToList TypeParamNone = []
+typeParamsToList (TypeParamJust names) = map (\(TypeIdentAbstract name) -> name) names
 
 inferTypeDef :: TypeDef -> Infer (Env, Type, [Constraint])
-inferTypeDef (TypeDefVar name options) = do
+inferTypeDef (TypeDefVar typeParams name options) = do
   env <- ask
   foldlM (\(envAcc, _, _) option -> do
-    i <- local (\_ -> envAcc) $ inferVariantOption name option
+    i <- local (\_ -> envAcc) $ inferVariantOption (typeParamsToList typeParams) name option
+    return i) (env, TUnit, []) options
+inferTypeDef (TypeDefVarP typeParams name options) = do
+  env <- ask
+  foldlM (\(envAcc, _, _) option -> do
+    i <- local (\_ -> envAcc) $ inferVariantOption (typeParamsToList typeParams) name option
     return i) (env, TUnit, []) options
 
 inferImplementationPhrase :: ImplPhrase -> Infer (Env, Type, [Constraint])
@@ -270,12 +292,21 @@ inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExp
   return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
 inferImplementationPhrase (IDefType typeDef) = inferTypeDef typeDef
 
-getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TVar)
-getTypeExpressionFV TypeExprEmpty = return Map.empty
-getTypeExpressionFV (TypeExprAbstract (TypeIdentAbstract name)) = do
+getTypeSimpleExpressionFV :: TypeSimpleExpression -> Infer (Map.Map String TVar)
+getTypeSimpleExpressionFV (TypeSExprList listType) = getTypeExpressionFV listType
+getTypeSimpleExpressionFV (TypeSExprIdent _) = return Map.empty
+getTypeSimpleExpressionFV TypeSExprEmpty = return Map.empty
+getTypeSimpleExpressionFV (TypeSExprAbstract (TypeIdentAbstract name)) = do
   tvv <- fresh
   return $ let (TVar tv) = tvv in Map.singleton name tv
-getTypeExpressionFV (TypeExprList listType) = getTypeExpressionFV listType
+
+getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TVar)
+getTypeExpressionFV  (TypeExprSimple simpl) = getTypeSimpleExpressionFV simpl
+getTypeExpressionFV (TypeExprIdent (TypeArgJustOne param) _) = getTypeSimpleExpressionFV param
+getTypeExpressionFV (TypeExprIdent (TypeArgJust firstParam restParams) _) = do
+  foldlM (\acc (TypeArgEl el) -> do
+    r <- getTypeExpressionFV el
+    return $ acc `Map.union` r) Map.empty ([firstParam] ++ restParams)
 getTypeExpressionFV (TypeFun a b) = do
   t1 <- (getTypeExpressionFV a)
   t2 <- (getTypeExpressionFV b)
@@ -286,12 +317,54 @@ getTypeExpressionFV (TypeExprTuple fstEl restEls) =
     return $ acc `Map.union` t) Map.empty ([fstEl] ++ restEls)
 getTypeExpressionFV _ = return Map.empty
 
-resolveTypeExpressionRec :: (Map.Map String TVar) -> TypeExpression -> Infer Type
-resolveTypeExpressionRec fvs TypeExprEmpty = return TUnit
-resolveTypeExpressionRec fvs (TypeExprIdent (Ident name)) = return $ TCon name
-resolveTypeExpressionRec fvs (TypeExprList expr) = do
+resolveTypeSimpleExpressionFVNames :: TypeSimpleExpression -> Infer (Set.Set String)
+resolveTypeSimpleExpressionFVNames TypeSExprEmpty = return $ Set.empty
+resolveTypeSimpleExpressionFVNames (TypeSExprList expr) = resolveTypeExpressionFVNames expr
+resolveTypeSimpleExpressionFVNames (TypeSExprAbstract (TypeIdentAbstract name)) = return $ Set.singleton name
+resolveTypeSimpleExpressionFVNames (TypeSExprIdent _) = return $ Set.empty
+
+resolveTypeExpressionFVNames :: TypeExpression -> Infer (Set.Set String)
+resolveTypeExpressionFVNames (TypeExprSimple simpl) = resolveTypeSimpleExpressionFVNames simpl
+resolveTypeExpressionFVNames (TypeExprIdent (TypeArgJustOne simpl) _) = resolveTypeSimpleExpressionFVNames simpl
+resolveTypeExpressionFVNames (TypeExprIdent (TypeArgJust firstParam restParams) _) = do
+  foldlM (\acc (TypeArgEl el) -> do
+    r <- resolveTypeExpressionFVNames el
+    return $ acc `Set.union` r) Set.empty ([firstParam] ++ restParams)
+resolveTypeExpressionFVNames (TypeFun a b) = do
+  x <- resolveTypeExpressionFVNames a
+  y <- resolveTypeExpressionFVNames b
+  return $ x `Set.union` y
+resolveTypeExpressionFVNames (TypeExprTuple firstElem restElems) = do
+  x <- resolveTypeExpressionFVNames firstElem
+  foldrM (\el acc -> do
+    y <- resolveTypeExpressionFVNames el
+    return $ acc `Set.union` y) x restElems
+
+resolveTypeSimpleExpressionRec :: (Map.Map String TVar) -> TypeSimpleExpression -> Infer Type
+resolveTypeSimpleExpressionRec fvs TypeSExprEmpty = return TUnit
+resolveTypeSimpleExpressionRec fvs (TypeSExprIdent (Ident name)) = return $ TCon name
+resolveTypeSimpleExpressionRec fvs (TypeSExprList expr) = do
   t <- resolveTypeExpressionRec fvs expr
   return $ TList t
+resolveTypeSimpleExpressionRec fvs (TypeSExprAbstract (TypeIdentAbstract name)) = do
+  parsedName <- return $ [ x | x <- name, not (x `elem` "'") ]
+  validFvs <- return $ name `Map.member` fvs
+  if not validFvs then
+    throwError $ Debug $ "Type name " ++ name ++ " is not a valid polymorhic type name"
+  else
+    let (Just tv) = Map.lookup name fvs in
+    return $ TVar tv
+
+resolveTypeExpressionRec :: (Map.Map String TVar) -> TypeExpression -> Infer Type
+resolveTypeExpressionRec fvs (TypeExprSimple simpl) = resolveTypeSimpleExpressionRec fvs simpl
+resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJust firstParam restParams) (Ident name)) = do
+  typeParams <- foldlM (\acc (TypeArgEl expr)-> do
+      t <- resolveTypeExpressionRec fvs expr
+      return $ [t] ++ acc) ([]) ([firstParam] ++ restParams)
+  return $ TDep name typeParams
+resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJustOne param) (Ident name)) = do
+  typeParam <- resolveTypeSimpleExpressionRec fvs param
+  return $ TDep name [typeParam]
 resolveTypeExpressionRec fvs (TypeFun a b) = do
   t1 <- resolveTypeExpressionRec fvs a
   t2 <- resolveTypeExpressionRec fvs b
@@ -301,14 +374,6 @@ resolveTypeExpressionRec fvs (TypeExprTuple fstEl restEls) = do
     t <- resolveTypeExpressionRec fvs expr
     return $ TTuple t acc) (TTuple TUnit TUnit) ([fstEl] ++ restEls)
   return tupleT
-resolveTypeExpressionRec fvs (TypeExprAbstract (TypeIdentAbstract name)) = do
-  parsedName <- return $ [ x | x <- name, not (x `elem` "'") ]
-  validFvs <- return $ name `Map.member` fvs
-  if not validFvs then
-    throwError $ Debug $ "Type name " ++ name ++ " is not a valid polymorhic type name"
-  else
-    let (Just tv) = Map.lookup name fvs in
-    return $ TVar tv
 
 getConstScheme :: Constant -> Scheme
 getConstScheme (CInt _) = Forall [] (TCon "Int")
@@ -559,7 +624,7 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
     fv TUnit = []
     fv (TExport _) = []
     fv (TCon _)   = []
-    fv (TVariant _ a) = fv a
+    fv (TDep _ deps) = foldl (\acc el -> acc ++ (fv el)) [] deps
 
     normtype TUnit = TUnit
     normtype (TExport v) = (TExport v)
@@ -567,7 +632,7 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
     normtype (TTuple a b) = TTuple (normtype a) (normtype b)
     normtype (TList a) = TList (normtype a)
     normtype (TCon a)   = TCon a
-    normtype (TVariant name a) = TVariant name $ normtype a
+    normtype (TDep name deps) = TDep name $ map normtype deps
     normtype (TVar a)   =
       case Prelude.lookup a ord of
         Just x -> TVar x
@@ -602,6 +667,9 @@ unifies :: Type -> Type -> Solve Subst
 unifies t1 t2 | t1 == t2 = return emptySubst
 unifies (TVar v) t = v `bind` t
 unifies t (TVar v) = v `bind` t
+unifies t1@(TDep name1 deps1) t2@(TDep name2 deps2) = do
+  _ <- if not (name1 == name2) then throwError $ UnificationMismatch [t1] [t2] else return 0
+  unifyMany deps1 deps2
 unifies (TList t1) (TList t2) = unifyMany [t1] [t2]
 unifies (TTuple t1 t2) (TTuple t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies (TArr t1 t2) (TArr t3 t4) = unifyMany [t1, t2] [t3, t4]

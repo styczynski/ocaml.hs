@@ -41,6 +41,6 @@ constructRecordType name fields = do
   return (REmpty, newEnv)
 
 execTypeDef :: TypeDef -> Exec (RuntimeValue, Environment)
-execTypeDef (TypeDefVar name variants) = constructVariantType name variants
-execTypeDef (TypeDefVarP name variants) = constructVariantType name variants
-execTypeDef (TypeDefRecord name fields) = constructRecordType name fields
+execTypeDef (TypeDefVar _ name variants) = constructVariantType name variants
+execTypeDef (TypeDefVarP _ name variants) = constructVariantType name variants
+execTypeDef (TypeDefRecord _ name fields) = constructRecordType name fields
