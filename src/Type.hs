@@ -17,6 +17,7 @@ data Type
   | TTuple Type Type
   | TUnit
   | TExport Env
+  | TVariant String Type
   deriving (Show, Eq)
 
 data Scheme = Forall [TVar] Type
@@ -34,6 +35,7 @@ typeToStr vars (TList t) = "[" ++ (typeToStr vars t) ++ "]"
 typeToStr vars (TArr a b) = "(" ++ (typeToStr vars a) ++ ") -> " ++ (typeToStr vars b)
 typeToStr vars (TVar (TV name)) = name ++ "'"
 typeToStr vars (TCon name) = name
+typeToStr vars (TVariant name inner) = name ++ " " ++ (typeToStr vars inner)
 typeToStr vars (TTuple TUnit TUnit) = "()"
 typeToStr vars (TTuple a (TTuple TUnit TUnit)) = typeToStr vars a
 typeToStr vars (TTuple a b) = (typeToStr vars a) ++ " * " ++ (typeToStr vars b)

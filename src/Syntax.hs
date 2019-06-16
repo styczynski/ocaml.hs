@@ -17,6 +17,7 @@ data Expr
   | Skip
   | Check Expr Scheme
   | Export
+  | Typed Scheme
   deriving (Show, Eq)
 
 data Lit

@@ -12,7 +12,7 @@ IGlobalLet.          ImplPhrase          ::= "let" LetRecKeyword SimplePattern [
 IGlobalLetOperator.  ImplPhrase    ::= "let" LetRecKeyword "(" OperatorAny ")" [SimplePattern] "=" ComplexExpression ;
 IDefType.            ImplPhrase          ::= TypeDef ;
 
-token TypeIdentAbstract (["abcdefghijklmnopqrstuvwxyz"] ["'"]) ;
+token TypeIdentAbstract (["'"] ["abcdefghijklmnopqrstuvwxyz"]) ;
 
 TypeExprEmpty.    TypeExpression1     ::= "unit" ;
 TypeExprAbstract.    TypeExpression2     ::= TypeIdentAbstract;
@@ -51,6 +51,7 @@ PatConstr.           SimplePattern2      ::= "(" Ident SimplePattern2 ")" ;
 PatList.             SimplePattern2      ::= PList ;
 PatNone.             SimplePattern2      ::= "_" ;
 PatIdent.            SimplePattern2      ::= Ident ;
+internal PatCheck.            SimplePattern2      ::= Ident ":" TypeExpression;
 PatConst.            SimplePattern2      ::= Constant ;
 PatCons.             SimplePattern1      ::= SimplePattern2 "::" SimplePattern1 ;
 PatTuple.            SimplePattern       ::= PTuple ;
@@ -104,6 +105,7 @@ ESRecord.            SimpleExpression    ::= DataRecord ;
 ESOp.                SimpleExpression    ::= "(" OperatorAny ")" ;
 separator            SimpleExpression    "" ;
 
+internal ECTyped.     ComplexExpression   ::= "%typed" "{" TypeExpression "}" ;
 internal ECExportEnv. ComplexExpression   ::= "%export_env" ;
 ECExpr.              ComplexExpression   ::= Expression ;
 ECTuple.             ComplexExpression   ::= DTuple ;
