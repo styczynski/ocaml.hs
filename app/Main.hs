@@ -18,9 +18,9 @@ runFile v f = putStrLn f >> readFile f >>= runBlock v
 runBlockI :: Verbosity -> String -> IO ()
 runBlockI v s = do
   initEnv0 <- runInitEmpty
-  -- stdlibStr <- readFile "./init/init.ml"
-  -- (Executed _ _ initEnv) <- runWith v stdlibStr initEnv0
-  result <- runWith v s initEnv0
+  stdlibStr <- readFile "./init/init.ml"
+  (Executed _ _ initEnv) <- runWith v stdlibStr initEnv0
+  result <- runWith v s initEnv
   case result of
      FailedTypechecking s -> do
                     hPutStrLn stderr $ show s

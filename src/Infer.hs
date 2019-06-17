@@ -257,17 +257,21 @@ createTypeExpressionAbstractArgConstructor names =
   TypeArgJust identHead identTail
 
 inferVariantOption :: [String] -> Ident -> TDefVariant -> Infer (Env, Type, [Constraint])
-inferVariantOption typeVars typeName (TDefVarSimpl name) = do
+inferVariantOption typeVars typeName (TDefVarSimpl name@(Ident nameStr)) = do
   retType <- return $ TypeExprIdent (createTypeExpressionAbstractArgConstructor typeVars) typeName
-  r <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped retType
+  reverseType <- return $ TypeFun retType retType
+  (r0, _, _) <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent $ Ident $ nameStr ++ "_reverse") [] TypeConstrEmpty $ ECTyped reverseType
+  r <- local (\_ -> r0) $ inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped retType
   return r
-inferVariantOption typeVars typeName (TDefVarCompl name typeExpr) = do
+inferVariantOption typeVars typeName (TDefVarCompl name@(Ident nameStr) typeExpr) = do
   fvsNames <- resolveTypeExpressionFVNames typeExpr
   _ <- if fvsNames `Set.isSubsetOf` (Set.fromList typeVars) then return 0 else throwError $ Debug $ "Invalid abstract variable used in type definition."
   -- [(PatCheck (Ident "x") typeExpr)]
   retType <- return $ TypeExprIdent (createTypeExpressionAbstractArgConstructor typeVars) typeName
   selType <- return $ TypeFun (typeExpr) retType
-  r <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped selType
+  selReverseType <- return $ TypeFun retType (typeExpr)
+  (r0, _, _) <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent $ Ident $ nameStr ++ "_reverse") [] TypeConstrEmpty $ ECTyped selReverseType
+  r <- local (\_ -> r0) $ inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped selType
   return r
 
 typeParamsToList :: TypeParam -> [String]
@@ -406,6 +410,8 @@ simplifyPattern _ PatNone _ expr = return expr
 simplifyPattern _ (PatList (PList [])) letExpr expr = do
   scheme <- resolveTypeExpression (TypeExprSimple $ TypeSExprList $ TypeExprSimple $ TypeSExprAbstract $ TypeIdentAbstract "'a")
   return $ Let (Ident "x") (Check letExpr scheme) expr
+simplifyPattern recMode (PatConstr (Ident nameStr) pat) letExpr expr = do
+  simplifyPattern recMode pat (App (Var $ Ident $ nameStr ++ "_reverse") letExpr) expr
 simplifyPattern recMode (PatList (PList list)) letExpr expr = do
   (simpl, _) <- foldrM (\(PListElement pat) (expr, n) -> do
     patSimpl <- simplifyPattern recMode pat (UniOp OpListNth letExpr) expr
