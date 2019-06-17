@@ -1,4 +1,2 @@
-let rec fn = function
-    | [] -> 0
-    | (h::t) -> 1 + fn t
-in fn [3;4;5]
+let x = [4] in
+let (h::t) = x in h

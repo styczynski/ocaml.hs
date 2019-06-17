@@ -140,22 +140,30 @@ delVariable name env =
     Just (RRef ref) -> delRefStorage ref $ env { variables = (Map.delete name oldVariables) }
     _ -> env { variables = (Map.delete name oldVariables) }
 
-getVariable :: Ident -> Environment -> RuntimeValue
+getVariable :: Ident -> Environment -> Exec (RuntimeValue, Environment)
 getVariable name env =
   let Environment { variables = oldVariables } = env in
-  Map.findWithDefault RInvalid name oldVariables
+  case Map.findWithDefault RInvalid name oldVariables of
+    RInvalid -> return (RInvalid, env)
+    (RRef fr) -> case getRefStorage (RRef fr) env of
+      fn@(RfFun (RFunSig 0) body) -> do
+        callFunctionF fn [] env
+      _ -> return ((RRef fr), env)
+    x -> return (x, env)
 
-pullRefStorage :: Ident -> Environment -> Exec RuntimeRefValue
-pullRefStorage name@(Ident nameStr) env =
-  let v = getVariable name env in case v of
+pullRefStorage :: Ident -> Environment -> Exec (RuntimeRefValue, Environment)
+pullRefStorage name@(Ident nameStr) env = do
+  (v, env2) <- getVariable name env
+  case v of
     RInvalid -> raise $ "Variable " ++ nameStr ++ " does not exist"
-    val -> return $ getRefStorage val env
+    val -> return (getRefStorage val env, env2)
 
-pullVariable :: Ident -> Environment -> Exec RuntimeValue
-pullVariable name@(Ident nameStr) env =
-  let v = getVariable name env in case v of
+pullVariable :: Ident -> Environment -> Exec (RuntimeValue, Environment)
+pullVariable name@(Ident nameStr) env = do
+  (v, env2) <- getVariable name env
+  case v of
     RInvalid -> raise $ "Variable " ++ nameStr ++ " does not exist"
-    val -> return $ val
+    val -> return $ (val, env2)
 
 execFunction :: RFunSig -> RFunBody -> [RuntimeValue] -> Exec (RuntimeValue, Environment)
 execFunction (RFunSig sig) body args = do
@@ -189,10 +197,10 @@ callFunctionR val args env = do
 
 callFunction :: Ident -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
 callFunction name@(Ident nameStr) args env = do
-  def <- pullRefStorage name env
+  (def, env2) <- pullRefStorage name env
   let argsInCount = length args in
     case def of
-      RfFun sig body -> callFunctionF (RfFun sig body) args env
+      RfFun sig body -> callFunctionF (RfFun sig body) args env2
       RfInvalid _ -> raise $ "Reference " ++ nameStr ++ " points nowhere"
 
 newFunction :: RFunSig -> RFunBody -> Environment -> (RuntimeValue, Environment)

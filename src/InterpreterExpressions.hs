@@ -99,13 +99,13 @@ execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   env <- ask
   shadow env $ execExpression expr
-execComplexExpression ast@(ECLet _ pattern [] typeAnnot letExpr expr) = do
-  proceed ast
-  env <- ask
-  (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
-  patEnv <- setPattern pattern letVal letEnv
-  (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
-  return $ (val, valEnv)
+--execComplexExpression ast@(ECLet r pattern [] typeAnnot letExpr expr) = do
+--  proceed ast
+--  env <- ask
+--  (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
+--  patEnv <- setPattern pattern letVal letEnv
+--  (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
+--  return $ (val, valEnv)
 execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExpr expr) = do
   proceed ast
   env <- ask
@@ -118,6 +118,13 @@ execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExp
     patEnv <- setPatterns restPatterns args inEnv
     shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
   (val, valEnv) <- shadow env $ local (createFunction name (Just newRef) (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
+  return $ (val, valEnv)
+execComplexExpression ast@(ECLet r pattern [] typeAnnot letExpr expr) = do
+  proceed ast
+  env <- ask
+  (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
+  patEnv <- setPattern pattern letVal letEnv
+  (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECLetOperator r opAny restPatterns letExpr expr) = do
   proceed ast
@@ -155,8 +162,7 @@ execSimpleExpression (ESOp opName) = execExpression $ ExprOp opName
 execSimpleExpression (ESRecord record) = execRecord record
 execSimpleExpression (ESConst c) = execExpression $ ExprConst c
 execSimpleExpression (ESIdent name) = do
-  val <- ask >>= pullVariable name
-  env <- ask
+  (val, env) <- ask >>= pullVariable name
   return (val, env)
 execSimpleExpression (ESExpr expr) = execComplexExpression expr
 execSimpleExpression (ESList list) = execList list
@@ -179,8 +185,8 @@ execExpression (ExprSemi action1 action2) = do
   return (val, env3)
 execExpression (ExprOp opName) = do
   env <- ask
-  val <- return $ getVariable (Ident $ getOperatorName opName) env
-  return (val, env)
+  (val, env2) <- getVariable (Ident $ getOperatorName opName) env
+  return (val, env2)
 execExpression (ExprRecord record) = execRecord record
 execExpression (ExprCompl expr) = execComplexExpression expr
 execExpression (ExprList list) = execList list
@@ -191,8 +197,7 @@ execExpression (ExprSel expr name) = do
   return (retVal, env)
 execExpression ast@(ExprVar name) = do
   proceedD ast
-  val <- ask >>= pullVariable name
-  env <- ask
+  (val, env) <- ask >>= pullVariable name
   return (val, env)
 execExpression ast@(ExprCall expr1 argFirst argsRest) = do
   proceedD ast
