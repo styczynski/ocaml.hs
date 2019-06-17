@@ -15,7 +15,7 @@ let ( + ) = value_add
 let ( * ) = value_mul
 let ( / ) = value_div
 let ref = value_create_ref
-let set = value_set_ref
+let ( := ) = value_set_ref
 
 let rec length_aux len = function
     [] -> len
