@@ -1,3 +1,9 @@
+(*
+ * Implementation of Levenstein distance along with few other utilities like
+ * custom sorting function.
+ *
+ *)
+
 let rec min a b = if a <= b then a else b
 let rec max a b = if a >= b then a else b
 

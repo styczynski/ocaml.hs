@@ -257,14 +257,16 @@ inferImplementationCore (IRootDef phrases) = do
     i <- local (\_ -> envAcc) $ inferImplementationPhrase phrase
     return i) (env, TUnit, []) phrases
 
-createTypeExpressionAbstractArgConstructor :: [String] -> TypeArg
-createTypeExpressionAbstractArgConstructor names =
+createTypeExpressionAbstractArgConstructor :: Ident -> [String] -> TypeExpression
+createTypeExpressionAbstractArgConstructor typeName [] =
+  TypeExprSimple $ TypeSExprIdent $ typeName
+createTypeExpressionAbstractArgConstructor typeName names@(hNames:tNames) =
   let (identHead:identTail) = map (\e -> TypeArgEl $ TypeExprSimple $ TypeSExprAbstract $ TypeIdentAbstract $ e) names in
-  TypeArgJust identHead identTail
+   TypeExprIdent (TypeArgJust identHead identTail) typeName
 
 inferVariantOption :: [String] -> Ident -> TDefVariant -> Infer (Env, Type, [Constraint])
 inferVariantOption typeVars typeName (TDefVarSimpl name@(Ident nameStr)) = do
-  retType <- return $ TypeExprIdent (createTypeExpressionAbstractArgConstructor typeVars) typeName
+  retType <- return $ createTypeExpressionAbstractArgConstructor typeName typeVars
   reverseType <- return $ TypeFun retType retType
   (r0, _, _) <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent $ Ident $ nameStr ++ "_reverse") [] TypeConstrEmpty $ ECTyped reverseType
   r <- local (\_ -> r0) $ inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent name) [] TypeConstrEmpty $ ECTyped retType
@@ -273,7 +275,7 @@ inferVariantOption typeVars typeName (TDefVarCompl name@(Ident nameStr) typeExpr
   fvsNames <- resolveTypeExpressionFVNames typeExpr
   _ <- if fvsNames `Set.isSubsetOf` (Set.fromList typeVars) then return 0 else throwError $ Debug $ "Invalid abstract variable used in type definition."
   -- [(PatCheck (Ident "x") typeExpr)]
-  retType <- return $ TypeExprIdent (createTypeExpressionAbstractArgConstructor typeVars) typeName
+  retType <- return $ createTypeExpressionAbstractArgConstructor typeName typeVars
   selType <- return $ TypeFun (typeExpr) retType
   selReverseType <- return $ TypeFun retType (typeExpr)
   (r0, _, _) <- inferImplementationPhrase $ IGlobalLet LetRecNo (PatIdent $ Ident $ nameStr ++ "_reverse") [] TypeConstrEmpty $ ECTyped selReverseType

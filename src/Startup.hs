@@ -63,4 +63,6 @@ interpreterStartupFn = do
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_sub" "'a -> 'a -> 'a" valueSub
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_mul" "'a -> 'a -> 'a" valueMul
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_div" "'a -> 'a -> 'a" valueDiv
+  (_,e) <- local (\_ -> e) $ setNativeVariable "string_split" "String -> String -> [String]" valueSplit
+  (_,e) <- local (\_ -> e) $ setNativeVariable "string_join" "String -> String -> String" valueJoin
   return (REmpty, e)

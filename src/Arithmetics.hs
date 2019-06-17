@@ -5,6 +5,8 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Data.Map as Map
+import Data.List.Split
+import Data.Foldable
 
 import AbsSyntax
 import Runtime
@@ -17,15 +19,36 @@ valueStringifyRaw v = valueToStr v
 valueStringify :: RuntimeValue -> Exec String
 valueStringify v = return $ valueStringifyRaw v
 
+valueSplit :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueSplit (RString delim) (RString str) = return $ RList $ map (\e -> RString e) $ splitOn delim str
+valueSplit _ _ = raise $ "Cannot perform split operation on the given types"
+
 valueEq :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueEq (RInt a) (RInt b) = return $ a == b
 valueEq (RString a) (RString b) = return $ a == b
 valueEq (RBool a) (RBool b) = return $ a == b
 valueEq (RRef a) (RRef b) = return $ a == b
+valueEq (RTuple a) (RTuple b) = do
+  lenA <- return $ length a
+  lenB <- return $ length b
+  lenEqCond <- return $ lenA == lenB
+  innerEqCond <- foldrM (\(elA, elB) acc -> do
+    t <- valueEq elA elB
+    return $ t && acc) True $ zip a b
+  return $ lenEqCond && innerEqCond
+valueEq (RList a) (RList b) = do
+  lenA <- return $ length a
+  lenB <- return $ length b
+  lenEqCond <- return $ lenA == lenB
+  innerEqCond <- foldrM (\(elA, elB) acc -> do
+    t <- valueEq elA elB
+    return $ t && acc) True $ zip a b
+  return $ lenEqCond && innerEqCond
+valueEq (RVariant a1 a2 t1) (RVariant b1 b2 t2) = do
+  cmp <- valueEq t1 t2
+  return $ (a1 == b1) && (a2 == b2) && cmp
 valueEq REmpty REmpty = return True
-valueEq x y = do
-  env <- ask
-  raise $ "Could not compare (==) objects of type " ++ (getTypeStr (x, env)) ++ " and " ++ (getTypeStr (y, env))
+valueEq _ _ = return False
 
 valueLt :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueLt (RInt a) (RInt b) = return $ a < b
@@ -109,6 +132,7 @@ valueMod x y = do
   raise $ "Could not calculate modulo (mod) of value: " ++ (getTypeStr (x, env)) ++ " % " ++ (getTypeStr (y, env))
 
 valueJoin :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
+valueJoin (RString a) (RString b) = return $ RString $ a ++ b
 valueJoin (RList a) (RList b) = return $ RList $ a ++ b
 valueJoin x y = do
   env <- ask

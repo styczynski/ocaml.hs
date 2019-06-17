@@ -14,6 +14,8 @@ let ( - ) = value_sub
 let ( + ) = value_add
 let ( * ) = value_mul
 let ( / ) = value_div
+let ( ^ ) = string_join
+let not a = value_not a
 let ( % ) = value_mod
 let ref = value_create_ref
 let ( := ) = value_set_ref
@@ -78,8 +80,32 @@ let rec filteri fn l =
 let rec filter fn l =
     let rec filterer item _ = fn item in filteri filterer l
 
+let rec foldli fn acc l =
+    let rec helper fn acc l index = match l with
+        | [] -> acc
+        | (h::t) -> helper fn (fn acc h index) t (index+1)
+    in helper fn acc l 0
+
+let rec foldl fn acc l =
+    let rec folder a e _ = fn a e in foldli folder acc l
+
+let rec foldri fn acc l =
+    let rec helper fn acc l index = match l with
+        | [] -> acc
+        | (h::t) -> (fn h (helper fn acc t (index+1)) index)
+    in helper fn acc l 0
+
+let rec foldr fn acc l =
+    let rec folder e a _ = fn e a in foldri folder acc l
+
 let rec iteri fn l = ignore (mapi fn l)
 let rec iter fn l = ignore (map fn l)
+
+let rev list =
+    let rec aux acc = function
+        | [] -> acc
+        | h::t -> aux (cons h acc) t in
+    aux [] list
 
 let rec take n l =
     let rec filterer _ ind = ind < n in filteri filterer l
