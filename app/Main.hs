@@ -41,8 +41,7 @@ execContents v = getContents >>= runBlock v
 
 data MainArgs = MainArgs
   { verbosity :: Int
-  , prettify :: Bool
-  , generatehs :: Bool }
+  , file :: String }
 
 parseMainArgs :: Parser MainArgs
 parseMainArgs = MainArgs
@@ -52,14 +51,13 @@ parseMainArgs = MainArgs
     <> showDefault
     <> value 1
     <> metavar "INT" )
-  <*> switch
-    ( long "prettify"
-      <> short 'p'
-      <> help "Do not interpret anything, only prettify the code and print it." )
-  <*> switch
-      ( long "generatehs"
-        <> short 'g'
-        <> help "Do not interpret anything just parse macros and generate Haskell code." )
+  <*> strOption
+      ( long "file"
+      <> short 'f'
+      <> showDefault
+      <> value "stdin"
+      <> help "File to load or stdin to load standard input"
+      <> metavar "FILENAME" )
 
 main :: IO ()
 main = mainEntry =<< execParser opts
@@ -70,8 +68,7 @@ main = mainEntry =<< execParser opts
       <> header "Piotr Styczynski 2019" )
 
 mainEntry :: MainArgs -> IO ()
-mainEntry (MainArgs verbosity prettify generatehs) = case (verbosity, prettify, generatehs) of
---  (v, True, False) -> (prettifyContents v) >>= putStrLn
-  (v, False, False) -> execContents v
---  (v, _, True) -> (generateHSFromContents v) >>= putStrLn
+mainEntry (MainArgs verbosity file) = case (verbosity, file) of
+  (v, "stdin") -> execContents v
+  (v, src) -> runFile v src
 mainEntry _ = return ()

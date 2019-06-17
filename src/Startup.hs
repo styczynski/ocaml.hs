@@ -40,6 +40,7 @@ interpreterStartupFn = do
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" "'a -> 'a -> 'a" valueAdd
   (_,e) <- local (\_ -> e) $ setNativeVariable "string_of_int" "Int -> String" valueStringify
   (_,e) <- local (\_ -> e) $ setNativeVariable "ignore" "'a -> unit" ignore
+  (_,e) <- local (\_ -> e) $ setNativeVariable "get_line" "String -> String" runtimeGetLine
   (_,e) <- local (\_ -> e) $ setNativeVariable "print" "'a -> unit" print_str
   (_,e) <- local (\_ -> e) $ setNativeVariable "printf" "String -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> unit" (VarargFun printf_str)
   (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" "'a -> unit" print_env

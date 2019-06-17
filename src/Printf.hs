@@ -1,9 +1,16 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Printf where
 
+import Control.Monad.Except
+import Control.Monad.State
+import Control.Monad.Identity
+import Control.Monad.Reader
+
 import Runtime
 import Environment
 import Text.Printf
+
+import System.IO
 
 data PrintfArgT = forall a. PrintfArg a => P a
 
@@ -22,3 +29,11 @@ printfUnpack v = P (valueToStr v)
 printfVars :: PrintfType t => String -> [ RuntimeValue ] -> t
 printfVars format vars =
   printfa format $ map printfUnpack vars
+
+runtimeGetLine :: RuntimeValue -> Exec RuntimeValue
+runtimeGetLine (RString greeting) = do
+  lift $ lift $ lift $ printfVars greeting []
+  lift $ lift $ lift $ hFlush stdout
+  val <- lift $ lift $ lift $ getLine
+  lift $ lift $ lift $ hFlush stdout
+  return $ RString val
