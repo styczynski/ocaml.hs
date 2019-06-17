@@ -9,6 +9,7 @@ import Runtime
 import Environment
 import ExportUtils
 import Arithmetics
+import Printf
 
 failwith :: String -> IO ()
 failwith str = error $ "Failed with: " ++ str
@@ -16,8 +17,13 @@ failwith str = error $ "Failed with: " ++ str
 invalid_arg :: String -> IO ()
 invalid_arg str = error $ "Invalid_argument: " ++ str
 
+printf_str :: [RuntimeValue] -> IO ()
+printf_str ((RString format):args) =
+  --putStrLn $ "format: [" ++ (format) ++ "] args: " ++ (show args)
+  printfVars format args
+
 print_str :: RuntimeValue -> IO ()
-print_str v = putStrLn $ valueToStr v
+print_str v = putStr $ valueStringifyRaw v
 
 print_env :: RuntimeValue -> Exec String
 print_env _ = do
@@ -35,6 +41,7 @@ interpreterStartupFn = do
   (_,e) <- local (\_ -> e) $ setNativeVariable "string_of_int" "Int -> String" valueStringify
   (_,e) <- local (\_ -> e) $ setNativeVariable "ignore" "'a -> unit" ignore
   (_,e) <- local (\_ -> e) $ setNativeVariable "print" "'a -> unit" print_str
+  (_,e) <- local (\_ -> e) $ setNativeVariable "printf" "String -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> unit" (VarargFun printf_str)
   (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" "'a -> unit" print_env
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_create_ref" "'a -> 'a Ref" valueCreateRef
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_set_ref" "'a Ref -> 'a -> 'a" valueSetRef

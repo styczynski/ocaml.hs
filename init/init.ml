@@ -14,6 +14,7 @@ let ( - ) = value_sub
 let ( + ) = value_add
 let ( * ) = value_mul
 let ( / ) = value_div
+let ( % ) = value_mod
 let ref = value_create_ref
 let ( := ) = value_set_ref
 

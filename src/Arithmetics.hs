@@ -10,8 +10,12 @@ import AbsSyntax
 import Runtime
 import Environment
 
+valueStringifyRaw :: RuntimeValue -> String
+valueStringifyRaw (RString v) = v
+valueStringifyRaw v = valueToStr v
+
 valueStringify :: RuntimeValue -> Exec String
-valueStringify v = return $ valueToStr v
+valueStringify v = return $ valueStringifyRaw v
 
 valueEq :: RuntimeValue -> RuntimeValue -> Exec Bool
 valueEq (RInt a) (RInt b) = return $ a == b

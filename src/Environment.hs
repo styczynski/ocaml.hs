@@ -176,6 +176,9 @@ execFunction (RFunSig sig) body args = do
   shadow env $ body args
 
 callFunctionF :: RuntimeRefValue -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
+callFunctionF (RfFun (RFunVararg) body) args env =
+  let argsInCount = length args in
+  callFunctionF (RfFun (RFunSig argsInCount) body) args env
 callFunctionF (RfFun (RFunSig argsCount) body) args env =
   let argsInCount = length args in
     if (argsCount > 0) && (argsInCount < argsCount) then

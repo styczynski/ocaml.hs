@@ -9,6 +9,7 @@ import Control.Monad.Reader
 import Control.Exception
 import System.IO.Unsafe
 import Data.Typeable
+import Data.Foldable
 import qualified Data.Map as Map
 
 import Runtime
@@ -41,6 +42,18 @@ annotateGlobalVariableTypeEnv env state name typeExpr = let ts = myLexer typeExp
         (Right (scheme, newState)) ->
           ( (extend env ((Ident name), scheme)), (newState) )
 
+data (UnpackableValue a, PackableValue b) => VarargFun a b = VarargFun ([a] -> b)
+instance (UnpackableValue a, PackableValue b) => PackableValue (VarargFun a b) where
+  packVal (VarargFun innerFn) = do
+    env <- ask
+    body <- return $ \args -> do
+      bodyEnv <- ask
+      (unpackedArgs, unpackedEnv) <- foldrM (\el (vals, env) -> do
+        (val1, env1) <- local (\_ -> env) $ unpackVal el
+        return $ ([val1] ++ vals, env1)) ([], bodyEnv) args
+      r <- return $ innerFn unpackedArgs
+      shadow bodyEnv $ local (\_ -> unpackedEnv) $ packVal r
+    shadow env $ return $ newFunction (RFunVararg) body env
 
 --instance (PackableValue a) => PackableValue [a] where
 --  packVal vals = do

@@ -16,6 +16,18 @@ let of_list l =
   let rec loopy rel ypos = iteri (loopx ypos) rel in
   (iteri loopy l) ~ b
 
+let sudoku_print b =
+    for y = 0 to 8 do
+        (for x = 0 to 8 do
+          printf (if x == 0 then "%s" else if x % 3 == 0 then " | %s"
+                  else "  %s")  (get_as_string b (x, y))
+        done) ~
+        (if y < 8 then
+          if y % 3 == 2 then printf "\n--------+---------+--------\n"
+          else printf "\n        |         |        \n"
+        else printf "\n")
+    done
+
 ;;
 
 let sudoku_in = [[0; 0; 4;  8; 0; 0;  0; 1; 7];
@@ -29,4 +41,4 @@ let sudoku_in = [[0; 0; 4;  8; 0; 0;  0; 1; 7];
               [2; 4; 0;  0; 0; 1;  5; 0; 0]] in
 
 let sudoku = of_list sudoku_in in
-array_print sudoku
+sudoku_print sudoku

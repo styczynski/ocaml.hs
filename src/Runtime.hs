@@ -41,7 +41,7 @@ data ExecutionResult = FailedParse String | FailedExecution String | Executed Ru
 type Exec = StateT (InterpreterState) (ReaderT (Environment) (ExceptT String IO))
 
 type RFunBody = [RuntimeValue] -> Exec (RuntimeValue, Environment)
-data RFunSig = RFunSig Int deriving (Show, Eq)
+data RFunSig = RFunVararg | RFunSig Int deriving (Show, Eq)
 
 data RuntimeRefValue
   = RfFun RFunSig RFunBody
@@ -164,6 +164,8 @@ typeToStr (TFunEx a b) = (typeToStr a) ++ " -> " ++ (typeToStr b)
 typeToStr TListEmpty = "[]"
 typeToStr (TList instype) = "[" ++ (typeToStr instype) ++ "]"
 typeToStr (TFun (RFunSig argsCount)) = "function<" ++ (show argsCount) ++ ">"
+typeToStr (TFun (RFunVararg)) = "function<...>"
+
 
 getTypeStr :: (RuntimeValue, Environment) -> String
 getTypeStr = typeToStr . getType
