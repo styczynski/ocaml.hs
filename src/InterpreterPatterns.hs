@@ -9,10 +9,21 @@ import Data.Foldable
 
 import Runtime
 import Environment
+import Arithmetics
 import AbsSyntax
 
+constToVal :: Constant -> RuntimeValue
+constToVal (CInt val) = RInt val
+constToVal (CString val) = RString val
+constToVal (CBool CBTrue) = RBool True
+constToVal (CBool CBFalse) = RBool False
+
 getPatternMapping :: SimplePattern -> RuntimeValue -> Exec (Map.Map Ident RuntimeValue)
-getPatternMapping (PatConst _) _ = return $ Map.empty
+getPatternMapping (PatConst c) v = do
+  r <- return $ constToVal c
+  isEq <- valueEq r v
+  _ <- if isEq then return REmpty else raise $ "Matching failed. Value is not equal to the constant"
+  return Map.empty
 getPatternMapping (PatCons hPat tPat) (RList (h:t)) = do
    e1 <- getPatternMapping hPat h
    e2 <- getPatternMapping tPat $ RList t

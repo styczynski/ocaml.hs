@@ -223,11 +223,10 @@ opsUni (OpTupleNth index len) = do
     return $ ((TTuple tv tup), [tv] ++ tvs)) ((TTuple TUnit TUnit), []) (replicate len 0)
   return $ (tupleType) `TArr` (elsTypes !! index)
 
-withTypeAnnot :: TypeConstraint -> Expr -> Infer Expr
+withTypeAnnot :: TypeConstraint -> ComplexExpression -> Infer ComplexExpression
 withTypeAnnot TypeConstrEmpty e = return e
 withTypeAnnot (TypeConstrDef texpr) e = do
-  s <- resolveTypeExpression texpr
-  return $ Check e s
+  return $ ECChecked e texpr
 
 isRec :: LetRecKeyword -> Bool
 isRec LetRecYes = True
@@ -464,19 +463,23 @@ simplifyComplexExpression (ECLetOperator recK opName patArgs letExpr expr) = do
   --Ident $ getOperatorName opName
   simplifyComplexExpression (ECLet recK (PatIdent $ Ident $ getOperatorName opName) patArgs TypeConstrEmpty letExpr expr)
 simplifyComplexExpression (ECLet recK pat [] typeAnnot letExpr expr) = do
+  expr <- withTypeAnnot typeAnnot expr
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
   r <- simplifyPattern (isRec recK) pat letSimpl exprSimpl
-  r <- withTypeAnnot typeAnnot r
   return r
+simplifyComplexExpression (ECChecked expr typeExpr) = do
+  simpl <- simplifyComplexExpression expr
+  s <- resolveTypeExpression typeExpr
+  return $ Check simpl s
 simplifyComplexExpression (ECLet recK pat argsPats typeAnnot letExpr expr) = do
+  expr <- withTypeAnnot typeAnnot expr
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
   letSimplAcc <- foldrM (\pat expr -> do
     s <- simplifyPattern False pat (Var $ Ident "x") expr
     return $ Lam (Ident "x") s) letSimpl argsPats
   r <- simplifyPattern (isRec recK) pat letSimplAcc exprSimpl
-  r <- withTypeAnnot typeAnnot r
   return r
 
 simplifyTuple :: DTuple -> Infer Expr

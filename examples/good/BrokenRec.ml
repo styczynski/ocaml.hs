@@ -1,2 +1,3 @@
-let x = [4] in
-let (h::t) = x in h
+match 5 with
+    | 5 -> 0
+    | x -> x

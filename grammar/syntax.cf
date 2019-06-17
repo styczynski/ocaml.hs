@@ -118,6 +118,7 @@ ESRecord.            SimpleExpression    ::= DataRecord ;
 ESOp.                SimpleExpression    ::= "(" OperatorAny ")" ;
 separator            SimpleExpression    "" ;
 
+internal ECChecked.  ComplexExpression    ::= "%check" "{" ComplexExpression "}" ":" "{" TypeExpression "}" ;
 internal ECTyped.     ComplexExpression   ::= "%typed" "{" TypeExpression "}" ;
 internal ECExportEnv. ComplexExpression   ::= "%export_env" ;
 ECExpr.              ComplexExpression   ::= Expression ;
