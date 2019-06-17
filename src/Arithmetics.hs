@@ -134,7 +134,8 @@ valueSetRef :: RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
 valueSetRef (RRef fr) v = do
   env <- ask
   env2 <- return $ setRefStorage fr (RfVal v) env
-  return (v, env2)
+  (RfVal vv) <- return $ getRefStorage (RRef fr) env2
+  return (vv, env2)
 
 valueExportEnv :: RuntimeValue -> Exec (RuntimeValue, Environment)
 valueExportEnv _ = do

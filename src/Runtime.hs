@@ -179,12 +179,22 @@ runtimePrint :: String -> Exec ()
 runtimePrint str = do
   lift $ lift $ lift $ putStrLn str
 
+refToStr :: RuntimeRefValue -> String
+refToStr (RfFun _ _) = "<function>"
+refToStr (RfInvalid v) = "<invalid: " ++ (valueToStr v) ++ ">"
+refToStr (RfVal v) = "<value: " ++ (valueToStr v) ++ ">"
+
 envToStr :: Environment -> String
+--envToStr env =
+--  let Environment { variables = variables } = env in
+--    " { " ++ (Map.foldlWithKey (\acc (Ident name) val ->
+--       if (acc == "") then name ++ "=" ++ (valueToStr val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr val)
+--     ) "" variables) ++ " }"
 envToStr env =
-  let Environment { variables = variables } = env in
-    " { " ++ (Map.foldlWithKey (\acc (Ident name) val ->
-       if (acc == "") then name ++ "=" ++ (valueToStr val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr val)
-     ) "" variables) ++ " }"
+  let Environment { refs = refs, variables = variables } = env in
+    let strRefs = (" { " ++ (Map.foldlWithKey (\acc id val -> if (acc == "") then (show id) ++ "=" ++ (refToStr val) else acc ++ "\n " ++ (show id) ++ "=" ++ (refToStr val)) "" refs) ++ " }") in
+    let strVals = (" { " ++ (Map.foldlWithKey (\acc (Ident name) val -> if (acc == "") then name ++ "=" ++ (valueToStr val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr val)) "" variables) ++ " }") in
+      strRefs ++ strVals
 
 debug ast = do
   env <- ask
@@ -240,7 +250,7 @@ valueToStr (RTuple vals) = "(" ++ (foldl (\acc el ->
 valueToStr (RList vals) = "[" ++ (foldl (\acc el ->
     if (acc == "") then valueToStr el else acc ++ "; " ++ (valueToStr el)
   ) "" vals) ++ "]"
-valueToStr (RRef _) = "<ref>"
+valueToStr (RRef fr) = "<ref: " ++ (show fr) ++ ">"
 valueToStr (RInvalid) = "Invalid"
 
 unpackBool :: (RuntimeValue, Environment) -> Exec (Bool, Environment)

@@ -26,7 +26,7 @@ data Lit
   | LString String
   deriving (Show, Eq)
 
-data Binop = OpCustom String | OpCons | OpTupleCons
+data Binop = OpSemicolon | OpSame | OpCustom String | OpCons | OpTupleCons
   deriving (Eq, Ord, Show)
 
 data Uniop = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int | OpListNth

@@ -99,13 +99,13 @@ execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   env <- ask
   shadow env $ execExpression expr
---execComplexExpression ast@(ECLet r pattern [] typeAnnot letExpr expr) = do
---  proceed ast
---  env <- ask
---  (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
---  patEnv <- setPattern pattern letVal letEnv
---  (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
---  return $ (val, valEnv)
+execComplexExpression ast@(ECLet LetRecNo pattern [] typeAnnot letExpr expr) = do
+  proceed ast
+  env <- ask
+  (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
+  patEnv <- setPattern pattern letVal letEnv
+  (val, valEnv) <- shadow env $ local (\_ -> patEnv) $ (execComplexExpression expr)
+  return $ (val, valEnv)
 execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExpr expr) = do
   proceed ast
   env <- ask
@@ -116,7 +116,8 @@ execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExp
     inEnv <- return $ shadowEnv env inEnv
     inEnv <- return $ if isRec r then importEnvRef newRef name inEnv env else inEnv
     patEnv <- setPatterns restPatterns args inEnv
-    shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
+    (eVal, eEnv) <- shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
+    return (eVal, eEnv)
   (val, valEnv) <- shadow env $ local (createFunction name (Just newRef) (RFunSig argsCount) fnBody) $ (execComplexExpression expr)
   return $ (val, valEnv)
 execComplexExpression ast@(ECLet r pattern [] typeAnnot letExpr expr) = do
@@ -207,7 +208,7 @@ execExpression ast@(ExprCall expr1 argFirst argsRest) = do
   (args, argsEnv) <- shadow env $ local (\_ -> fnEnv) $ foldM (\(res, env) exp -> do
     (r, newEnv) <- shadow env $ local (\_ -> env) $ execSimpleExpression exp
     return ((res ++ [r]), newEnv)) ([], fnEnv) argsExprs
-  shadow env $ callFunctionR fn args argsEnv
+  shadow env $ local (\_ -> argsEnv) $ callFunctionR fn args argsEnv
 execExpression ast@(ExprConst (CInt value)) = do
   proceedD ast
   env <- ask

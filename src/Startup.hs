@@ -30,7 +30,7 @@ interpreterStartupFn = do
   e <- ask
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" "'a -> 'a -> 'a" valueAdd
   (_,e) <- local (\_ -> e) $ setNativeVariable "print" "'a -> unit" print_str
---  (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" print_env
+  (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" "'a -> unit" print_env
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_create_ref" "'a -> 'a Ref" valueCreateRef
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_set_ref" "'a Ref -> 'a -> 'a" valueSetRef
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_get_ref" "'a Ref -> 'a" valueGetRef

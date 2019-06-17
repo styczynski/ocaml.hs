@@ -147,7 +147,7 @@ getVariable name env =
     RInvalid -> return (RInvalid, env)
     (RRef fr) -> case getRefStorage (RRef fr) env of
       fn@(RfFun (RFunSig 0) body) -> do
-        callFunctionF fn [] env
+        local (\_ -> env) $ callFunctionF fn [] env
       _ -> return ((RRef fr), env)
     x -> return (x, env)
 
@@ -175,7 +175,7 @@ callFunctionF (RfFun (RFunSig argsCount) body) args env =
   let argsInCount = length args in
     if (argsCount > 0) && (argsInCount < argsCount) then
       let fnBody = \paramArgs -> execFunction (RFunSig argsCount) body (args ++ paramArgs) in
-        shadow env $ return $ newFunction (RFunSig (argsCount - argsInCount)) fnBody env
+        shadow env $ local (\_ -> env) $ return $ newFunction (RFunSig (argsCount - argsInCount)) fnBody env
     else
       if argsInCount > argsCount then do
         (val, valEnv) <- execFunction (RFunSig argsCount) body (take argsCount args)
@@ -183,7 +183,7 @@ callFunctionF (RfFun (RFunSig argsCount) body) args env =
         (val, valEnv) <- local (\_ -> valEnv) $ callFunctionF fnCont (drop (argsInCount - argsCount) args) valEnv
         return (val, valEnv)
       else do
-        (val, valEnv) <- shadow env $ execFunction (RFunSig argsCount) body args
+        (val, valEnv) <- shadow env $ local (\_ -> env) $ execFunction (RFunSig argsCount) body args
         return (val, valEnv)
 callFunctionF _ _ _ = raise $ "Could not call non-functional value"
 

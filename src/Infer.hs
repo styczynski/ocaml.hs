@@ -191,6 +191,13 @@ generalize env t  = Forall as t
     where as = Set.toList $ ftv t `Set.difference` ftv env
 
 ops :: Binop -> Infer Type
+ops OpSemicolon = do
+  tv1 <- fresh
+  tv2 <- fresh
+  return $ tv1 `TArr` (tv2 `TArr` tv2)
+ops OpSame = do
+  tv <- fresh
+  return $ tv `TArr` (tv `TArr` tv)
 ops OpCons = do
   tv <- fresh
   return $ (tv) `TArr` ((TList tv) `TArr` (TList tv) )
@@ -440,6 +447,23 @@ simplifyComplexExpression :: ComplexExpression -> Infer Expr
 simplifyComplexExpression (ECTyped typeExpr) = do
   scheme <- resolveTypeExpression typeExpr
   return $ Typed scheme
+simplifyComplexExpression (ECFor varName initExpr dir endExpr bodyExpr) = do
+  forCheckType <- return $ Forall [] $ (TCon "Int")
+  initSimpl <- simplifyComplexExpression initExpr
+  endSimpl <- simplifyComplexExpression endExpr
+  initSimplCheck <- return $ Check initSimpl forCheckType
+  endSimplCheck <- return $ Check endSimpl forCheckType
+  bodySimpl <- simplifyComplexExpression bodyExpr
+  return $ Let varName (Op OpSame initSimplCheck endSimplCheck) bodySimpl
+simplifyComplexExpression (ECWhile condExpr bodyExpr) = do
+  whileCheckType <- return $ Forall [] $ (TCon "Bool")
+  condSimpl <- simplifyComplexExpression condExpr
+  bodySimpl <- simplifyComplexExpression bodyExpr
+  condSimplCheck <- return $ Check condSimpl whileCheckType
+  return $ Let (Ident "x") condSimplCheck bodySimpl
+  --bodyTypeExpr <- return $ TypeExprSimple $ TypeSExprEmpty
+  --simplifyComplexExpression $ ECLet LetRecNo (PatIdent $ Ident "x") [] (TypeConstrDef bodyTypeExpr) (ECLet LetRecNo (PatIdent $ varName) [] TypeConstrEmpty initExpr bodyExpr) $ ECExpr $ ExprVar $ Ident "x"
+
 simplifyComplexExpression ECExportEnv = return Export
 simplifyComplexExpression (ECTuple tuple) = simplifyTuple tuple
 simplifyComplexExpression (ECExpr expr) = simplifyExpression expr
@@ -497,6 +521,10 @@ simplifyList (DList elems) = do
   return $ elemsSimpl
 
 simplifyExpression :: Expression -> Infer Expr
+simplifyExpression (ExprSemi expA expB) = do
+  simplA <- simplifyExpression expA
+  simplB <- simplifyExpression expB
+  return $ Op OpSemicolon simplA simplB
 simplifyExpression (ExprOp opName) = do
   return $ Var $ Ident $ getOperatorName opName
 simplifyExpression (Expr1 expA (OperatorA name) expB) = do
