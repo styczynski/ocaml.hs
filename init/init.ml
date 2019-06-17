@@ -55,7 +55,7 @@ let rec append l1 l2 =
     [] -> l2
   | a :: l -> cons a (append l l2)
 
-let length = length_aux 0
+let rec length = length_aux 0
 
 let ( @@ ) = append
 
