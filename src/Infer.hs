@@ -214,6 +214,9 @@ opsUni OpEmptyList = do
 opsUni OpEmptyTuple = do
   tv <- fresh
   return $ tv `TArr` (TTuple TUnit TUnit)
+opsUni OpListNth = do
+  tv <- fresh
+  return $ (TList tv) `TArr` tv
 opsUni (OpTupleNth index len) = do
   (tupleType, elsTypes) <- foldrM (\_ (tup, tvs) -> do
     tv <- fresh
@@ -400,6 +403,14 @@ resolveTypeExpression exp = do
 
 simplifyPattern :: Bool -> SimplePattern -> Expr -> Expr -> Infer Expr
 simplifyPattern _ PatNone _ expr = return expr
+simplifyPattern _ (PatList (PList [])) letExpr expr = do
+  scheme <- resolveTypeExpression (TypeExprSimple $ TypeSExprList $ TypeExprSimple $ TypeSExprAbstract $ TypeIdentAbstract "'a")
+  return $ Let (Ident "x") (Check letExpr scheme) expr
+simplifyPattern recMode (PatList (PList list)) letExpr expr = do
+  (simpl, _) <- foldrM (\(PListElement pat) (expr, n) -> do
+    patSimpl <- simplifyPattern recMode pat (UniOp OpListNth letExpr) expr
+    return (patSimpl, n+1)) (expr, 0) list
+  return simpl
 simplifyPattern _ (PatConst const) letExpr expr =
   return $ Let (Ident "x") (Check letExpr $ getConstScheme const) expr
 simplifyPattern recMode (PatCheck name typeExpr) letExpr expr = do

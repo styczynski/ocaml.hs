@@ -29,7 +29,7 @@ data Lit
 data Binop = OpCustom String | OpCons | OpTupleCons
   deriving (Eq, Ord, Show)
 
-data Uniop = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int
+data Uniop = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int | OpListNth
   deriving (Eq, Ord, Show)
 
 data Program = Program [Decl] Expr deriving Eq
