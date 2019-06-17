@@ -202,22 +202,27 @@ debug ast = do
   env <- ask
   runtimePrint $ "Code: " ++ (treeToStr ast) ++ ", env: " ++ (envToStr env)
 
-proceedD :: (Show a, Print a) => a -> Exec ()
-proceedD a = do
-  --debug a
-  state <- get
-  put $ let InterpreterState { trace = trace } = state in state { lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)] ++ trace) }
+--proceedD :: (Show a, Print a) => a -> Exec ()
+--proceedD a = do
+--  --debug a
+--  state <- get
+--  put $ let InterpreterState { trace = trace } = state in state { lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)] ++ trace) }
 
 proceed :: (Show a, Print a) => a -> Exec ()
 proceed a = do
   --debug a
   state <- get
-  put $ let InterpreterState { trace = trace } = state in state { lastNode = (treeToStr a), lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)])  }
+  put $ let InterpreterState { trace = trace } = state in state { lastNode = (treeToStr a), lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)] ++ trace)  }
 
-proceedT :: (Show a, Print a) => a -> (Exec (RuntimeValue, Environment)) -> (Exec (RuntimeValue, Environment))
-proceedT a val = do
-  proceed a
-  val
+unproceed :: Exec ()
+unproceed = do
+  state <- get
+  put $ let InterpreterState { trace = trace } = state in state { trace = (drop 1 trace)  }
+
+--proceedT :: (Show a, Print a) => a -> (Exec (RuntimeValue, Environment)) -> (Exec (RuntimeValue, Environment))
+--proceedT a val = do
+--  proceed a
+--  val
 
 raise :: String -> Exec a
 raise errorText = do

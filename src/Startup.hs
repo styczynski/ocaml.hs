@@ -44,7 +44,7 @@ interpreterStartupFn = do
   (_,e) <- local (\_ -> e) $ setNativeVariable "printf" "String -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> unit" (VarargFun printf_str)
   (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" "'a -> unit" print_env
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_create_ref" "'a -> 'a Ref" valueCreateRef
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_set_ref" "'a Ref -> 'a -> 'a" valueSetRef
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_set_ref" "'a Ref -> 'a -> unit" valueSetRef
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_get_ref" "'a Ref -> 'a" valueGetRef
   (_,e) <- local (\_ -> e) $ setNativeVariable "failwith" "String -> 'a" failwith
   (_,e) <- local (\_ -> e) $ setNativeVariable "invalid_arg" "String -> 'a" invalid_arg

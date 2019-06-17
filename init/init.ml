@@ -100,11 +100,11 @@ let array_from_list l = array (ref l)
 let array_get l index = match l with
     | (array l) -> nth (!l) index
 
-let array_copy = fun l -> array_from_list (array_to_list l)
+let array_copy l = array_from_list (array_to_list l)
 
 let array_make count v = array_from_list (repeat v count)
 
 let array_set l index v = match l with
-    | (array l) -> l := (set_nth (!l) index v)
+    | (array l) -> ignore (l := (set_nth (!l) index v))
 
 let rec array_print = fun l -> print (array_to_list l)

@@ -134,8 +134,9 @@ valueCreateRef v = do
 valueGetRef :: RuntimeValue -> Exec (RuntimeValue, Environment)
 valueGetRef p = do
   env <- ask
-  (RfVal v) <- return $ getRefStorage p env
-  return (v, env)
+  case  getRefStorage p env of
+    (RfVal v) -> return (v, env)
+    _ -> raise $ "Missing reffered object. There's probably bug in a code."
 
 valueSetRef :: RuntimeValue -> RuntimeValue -> Exec (RuntimeValue, Environment)
 valueSetRef (RRef fr) v = do
