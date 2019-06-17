@@ -1,3 +1,0 @@
-type Test = Nope1 | Nope2 of Int * Test
-;;
-let ii = Nope2 (6, Nope2 (5, Nope1)) in ii

@@ -1,1 +1,0 @@
-let fn x : int -> a' = x in fn ;;

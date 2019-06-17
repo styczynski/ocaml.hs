@@ -1,4 +1,0 @@
-let x = 45
-let fn x = value_add x 1
-;;
-fn
