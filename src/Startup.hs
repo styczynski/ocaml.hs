@@ -25,10 +25,15 @@ print_env _ = do
   runtimePrint $ "[Environment]: " ++ (envToStr env)
   return $ "Done."
 
+ignore :: RuntimeValue -> RuntimeValue
+ignore _ = REmpty
+
 interpreterStartupFn :: Exec (RuntimeValue, Environment)
 interpreterStartupFn = do
   e <- ask
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" "'a -> 'a -> 'a" valueAdd
+  (_,e) <- local (\_ -> e) $ setNativeVariable "string_of_int" "Int -> String" valueStringify
+  (_,e) <- local (\_ -> e) $ setNativeVariable "ignore" "'a -> unit" ignore
   (_,e) <- local (\_ -> e) $ setNativeVariable "print" "'a -> unit" print_str
   (_,e) <- local (\_ -> e) $ setNativeVariable "print_env" "'a -> unit" print_env
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_create_ref" "'a -> 'a Ref" valueCreateRef

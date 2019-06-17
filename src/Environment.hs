@@ -64,6 +64,11 @@ shadowM envA v = do
   envB <- v
   return $ shadowEnv envA envB
 
+shadowE :: Environment -> Exec Environment -> Exec Environment
+shadowE envA v = do
+  (envB) <- v
+  return (shadowEnv envA envB)
+
 shadow :: Environment -> Exec (a, Environment) -> Exec (a, Environment)
 shadow envA v = do
   (val, envB) <- v
