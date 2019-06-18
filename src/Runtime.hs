@@ -26,6 +26,7 @@ data Environment = Environment {
   refs            :: (Map.Map Integer RuntimeRefValue),
   defs            :: (Map.Map Ident RuntimeDef),
   nextFreeRef     :: Integer,
+  nextFreeNameId  :: Integer,
   itypes           :: Env,
   stypes           :: InferState
 }

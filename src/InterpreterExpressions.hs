@@ -103,8 +103,9 @@ execComplexExpression ast@(ECMatch expr _ clauses) = do
 execComplexExpression ast@(ECFunction bPip matchClauses) = do
   proceed ast
   env <- ask
+  (id, env) <- return $ allocIdent env
   unproceed
-  shadow env $ execComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprVar (Ident "x")) bPip matchClauses
+  shadow env $ execComplexExpression $ ECFun (PatIdent id) [] $ ECMatch (ECExpr $ ExprVar id) bPip matchClauses
 execComplexExpression ast@(ECExpr expr) = do
   proceed ast
   env <- ask
@@ -144,7 +145,8 @@ execComplexExpression ast@(ECLet r pattern [] typeAnnot letExpr expr) = do
 execComplexExpression ast@(ECLetOperator r opAny restPatterns letExpr expr) = do
   proceed ast
   env <- ask
-  (valFnRef, env2) <- shadow env $ execComplexExpression (ECLet r (PatIdent $ Ident "_OP_") restPatterns TypeConstrEmpty letExpr (ECExpr $ ExprVar $ Ident "_OP_"))
+  (id, env) <- return $ allocIdent env
+  (valFnRef, env2) <- shadow env $ execComplexExpression (ECLet r (PatIdent id) restPatterns TypeConstrEmpty letExpr (ECExpr $ ExprVar id))
   (RfFun fnSig fnBody) <- return $ getRefStorage valFnRef env2
   (_, defEnv) <- local (\_ -> env2) $ createOperator opAny fnSig fnBody
   (val, valEnv) <- shadow env $ local (\_ -> defEnv) $ (execComplexExpression expr)

@@ -16,6 +16,7 @@ emptyEnv = Environment {
   refs = Map.empty,
   defs = Map.empty,
   nextFreeRef = 0,
+  nextFreeNameId = 0,
   itypes = empty,
   stypes = initInfer
 }
@@ -56,8 +57,8 @@ getTypesEnv env =
 
 shadowEnv :: Environment -> Environment -> Environment
 shadowEnv envA envB =
-  let Environment { nextFreeRef = nextFreeRef, refs = refs } = envB in
-  envA { nextFreeRef = nextFreeRef, refs = refs }
+  let Environment { nextFreeRef = nextFreeRef, refs = refs, nextFreeNameId = nextFreeNameId } = envB in
+  envA { nextFreeRef = nextFreeRef, refs = refs, nextFreeNameId = nextFreeNameId }
 
 shadowM :: Environment -> Exec Environment -> Exec Environment
 shadowM envA v = do
@@ -76,6 +77,11 @@ shadow envA v = do
 
 (->>) :: Environment -> Exec (a, Environment) -> Exec (a, Environment)
 (->>) = shadow
+
+allocIdent :: Environment -> (Ident, Environment)
+allocIdent env =
+  let Environment { nextFreeNameId = nextFreeNameId } = env in
+  ((Ident $ "__@$internal_variable__" ++ (show nextFreeNameId) ++ "_"), (env { nextFreeNameId = nextFreeNameId + 1 }))
 
 allocRef :: Environment -> (Integer, Environment)
 allocRef env =

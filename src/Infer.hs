@@ -174,6 +174,12 @@ lookupEnv x = do
 letters :: [String]
 letters = [1..] >>= flip replicateM ['a'..'z']
 
+freshIdent :: Infer Ident
+freshIdent = do
+    s <- get
+    put s{count = count s + 1}
+    return $ Ident $ "__@$internal_variable__" ++ (letters !! count s) ++ "_"
+
 fresh :: Infer Type
 fresh = do
     s <- get
@@ -417,7 +423,8 @@ simplifyPattern :: Bool -> SimplePattern -> Expr -> Expr -> Infer Expr
 simplifyPattern _ PatNone _ expr = return expr
 simplifyPattern _ (PatList (PList [])) letExpr expr = do
   scheme <- resolveTypeExpression (TypeExprSimple $ TypeSExprList $ TypeExprSimple $ TypeSExprAbstract $ TypeIdentAbstract "'a")
-  return $ Let (Ident "x") (Check letExpr scheme) expr
+  id <- freshIdent
+  return $ Let id (Check letExpr scheme) expr
 simplifyPattern recMode (PatConstr (Ident nameStr) pat) letExpr expr = do
   simplifyPattern recMode pat (App (Var $ Ident $ nameStr ++ "_reverse") letExpr) expr
 simplifyPattern recMode (PatList (PList list)) letExpr expr = do
@@ -425,8 +432,9 @@ simplifyPattern recMode (PatList (PList list)) letExpr expr = do
     patSimpl <- simplifyPattern recMode pat (UniOp OpListNth letExpr) expr
     return (patSimpl, n+1)) (expr, 0) list
   return simpl
-simplifyPattern _ (PatConst const) letExpr expr =
-  return $ Let (Ident "x") (Check letExpr $ getConstScheme const) expr
+simplifyPattern _ (PatConst const) letExpr expr = do
+  id <- freshIdent
+  return $ Let id (Check letExpr $ getConstScheme const) expr
 simplifyPattern recMode (PatCheck name typeExpr) letExpr expr = do
   scheme <- resolveTypeExpression typeExpr
   simplifyPattern recMode (PatIdent name) (Check letExpr scheme) expr
@@ -462,7 +470,8 @@ simplifyComplexExpression (ECWhile condExpr bodyExpr) = do
   condSimpl <- simplifyComplexExpression condExpr
   bodySimpl <- simplifyComplexExpression bodyExpr
   condSimplCheck <- return $ Check condSimpl whileCheckType
-  return $ Let (Ident "x") condSimplCheck bodySimpl
+  id <- freshIdent
+  return $ Let id condSimplCheck bodySimpl
   --bodyTypeExpr <- return $ TypeExprSimple $ TypeSExprEmpty
   --simplifyComplexExpression $ ECLet LetRecNo (PatIdent $ Ident "x") [] (TypeConstrDef bodyTypeExpr) (ECLet LetRecNo (PatIdent $ varName) [] TypeConstrEmpty initExpr bodyExpr) $ ECExpr $ ExprVar $ Ident "x"
 
@@ -482,9 +491,11 @@ simplifyComplexExpression (ECMatch expr _ clauses) = do
   return $ UniOp OpHead r
 
 simplifyComplexExpression (ECFunction bPip matchClauses) = do
-  simplifyComplexExpression $ ECFun (PatIdent (Ident "x")) [] $ ECMatch (ECExpr $ ExprVar (Ident "x")) bPip matchClauses
+  id <- freshIdent
+  simplifyComplexExpression $ ECFun (PatIdent id) [] $ ECMatch (ECExpr $ ExprVar id) bPip matchClauses
 simplifyComplexExpression (ECFun pat argsPat expr) = do
-  simplifyComplexExpression (ECLet LetRecNo (PatIdent $ Ident "x") ([pat] ++ argsPat) TypeConstrEmpty expr (ECExpr $ ExprVar $ Ident "x"))
+  id <- freshIdent
+  simplifyComplexExpression (ECLet LetRecNo (PatIdent id) ([pat] ++ argsPat) TypeConstrEmpty expr (ECExpr $ ExprVar id))
 simplifyComplexExpression (ECLetOperator recK opName patArgs letExpr expr) = do
   --Ident $ getOperatorName opName
   simplifyComplexExpression (ECLet recK (PatIdent $ Ident $ getOperatorName opName) patArgs TypeConstrEmpty letExpr expr)
@@ -503,8 +514,9 @@ simplifyComplexExpression (ECLet recK pat argsPats typeAnnot letExpr expr) = do
   letSimpl <- simplifyComplexExpression letExpr
   exprSimpl <- simplifyComplexExpression expr
   letSimplAcc <- foldrM (\pat expr -> do
-    s <- simplifyPattern False pat (Var $ Ident "x") expr
-    return $ Lam (Ident "x") s) letSimpl argsPats
+    id <- freshIdent
+    s <- simplifyPattern False pat (Var $ id) expr
+    return $ Lam id s) letSimpl argsPats
   r <- simplifyPattern (isRec recK) pat letSimplAcc exprSimpl
   return r
 
