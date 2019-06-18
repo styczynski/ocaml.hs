@@ -1,1 +1,1 @@
-let lol : Int = 0 in lol 5
+let rec x = x in x

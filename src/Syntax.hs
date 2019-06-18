@@ -18,6 +18,7 @@ data Expr
   | Check Expr Scheme
   | Export
   | Typed Scheme
+  | Annot String Expr
   deriving (Show, Eq)
 
 data Lit

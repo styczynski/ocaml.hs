@@ -28,7 +28,7 @@ type Verbosity = Int
 
 runTIWith :: Verbosity -> String -> Environment -> Either TypeError (Scheme, Environment)
 runTIWith v s e = let state = getTypesState e in let env = getTypesEnv e in let ts = myLexer s in case pImplementation ts of
-          Bad s    -> Left $ Debug $ show s
+          Bad s    -> Left $ Debug EmptyPayload $ s
           Ok  tree ->
             case inferAST env state tree of
               (Left e) -> Left e

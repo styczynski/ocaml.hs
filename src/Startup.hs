@@ -50,20 +50,20 @@ interpreterStartupFn = do
   (_,e) <- local (\_ -> e) $ setNativeVariable "failwith" "String -> 'a" failwith
   (_,e) <- local (\_ -> e) $ setNativeVariable "invalid_arg" "String -> 'a" invalid_arg
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_eq" "'a -> 'a -> Bool" valueEq
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt" "'a -> 'a -> Bool" valueLt
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt" "'a -> 'a -> Bool" valueGt
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt_eq" "'a -> 'a -> Bool" valueLtEq
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt_eq" "'a -> 'a -> Bool" valueGtEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt" "Int -> Int -> Bool" valueLt
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt" "Int -> Int -> Bool" valueGt
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_lt_eq" "Int -> Int -> Bool" valueLtEq
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_gt_eq" "Int -> Int -> Bool" valueGtEq
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_cons" "'a -> ['a] -> ['a]" valueCons
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_join" "['a] -> ['a] -> ['a]" valueJoin
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_and" "Bool -> Bool -> Bool" valueAnd
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_or" "Bool -> Bool -> Bool" valueOr
   (_,e) <- local (\_ -> e) $ setNativeVariable "value_not" "Bool -> Bool" valueNot
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mod" "'a -> 'a -> 'a" valueMod
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" "'a -> 'a -> 'a" valueAdd
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_sub" "'a -> 'a -> 'a" valueSub
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mul" "'a -> 'a -> 'a" valueMul
-  (_,e) <- local (\_ -> e) $ setNativeVariable "value_div" "'a -> 'a -> 'a" valueDiv
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mod" "Int -> Int -> 'a" valueMod
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_add" "Int -> Int -> 'a" valueAdd
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_sub" "Int -> Int -> 'a" valueSub
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_mul" "Int -> Int -> 'a" valueMul
+  (_,e) <- local (\_ -> e) $ setNativeVariable "value_div" "Int -> Int -> 'a" valueDiv
   (_,e) <- local (\_ -> e) $ setNativeVariable "string_split" "String -> String -> [String]" valueSplit
   (_,e) <- local (\_ -> e) $ setNativeVariable "string_join" "String -> String -> String" valueJoin
   return (REmpty, e)
