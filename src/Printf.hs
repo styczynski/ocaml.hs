@@ -24,7 +24,7 @@ printfUnpack :: RuntimeValue -> PrintfArgT
 printfUnpack (RInt v) = P v
 printfUnpack (RBool v) = P (show v)
 printfUnpack (RString v) = P v
-printfUnpack v = P (valueToStr v)
+printfUnpack v = P (valueToStrN v)
 
 printfVars :: PrintfType t => String -> [ RuntimeValue ] -> t
 printfVars format vars =

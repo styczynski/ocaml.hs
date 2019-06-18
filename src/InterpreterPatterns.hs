@@ -61,7 +61,9 @@ getPatternMapping (PatList (PList elems)) (RList vals) = do
     submap <- getPatternMapping elem (head accVals)
     return $ ((Map.unionWith (\_ b -> b) accMap submap),(tail accVals))) (Map.empty, vals) elems
   return newEnv
-getPatternMapping pattern value = raise $ "Pattern matching error. Could not match " ++ (treeToStr pattern) ++ " with " ++ (valueToStr value)
+getPatternMapping pattern value = do
+  env <- ask
+  raise $ "Pattern matching error. Could not match " ++ (treeToStr pattern) ++ " with " ++ (valueToStr env value)
 
 setPattern :: SimplePattern -> RuntimeValue -> Environment -> Exec Environment
 setPattern pattern val env = do

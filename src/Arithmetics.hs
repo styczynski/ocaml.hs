@@ -14,7 +14,7 @@ import Environment
 
 valueStringifyRaw :: RuntimeValue -> String
 valueStringifyRaw (RString v) = v
-valueStringifyRaw v = valueToStr v
+valueStringifyRaw v = valueToStrN v
 
 valueStringify :: RuntimeValue -> Exec String
 valueStringify v = return $ valueStringifyRaw v
@@ -120,13 +120,17 @@ valueMul x y = do
   raise $ "Could not multiply values: " ++ (getTypeStr (x, env)) ++ " * " ++ (getTypeStr (y, env))
 
 valueDiv :: RuntimeValue -> RuntimeValue -> Exec RuntimeValue
-valueDiv (RInt a) (RInt b) = return $ RInt $ a `div` b
+valueDiv (RInt a) (RInt b) = do
+  _ <- if b == 0 then raise $ "Arithemtics error: Division by 0" else return REmpty
+  return $ RInt $ a `div` b
 valueDiv x y = do
   env <- ask
   raise $ "Could not divide values: " ++ (getTypeStr (x, env)) ++ " / " ++ (getTypeStr (y, env))
 
 valueMod :: RuntimeValue -> RuntimeValue -> Exec Integer
-valueMod (RInt a) (RInt b) = return $ mod a b
+valueMod (RInt a) (RInt b) = do
+  _ <- if b == 0 then raise $ "Arithemtics error: Modulo of division by 0" else return REmpty
+  return $ mod a b
 valueMod x y = do
   env <- ask
   raise $ "Could not calculate modulo (mod) of value: " ++ (getTypeStr (x, env)) ++ " % " ++ (getTypeStr (y, env))

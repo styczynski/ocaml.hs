@@ -33,7 +33,7 @@ runBlockI v s = do
                     hPutStrLn stderr s
                     exitFailure
      Executed v t env -> do
-                    putStrLn $ "- : " ++ (Type.typeToStr [] t) ++ " = " ++ (valueToStr v)
+                    putStrLn $ "- : " ++ (Type.typeToStr [] t) ++ " = " ++ (valueToStr env v)
                     exitSuccess
 
 runBlock = runBlockI

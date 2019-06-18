@@ -184,8 +184,8 @@ runtimePrint str = do
 
 refToStr :: RuntimeRefValue -> String
 refToStr (RfFun _ _) = "<function>"
-refToStr (RfInvalid v) = "<invalid: " ++ (valueToStr v) ++ ">"
-refToStr (RfVal v) = "<value: " ++ (valueToStr v) ++ ">"
+refToStr (RfInvalid v) = "<invalid>"
+refToStr (RfVal v) = "<value>"
 
 envToStr :: Environment -> String
 --envToStr env =
@@ -196,7 +196,7 @@ envToStr :: Environment -> String
 envToStr env =
   let Environment { refs = refs, variables = variables } = env in
     let strRefs = (" { " ++ (Map.foldlWithKey (\acc id val -> if (acc == "") then (show id) ++ "=" ++ (refToStr val) else acc ++ "\n " ++ (show id) ++ "=" ++ (refToStr val)) "" refs) ++ " }") in
-    let strVals = (" { " ++ (Map.foldlWithKey (\acc (Ident name) val -> if (acc == "") then name ++ "=" ++ (valueToStr val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr val)) "" variables) ++ " }") in
+    let strVals = (" { " ++ (Map.foldlWithKey (\acc (Ident name) val -> if (acc == "") then name ++ "=" ++ (valueToStr env val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr env val)) "" variables) ++ " }") in
       strRefs ++ strVals
 
 debug ast = do
@@ -236,30 +236,45 @@ raise errorText = do
         _ -> throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n    " ++ errorText ++ "\n" ++ traceStr
 
 resultToStr :: ExecutionResult -> String
-resultToStr (Executed val _ _) = valueToStr val
+resultToStr (Executed val _ env) = valueToStr env val
 resultToStr (FailedParse err) = err
 resultToStr (FailedExecution err) = err
 resultToStr (FailedTypechecking err) = show err
 
-valueToStr :: RuntimeValue -> String
-valueToStr REmpty = "()"
-valueToStr (RExport _) = "%export"
-valueToStr (RInt val) = show val
-valueToStr (RString val) = show val
-valueToStr (RVariant _ (Ident option) val) = option ++ " " ++ (valueToStr val)
-valueToStr (RBool val) = show val
-valueToStr (RTuple []) = "()"
-valueToStr (RRecord _ fields) = "{ " ++ (Map.foldlWithKey (\acc (Ident fieldName) fieldVal ->
-    if (acc == "") then fieldName ++ "=" ++ (valueToStr fieldVal) else acc ++ "; " ++ fieldName ++ "=" ++ (valueToStr fieldVal)
+valueToStrRec :: (Maybe Environment) -> RuntimeValue -> String
+valueToStrRec env REmpty = "()"
+valueToStrRec env (RExport _) = "%export"
+valueToStrRec env (RInt val) = show val
+valueToStrRec env (RString val) = show val
+valueToStrRec env (RVariant _ (Ident option) val) = option ++ " " ++ (valueToStrRec env val)
+valueToStrRec env (RBool val) = show val
+valueToStrRec env (RTuple []) = "()"
+valueToStrRec env (RRecord _ fields) = "{ " ++ (Map.foldlWithKey (\acc (Ident fieldName) fieldVal ->
+    if (acc == "") then fieldName ++ "=" ++ (valueToStrRec env fieldVal) else acc ++ "; " ++ fieldName ++ "=" ++ (valueToStrRec env fieldVal)
   ) "" fields) ++ "}"
-valueToStr (RTuple vals) = "(" ++ (foldl (\acc el ->
-    if (acc == "") then valueToStr el else acc ++ ", " ++ (valueToStr el)
+valueToStrRec env (RTuple vals) = "(" ++ (foldl (\acc el ->
+    if (acc == "") then valueToStrRec env el else acc ++ ", " ++ (valueToStrRec env el)
   ) "" vals) ++ ")"
-valueToStr (RList vals) = "[" ++ (foldl (\acc el ->
-    if (acc == "") then valueToStr el else acc ++ "; " ++ (valueToStr el)
+valueToStrRec env (RList vals) = "[" ++ (foldl (\acc el ->
+    if (acc == "") then valueToStrRec env el else acc ++ "; " ++ (valueToStrRec env el)
   ) "" vals) ++ "]"
-valueToStr (RRef fr) = "<ref: " ++ (show fr) ++ ">"
-valueToStr (RInvalid) = "Invalid"
+valueToStrRec Nothing (RRef fr) = "<ref: " ++ (show fr) ++ ">"
+valueToStrRec (Just env) (RRef fr) =
+  let Environment { refs = oldRefs } = env in
+  let r = Map.findWithDefault (RfInvalid RInvalid) fr oldRefs in
+  case r of
+    (RfInvalid _) -> "<dangling_ref>"
+    (RfFun _ _) -> "<function>"
+    (RfVal v) -> valueToStrRec (Just env) v
+
+
+valueToStrRec env (RInvalid) = "Invalid"
+
+valueToStr :: Environment -> RuntimeValue -> String
+valueToStr e r = valueToStrRec (Just e) r
+
+valueToStrN :: RuntimeValue -> String
+valueToStrN r = valueToStrRec Nothing r
 
 unpackBool :: (RuntimeValue, Environment) -> Exec (Bool, Environment)
 unpackBool arg@(val, env) =
@@ -278,25 +293,3 @@ unpackString arg@(val, env) =
   case val of
     RString v -> return (v, env)
     _ -> raise $ "Expected type: " ++ (typeToStr TString) ++ ", got: " ++ (getTypeStr arg)
-
---vmapBool :: (Bool -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
---vmapBool fn e1 = do
---  (val1, env) <- e1 >>= unpackBool
---  return ((fn val1), env)
---
---vmapBool2 :: (Bool -> Bool -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
---vmapBool2 fn e1 e2 = do
---  (val1, env1) <- e1 >>= unpackBool
---  (val2, env2) <- e2 >>= unpackBool
---  return ((fn val1 val2), env2)
---
---vmapInt :: (Integer -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
---vmapInt fn e1 = do
---  (val1, env1) <- e1 >>= unpackInt
---  return ((fn val1), env1)
---
---vmapInt2 :: (Integer -> Integer -> RuntimeValue) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment) -> Exec (RuntimeValue, Environment)
---vmapInt2 fn e1 e2 = do
---  (val1, env1) <- e1 >>= unpackInt
---  (val2, env2) <- e2 >>= unpackInt
---  return ((fn val1 val2), env2)
