@@ -100,6 +100,24 @@ data TypeError
   | Debug String
   deriving (Show)
 
+constraintToStr :: Constraint -> String
+constraintToStr (a,b) = (typeToStr [] a) ++ " ~ " ++ (typeToStr [] b)
+
+constraintsListToStr :: [Constraint] -> String
+constraintsListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (constraintToStr t)) "" l) ++ "}"
+
+typesListToStr :: [Type] -> String
+typesListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (typeToStr [] t)) "" l) ++ "}"
+
+typeErrorToStr :: TypeError -> String
+typeErrorToStr (UnificationFail a b) = "Cannot match types, expected: " ++ (typeToStr [] b) ++ ", got: " ++ (typeToStr [] a)
+typeErrorToStr (Debug mes) = mes
+typeErrorToStr (UnificationMismatch a b) = "Cannot match types, mismatch when unyfying: " ++ (typesListToStr a) ++ " and " ++ (typesListToStr b)
+typeErrorToStr (Ambigious a) = "Cannot infer types, expression is ambigious: " ++ (constraintsListToStr a)
+typeErrorToStr (UnboundVariable (Ident a)) = "Variable not in scope: \"" ++ a ++ "\""
+typeErrorToStr (InfiniteType (TV v) t) = "Infinite type detected: " ++ v ++ "': " ++ (typeToStr [] t)
+typeErrorToStr e = "Got unexpected error during type inference phase.\n" ++ (show e)
+
 -------------------------------------------------------------------------------
 -- Inference
 -------------------------------------------------------------------------------

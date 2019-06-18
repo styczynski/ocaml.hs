@@ -11,6 +11,7 @@ import Lib
 import Runtime
 import InterpreterDefinitions
 import Type
+import Infer
 
 runFile :: Verbosity -> FilePath -> IO ()
 runFile v f = putStrLn f >> readFile f >>= runBlock v
@@ -23,7 +24,7 @@ runBlockI v s = do
   result <- runWith v s initEnv
   case result of
      FailedTypechecking s -> do
-                    hPutStrLn stderr $ show s
+                    hPutStrLn stderr $ typeErrorToStr  s
                     exitFailure
      FailedExecution s -> do
                     hPutStrLn stderr s

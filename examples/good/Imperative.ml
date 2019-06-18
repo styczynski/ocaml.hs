@@ -4,7 +4,8 @@
  *
  *)
 let counter = ref 0 in
-while (!counter) < 3 do
-    printf "Counter = %d and %d\n" (!counter) 4 ~
+let counterMax = 3 in
+while (!counter) < counterMax do
+    printf "Counter = %d < %d\n" (!counter) counterMax ~
     counter := !counter+1
 done

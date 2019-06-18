@@ -125,8 +125,7 @@ execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExp
   argsCount <- return $ length restPatterns
   newRef <- return $ allocRef env
   fnBody <- return $ \args -> do
-    inEnv <- ask
-    inEnv <- return $ shadowEnv env inEnv
+    inEnv <- shadowE env ask
     inEnv <- return $ if isRec r then importEnvRef newRef name inEnv env else inEnv
     patEnv <- local (\_ -> inEnv) $ setPatterns restPatterns args inEnv
     (eVal, eEnv) <- shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
@@ -158,8 +157,7 @@ execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExp
   newRef <- return $ allocRef env
   argsCount <- return $ length restPatterns
   fnBody <- return $ \args -> do
-    inEnv <- ask
-    inEnv <- return $ shadowEnv env inEnv
+    inEnv <- shadowE env ask
     inEnv <- return $ if isRec r then importEnvRef newRef name inEnv env else inEnv
     patEnv <- local (\_ -> inEnv) $ setPatterns restPatterns args inEnv
     shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression letExpr)
@@ -171,7 +169,7 @@ execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   env <- ask
   argsCount <- return $ 1 + (length restPatterns)
   fnBody <- return $ \args -> do
-    inEnv <- return $ env
+    inEnv <- shadowE env ask
     patEnv <- local (\_ -> inEnv) $ setPatterns ([pattern] ++ restPatterns) args inEnv
     shadow inEnv $ local (\_ -> patEnv) $ (execComplexExpression bodyExpr)
   unproceed

@@ -1,0 +1,1 @@
+let lol : Int = 0 in lol 5
