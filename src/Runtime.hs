@@ -67,6 +67,7 @@ data RuntimeValue
   | RTuple [RuntimeValue]
   | RList [RuntimeValue]
   | RRef Integer
+  | RInternalDupIdent
   deriving (Show, Eq)
 
 data RuntimeDef

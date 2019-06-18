@@ -113,6 +113,7 @@ execComplexExpression ast@(ECExpr expr) = do
   shadow env $ execExpression expr
 execComplexExpression ast@(ECLet LetRecNo pattern [] typeAnnot letExpr expr) = do
   proceed ast
+  validatePatterns ([pattern])
   env <- ask
   (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
   patEnv <- local (\_ -> letEnv) $ setPattern pattern letVal letEnv
@@ -121,6 +122,7 @@ execComplexExpression ast@(ECLet LetRecNo pattern [] typeAnnot letExpr expr) = d
   return $ (val, valEnv)
 execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExpr expr) = do
   proceed ast
+  validatePatterns ([(PatIdent name)] ++ restPatterns)
   env <- ask
   argsCount <- return $ length restPatterns
   newRef <- return $ allocRef env
@@ -135,6 +137,7 @@ execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExp
   return $ (val, valEnv)
 execComplexExpression ast@(ECLet r pattern [] typeAnnot letExpr expr) = do
   proceed ast
+  validatePatterns ([pattern])
   env <- ask
   (letVal, letEnv) <- shadow env $ execComplexExpression letExpr
   patEnv <- local (\_ -> letEnv) $ setPattern pattern letVal letEnv
@@ -143,6 +146,7 @@ execComplexExpression ast@(ECLet r pattern [] typeAnnot letExpr expr) = do
   return $ (val, valEnv)
 execComplexExpression ast@(ECLetOperator r opAny restPatterns letExpr expr) = do
   proceed ast
+  validatePatterns (restPatterns)
   env <- ask
   (id, env) <- return $ allocIdent env
   (valFnRef, env2) <- shadow env $ execComplexExpression (ECLet r (PatIdent id) restPatterns TypeConstrEmpty letExpr (ECExpr $ ExprVar id))
@@ -153,6 +157,7 @@ execComplexExpression ast@(ECLetOperator r opAny restPatterns letExpr expr) = do
   return $ (val, valEnv)
 execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExpr expr) = do
   proceed ast
+  validatePatterns ([(PatIdent name)] ++ restPatterns)
   env <- ask
   newRef <- return $ allocRef env
   argsCount <- return $ length restPatterns
@@ -166,6 +171,7 @@ execComplexExpression ast@(ECLet r (PatIdent name) restPatterns typeAnnot letExp
   return $ (val, valEnv)
 execComplexExpression ast@(ECFun pattern restPatterns bodyExpr) = do
   proceed ast
+  validatePatterns ([pattern] ++ restPatterns)
   env <- ask
   argsCount <- return $ 1 + (length restPatterns)
   fnBody <- return $ \args -> do
