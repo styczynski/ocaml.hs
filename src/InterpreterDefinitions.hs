@@ -19,7 +19,7 @@ createVariant name env (TDefVarCompl option _) = do
   fnBody <- return $ \[arg] -> do
     env <- ask
     return ((RVariant name option $ arg), env)
-  env1 <- return $ createFunction option (RFunSig 1) fnBody env
+  env1 <- return $ createFunction option Nothing (RFunSig 1) fnBody env
   env2 <- return $ setDef option (DVariant name option) env1
   return env2
 
@@ -41,6 +41,6 @@ constructRecordType name fields = do
   return (REmpty, newEnv)
 
 execTypeDef :: TypeDef -> Exec (RuntimeValue, Environment)
-execTypeDef (TypeDefVar name variants) = constructVariantType name variants
-execTypeDef (TypeDefVarP name variants) = constructVariantType name variants
-execTypeDef (TypeDefRecord name fields) = constructRecordType name fields
+execTypeDef (TypeDefVar _ name variants) = constructVariantType name variants
+execTypeDef (TypeDefVarP _ name variants) = constructVariantType name variants
+execTypeDef (TypeDefRecord _ name fields) = constructRecordType name fields

@@ -1,135 +1,165 @@
-IRoot.          Implementation      ::= [ImplPhrase] ;
-terminator nonempty ImplPhrase ";;" ;
-separator Ident "" ;
+comment "(*" "*)" ;
 
-IPhrase.        ImplPhrase          ::= ComplexExpression ;
-IDefType.        ImplPhrase          ::= TypeDef ;
+IRoot.               Implementation          ::= [ImplementationCore] ;
+separator nonempty ImplementationCore ";;" ;
 
+IRootDef.            ImplementationCore      ::= [ImplPhrase] ;
+IRootExpr.           ImplementationCore      ::= ComplexExpression ;
+terminator           nonempty            ImplPhrase "" ;
+separator            Ident               "" ;
 
-TypeExprString.    TypeExpression2     ::= "string" ;
-TypeExprBool.      TypeExpression2     ::= "bool" ;
-TypeExprInt.       TypeExpression2     ::= "int" ;
-TypeExprList.      TypeExpression2     ::= "[" TypeExpression "]" ;
-TypeExprTuple.     TypeExpression1     ::= TypeExpression1 "*" TypeExpression2 ;
-TypeFun.           TypeExpression      ::= TypeExpression "->" TypeExpression1 ;
+IGlobalLet.          ImplPhrase          ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression ;
+IGlobalLetOperator.  ImplPhrase    ::= "let" LetRecKeyword "(" OperatorAny ")" [SimplePattern] "=" ComplexExpression ;
+IDefType.            ImplPhrase          ::= TypeDef ;
 
-coercions          TypeExpression      2 ;
+token TypeIdentAbstract (["'"] ["abcdefghijklmnopqrstuvwxyz"]) ;
 
+TypeParamJust. TypeParam ::= "(" [TypeIdentAbstract] ")" ;
+TypeParamJustOne. TypeParam ::= TypeIdentAbstract ;
+TypeParamNone. TypeParam ::= "" ;
+separator nonempty TypeIdentAbstract "," ;
 
-TypeDefVarP.       TypeDef             ::= "type" Ident "=" "|" [TDefVariant] ;
-TypeDefVar.        TypeDef             ::= "type" Ident "=" [TDefVariant] ;
-TypeDefRecord.     TypeDef             ::= "type" Ident "=" "{" [TDefRecord] "}" ;
+TypeArgEl. TypeArgEl ::= TypeExpression ;
+separator nonempty TypeArgEl "," ;
+TypeArgJust. TypeArg ::= "(" TypeArgEl "," [TypeArgEl] ")" ;
+TypeArgJustOne. TypeArg ::= TypeSimpleExpression ;
 
-TDefVarCompl.       TDefVariant            ::= Ident "of" TypeExpression ;
-TDefVarSimpl.      TDefVariant            ::= Ident ;
-separator nonempty TDefVariant "|" ;
+TypeSExprEmpty. TypeSimpleExpression ::= "unit" ;
+TypeSExprAbstract.    TypeSimpleExpression  ::= TypeIdentAbstract;
+TypeSExprIdent.       TypeSimpleExpression  ::= Ident ;
+TypeSExprList.        TypeSimpleExpression     ::= "[" TypeExpression "]" ;
 
-TDefRecord.        TDefRecord   ::= Ident ":" TypeExpression ;
-separator nonempty TDefRecord ";" ;
+TypeExprSimple.  TypeExpression4      ::= TypeSimpleExpression ;
+TypeExprIdent.    TypeExpression3     ::= TypeArg Ident ;
+TypeExprTuple.       TypeExpression1     ::= TypeExpression2 "*" [TypeExpression2] ;
+separator nonempty TypeExpression2 "*" ;
+TypeFun.             TypeExpression      ::= TypeExpression1 "->" TypeExpression ;
 
-PList.          PList       ::= "[" [PListElement] "]" ;
-PListElement.     PListElement    ::= SimplePattern ;
-separator PListElement ";" ;
+coercions            TypeExpression      5 ;
 
-PTuple. PTuple ::= PTupleElement "," [PTupleElement] ;
+TypeConstrDef.      TypeConstraint      ::= ":" TypeExpression ;
+TypeConstrEmpty.    TypeConstraint      ::= "" ;
 
-PTupleElement. PTupleElement ::= SimplePattern1 ;
-separator nonempty PTupleElement "," ;
+TypeDefVarP.         TypeDef             ::= "type" TypeParam Ident "=" "|" [TDefVariant] ;
+TypeDefVar.          TypeDef             ::= "type" TypeParam Ident "=" [TDefVariant] ;
+TypeDefRecord.       TypeDef             ::= "type" TypeParam Ident "=" "{" [TDefRecord] "}" ;
 
-PatConstr.      SimplePattern2     ::= "(" Ident SimplePattern2 ")" ;
-PatList.        SimplePattern2      ::= PList ;
-PatNone.        SimplePattern2      ::= "_" ;
-PatIdent.       SimplePattern2      ::= Ident ;
-PatConst.       SimplePattern2      ::= Constant ;
-PatCons.        SimplePattern1      ::= SimplePattern2 "::" SimplePattern1 ;
-PatTuple.       SimplePattern       ::= PTuple ;
+TDefVarCompl.        TDefVariant         ::= Ident "of" TypeExpression ;
+TDefVarSimpl.        TDefVariant         ::= Ident ;
+separator nonempty   TDefVariant         "|" ;
 
-coercions       SimplePattern       2 ;
-separator       SimplePattern       "" ;
+TDefRecord.          TDefRecord          ::= Ident ":" TypeExpression ;
+separator nonempty   TDefRecord          ";" ;
 
-ExprCompl.      Expression6         ::= "(" ComplexExpression ")" ;
-ExprList.       Expression6         ::= DList ;
-ExprRecord.       Expression6         ::= DataRecord ;
-ExprConst.      Expression6         ::= Constant ;
-ExprCall.       Expression6         ::= Ident [SimpleExpression];
-ExprSel.       Expression6         ::= Expression6 "." Ident ;
-Expr6.          Expression5         ::= PrefixOperator Expression6 ;
-Expr5.          Expression4         ::= Expression4 InfixOperatorE Expression5 ;
-Expr4.          Expression3         ::= Expression3 InfixOperatorD Expression4 ;
-Expr3.          Expression2         ::= Expression2 InfixOperatorC Expression3 ;
-Expr2.          Expression1         ::= Expression2 InfixOperatorB Expression1 ;
-Expr1.          Expression          ::= Expression1 InfixOperatorA Expression ;
+PList.               PList               ::= "[" [PListElement] "]" ;
+PListElement.        PListElement        ::= SimplePattern ;
+separator            PListElement        ";" ;
 
-coercions Expression 6 ;
+PTuple.              PTuple              ::= PTupleElement "," [PTupleElement] ;
 
-ESConst.        SimpleExpression    ::= Constant ;
-ESIdent.        SimpleExpression    ::= Ident ;
-ESExpr.         SimpleExpression    ::= "(" ComplexExpression ")" ;
-ESList.         SimpleExpression       ::= DList ;
-ESRecord.       SimpleExpression   ::= DataRecord ;
-separator SimpleExpression "" ;
+PTupleElement.       PTupleElement       ::= SimplePattern1 ;
+separator nonempty   PTupleElement       "," ;
 
-ECExpr.          ComplexExpression       ::= Expression ;
-ECTuple.          ComplexExpression       ::= DTuple ;
-ECFun.           ComplexExpression       ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
-ECLet.          ComplexExpression       ::= "let" LetRecKeyword SimplePattern [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
-ECFunction.        ComplexExpression       ::= "function" [MatchClause] ;
-ECMatch.        ComplexExpression       ::= "match" ComplexExpression "with" [MatchClause] ;
-ECIf.            ComplexExpression       ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
-ECWhile.         ComplexExpression       ::= "while" ComplexExpression "do" ComplexExpression "done" ;
-ECFor.           ComplexExpression       ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
+PatConstr.           SimplePattern2      ::= "(" Ident SimplePattern2 ")" ;
+PatList.             SimplePattern2      ::= PList ;
+PatNone.             SimplePattern2      ::= "_" ;
+PatIdent.            SimplePattern2      ::= Ident ;
+internal PatCheck.            SimplePattern2      ::= Ident ":" TypeExpression;
+PatConst.            SimplePattern2      ::= Constant ;
+PatCons.             SimplePattern1      ::= SimplePattern2 "::" SimplePattern1 ;
+PatTuple.            SimplePattern       ::= PTuple ;
 
-LetRecNo.      LetRecKeyword ::= "" ;
-LetRecYes.     LetRecKeyword ::= "rec" ;
+coercions            SimplePattern       2 ;
+separator            SimplePattern       "" ;
 
-MatchClause.     MatchClause  ::=  SimplePattern "->" ComplexExpression ;
-separator nonempty MatchClause "|" ;
+token OperatorF (["~!?"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorD (["*%/"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorE ({"**"} (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorC (["+-"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorB (["@^"] (["~!?*%/-+^@$&|<>=:"])*) ;
+token OperatorA (["$&|<>=:"] (["~!?*%/-+^@$&|<>=:"])*) ;
 
-DataRecord.   DataRecord  ::= "{" [RecordElement] "}" ;
-RecordElement. RecordElement ::= Ident "=" ComplexExpression ;
-separator nonempty RecordElement ";" ;
+OperatorDS. OperatorDS ::= "*" ;
 
-DList.          DList       ::= "[" [ListElement] "]" ;
-ListElement.     ListElement    ::= ComplexExpression ;
-separator ListElement ";" ;
+OperatorAnyF.  OperatorAny ::= OperatorF ;
+OperatorAnyE.  OperatorAny ::= OperatorE ;
+OperatorAnyDS.  OperatorAny ::= OperatorDS ;
+OperatorAnyD.  OperatorAny ::= OperatorD ;
+OperatorAnyC.  OperatorAny ::= OperatorC ;
+OperatorAnyB.  OperatorAny ::= OperatorB ;
+OperatorAnyA.  OperatorAny ::= OperatorA ;
 
-DTuple. DTuple ::= DTupleElement "," [DTupleElement] ;
-DTupleElement. DTupleElement ::= Expression ;
-separator nonempty DTupleElement "," ;
+ExprCompl.           Expression7         ::= "(" ComplexExpression ")" ;
+ExprList.            Expression7         ::= DList ;
+ExprRecord.          Expression7         ::= DataRecord ;
+ExprConst.           Expression7         ::= Constant ;
+ExprVar.             Expression7         ::= Ident ;
+ExprOp.              Expression7         ::= "(" OperatorAny ")" ;
 
-ForDirTo.       ForDirection        ::= "to" ;
-ForDirDownTo.   ForDirection        ::= "downto" ;
+ExprCall.            Expression6       ::= Expression7 SimpleExpression [SimpleExpression] ;
 
-OpOr.           InfixOperatorA      ::= "||" ;
-OpAnd.          InfixOperatorB      ::= "&&" ;
-OpJoin.         InfixOperatorB      ::= "@" ;
-OpCons.         InfixOperatorB      ::= "::" ;
-OpEq.           InfixOperatorC      ::= "=" ;
-OpEqSt.         InfixOperatorC      ::= "==" ;
-OpNEq.          InfixOperatorC      ::= "<>" ;
-OpNEqSt.        InfixOperatorC      ::= "!=" ;
-OpLt.           InfixOperatorC      ::= "<" ;
-OpLtD.          InfixOperatorC      ::= "<." ;
-OpGt.           InfixOperatorC      ::= ">" ;
-OpGtD.          InfixOperatorC      ::= ">." ;
-OpLtEq.         InfixOperatorC      ::= "<=" ;
-OpLtEqD.        InfixOperatorC      ::= "<=." ;
-OpGtEq.         InfixOperatorC      ::= ">=" ;
-OpGtEqD.        InfixOperatorC      ::= ">=." ;
-OpAdd.          InfixOperatorD      ::= "+" ;
-OpAddD.         InfixOperatorD      ::= "+." ;
-OpSub.          InfixOperatorD      ::= "-" ;
-OpSubD.         InfixOperatorD      ::= "-." ;
-OpMul.          InfixOperatorE      ::= "*" ;
-OpDiv.          InfixOperatorE      ::= "/" ;
-OpNot.          PrefixOperator      ::= "!" ;
-OpNeg.          PrefixOperator      ::= "-" ;
-OpNegD.         PrefixOperator      ::= "-." ;
+ExprSel.             Expression6         ::= Expression6 "." Ident ;
+Expr6.               Expression5         ::= OperatorF Expression6 ;
+Expr5.               Expression4         ::= Expression4 OperatorE Expression5 ;
+Expr4S.               Expression3         ::= Expression3 OperatorDS Expression4 ;
+Expr4.               Expression3         ::= Expression3 OperatorD Expression4 ;
+Expr3.               Expression2         ::= Expression2 OperatorC Expression3 ;
+Expr2.               Expression1         ::= Expression2 OperatorB Expression1 ;
+Expr1.               Expression          ::= Expression1 OperatorA Expression ;
 
-CInt.           Constant            ::= Integer ;
-CString.        Constant            ::= String ;
-CBool.          Constant            ::= ConstantBool ;
+ExprSemi.             Expression         ::= Expression1 "~" Expression ;
+coercions            Expression          7 ;
 
-CBTrue.         ConstantBool        ::= "true" ;
-CBFalse.        ConstantBool        ::= "false" ;
+ESConst.             SimpleExpression    ::= Constant ;
+ESIdent.             SimpleExpression    ::= Ident ;
+ESExpr.              SimpleExpression    ::= "(" ComplexExpression ")" ;
+ESList.              SimpleExpression    ::= DList ;
+ESRecord.            SimpleExpression    ::= DataRecord ;
+ESOp.                SimpleExpression    ::= "(" OperatorAny ")" ;
+separator            SimpleExpression    "" ;
+
+internal ECChecked.  ComplexExpression    ::= "%check" "{" ComplexExpression "}" ":" "{" TypeExpression "}" ;
+internal ECTyped.     ComplexExpression   ::= "%typed" "{" TypeExpression "}" ;
+internal ECExportEnv. ComplexExpression   ::= "%export_env" ;
+ECExpr.              ComplexExpression   ::= Expression ;
+ECTuple.             ComplexExpression   ::= DTuple ;
+ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
+ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression "in" ComplexExpression ;
+ECLetOperator.       ComplexExpression   ::= "let" LetRecKeyword "(" OperatorAny ")" [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
+ECFunction.          ComplexExpression   ::= "function" PipeKeyword [MatchClause] ;
+ECMatch.             ComplexExpression   ::= "match" ComplexExpression "with" PipeKeyword [MatchClause] ;
+ECIf.                ComplexExpression   ::= "if" ComplexExpression "then" ComplexExpression "else" ComplexExpression ;
+ECWhile.             ComplexExpression   ::= "while" ComplexExpression "do" ComplexExpression "done" ;
+ECFor.               ComplexExpression   ::= "for" Ident "=" ComplexExpression ForDirection ComplexExpression "do" ComplexExpression "done" ;
+
+LetRecNo.            LetRecKeyword       ::= "" ;
+LetRecYes.           LetRecKeyword       ::= "rec" ;
+
+PipeKeywordYes.      PipeKeyword         ::= "|" ;
+PipeKeywordNo.      PipeKeyword          ::= "" ;
+
+MatchClause.         MatchClause         ::=  SimplePattern "->" ComplexExpression ;
+separator nonempty   MatchClause         "|" ;
+
+DataRecord.          DataRecord          ::= "{" [RecordElement] "}" ;
+RecordElement.       RecordElement       ::= Ident "=" ComplexExpression ;
+separator nonempty   RecordElement       ";" ;
+
+DList.               DList               ::= "[" [ListElement] "]" ;
+ListElement.         ListElement         ::= ComplexExpression ;
+separator            ListElement         ";" ;
+
+DTuple.              DTuple              ::= DTupleElement "," [DTupleElement] ;
+DTupleElement.       DTupleElement       ::= Expression ;
+separator nonempty   DTupleElement       "," ;
+
+ForDirTo.            ForDirection        ::= "to" ;
+ForDirDownTo.        ForDirection        ::= "downto" ;
+
+CInt.                Constant            ::= Integer ;
+CString.             Constant            ::= String ;
+CBool.               Constant            ::= ConstantBool ;
+
+CBTrue.              ConstantBool        ::= "true" ;
+CBFalse.             ConstantBool        ::= "false" ;
 

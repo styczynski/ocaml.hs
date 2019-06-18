@@ -10,21 +10,38 @@ import Control.Monad.Except
 import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
+import Data.Foldable
+
+import Startup
+import qualified Type as Type
 
 exec :: Implementation -> Exec (RuntimeValue, Environment)
-exec (IRoot implPhrases) = do
+exec (IRoot implCores) = do
   rootEnv <- ask
-  foldM (\(_,env) phrase -> do
-     local (\_ -> env) $ execPhrase phrase) (REmpty,rootEnv) implPhrases
+  foldlM (\(_,env) core -> do
+     local (\_ -> env) $ execCoreImpl core) (REmpty,rootEnv) implCores
 
-execPhrase :: ImplPhrase -> Exec (RuntimeValue, Environment)
-execPhrase (IPhrase expr) = execComplexExpression expr
-execPhrase (IDefType typeDef) = execTypeDef typeDef
+execCoreImpl :: ImplementationCore -> Exec (RuntimeValue, Environment)
+execCoreImpl (IRootExpr expr) = execComplexExpression expr
+execCoreImpl (IRootDef implPhrases) = do
+  rootEnv <- ask
+  foldlM (\(_,env) phrase -> do
+     local (\_ -> env) $ execPhrase phrase) (REmpty,rootEnv) implPhrases
 
 runAST :: Implementation -> Environment -> IO ExecutionResult
 runAST tree env  = do
-  r <- runExceptT (runReaderT (runStateT (exec tree) (InterpreterState { lastNode = "", lastNodeDetail = "", trace = [] })) (env))
+  r <- runExceptT (runReaderT (runStateT (exec tree) (InterpreterState { lastNode = "", lastNodeDetail = "", trace = [], globalExportEnv = Nothing })) (env))
   result <- return (case r of
       Left err -> FailedExecution err
-      Right ((res, env), _) -> Executed res env)
+      Right ((res, env), InterpreterState { globalExportEnv = Nothing }) -> Executed res Type.TUnit env
+      Right ((res, _), InterpreterState { globalExportEnv = (Just env) }) -> Executed res Type.TUnit env)
+  return result
+
+runFn :: (Exec (RuntimeValue, Environment)) -> Environment -> IO ExecutionResult
+runFn fn env = do
+  r <- runExceptT (runReaderT (runStateT (fn) (InterpreterState { lastNode = "", lastNodeDetail = "", trace = [], globalExportEnv = Nothing })) (env))
+  result <- return (case r of
+      Left err -> FailedExecution err
+      Right ((res, env), InterpreterState { globalExportEnv = Nothing } ) -> Executed res Type.TUnit env
+      Right ((res, _), InterpreterState { globalExportEnv = (Just env) }) -> Executed res Type.TUnit env)
   return result

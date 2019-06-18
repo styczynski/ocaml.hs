@@ -10,30 +10,39 @@ import System.Exit ( exitFailure, exitSuccess )
 import Lib
 import Runtime
 import InterpreterDefinitions
+import Type
+import Infer
 
 runFile :: Verbosity -> FilePath -> IO ()
 runFile v f = putStrLn f >> readFile f >>= runBlock v
 
-runBlock :: Verbosity -> String -> IO ()
-runBlock v s = do
-  result <- run v s
+runBlockI :: Verbosity -> String -> IO ()
+runBlockI v s = do
+  initEnv0 <- runInitEmpty
+  stdlibStr <- readFile "./init/init.ml"
+  (Executed _ _ initEnv) <- runWith v stdlibStr initEnv0
+  result <- runWith v s initEnv
   case result of
+     FailedTypechecking s -> do
+                    hPutStrLn stderr $ typeErrorToStr  s
+                    exitFailure
      FailedExecution s -> do
                     hPutStrLn stderr s
                     exitFailure
      FailedParse s  -> do
                     hPutStrLn stderr s
                     exitFailure
-     Executed v env -> do
-                    putStrLn $ "- : " ++ (getTypeStr (v,env)) ++ " = " ++ (valueToStr v)
+     Executed v t env -> do
+                    putStrLn $ "- : " ++ (Type.typeToStr [] t) ++ " = " ++ (valueToStr env v)
                     exitSuccess
+
+runBlock = runBlockI
 
 execContents v = getContents >>= runBlock v
 
 data MainArgs = MainArgs
   { verbosity :: Int
-  , prettify :: Bool
-  , generatehs :: Bool }
+  , file :: String }
 
 parseMainArgs :: Parser MainArgs
 parseMainArgs = MainArgs
@@ -43,14 +52,13 @@ parseMainArgs = MainArgs
     <> showDefault
     <> value 1
     <> metavar "INT" )
-  <*> switch
-    ( long "prettify"
-      <> short 'p'
-      <> help "Do not interpret anything, only prettify the code and print it." )
-  <*> switch
-      ( long "generatehs"
-        <> short 'g'
-        <> help "Do not interpret anything just parse macros and generate Haskell code." )
+  <*> strOption
+      ( long "file"
+      <> short 'f'
+      <> showDefault
+      <> value "stdin"
+      <> help "File to load or stdin to load standard input"
+      <> metavar "FILENAME" )
 
 main :: IO ()
 main = mainEntry =<< execParser opts
@@ -61,8 +69,7 @@ main = mainEntry =<< execParser opts
       <> header "Piotr Styczynski 2019" )
 
 mainEntry :: MainArgs -> IO ()
-mainEntry (MainArgs verbosity prettify generatehs) = case (verbosity, prettify, generatehs) of
---  (v, True, False) -> (prettifyContents v) >>= putStrLn
-  (v, False, False) -> execContents v
---  (v, _, True) -> (generateHSFromContents v) >>= putStrLn
+mainEntry (MainArgs verbosity file) = case (verbosity, file) of
+  (v, "stdin") -> execContents v
+  (v, src) -> runFile v src
 mainEntry _ = return ()

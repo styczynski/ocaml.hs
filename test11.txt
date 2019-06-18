@@ -1,5 +1,0 @@
-type bintree =
-        | Leaf
-        | Tree of int
-;;
-match 99 with Leaf -> 1 | (Tree x) -> x | k -> k+1 ;;
