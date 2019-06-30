@@ -70,12 +70,15 @@ execComplexExpression ast@(ECWhile cond exp) = do
   proceed ast
   env <- ask
   (condVal, condEnv) <- shadow env $ execComplexExpression cond >>= unpackBool
-  r <- (if condVal then do
-          (_, stEnv) <- shadow env $ local (\_ -> condEnv) $ execComplexExpression exp
-          (shadow env $ local (\_ -> stEnv) $ execComplexExpression (ECWhile cond exp))
-        else (return (REmpty, condEnv)))
-  unproceed
-  return r
+  if condVal then do
+    (_, stEnv) <- shadow env $ local (\_ -> condEnv) $ execComplexExpression exp
+    r <- (shadow env $ local (\_ -> stEnv) $ execComplexExpression (ECWhile cond exp))
+    unproceed
+    return r
+  else do
+    r <- return (REmpty, condEnv)
+    unproceed
+    return r
 execComplexExpression ast@(ECFor name expVal1 dir expVal2 exp) = do
   proceed ast
   env <- ask
