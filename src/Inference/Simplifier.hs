@@ -201,10 +201,10 @@ simplifyExpression fn (Expr6 (OperatorF name) exp) = do
   simpl <- simplifyExpression fn exp
   addExprAnnot $ return $ SimplifiedUnaryOp (OpCustomUni name) simpl
 simplifyExpression _ (ExprVar name) = addExprAnnot $ return $ SimplifiedVariable name
-simplifyExpression _ (ExprConst (CInt val)) = addExprAnnot $ return $ SimplifiedConst $ LInt val
-simplifyExpression _ (ExprConst (CString val)) = addExprAnnot $ return $ SimplifiedConst $ LString val
-simplifyExpression _ (ExprConst (CBool CBTrue)) = addExprAnnot $ return $ SimplifiedConst $ LBool True
-simplifyExpression _ (ExprConst (CBool CBFalse)) = addExprAnnot $ return $ SimplifiedConst $ LBool False
+simplifyExpression _ (ExprConst (CInt val)) = addExprAnnot $ return $ SimplifiedConstInt val
+simplifyExpression _ (ExprConst (CString val)) = addExprAnnot $ return $ SimplifiedConstString val
+simplifyExpression _ (ExprConst (CBool CBTrue)) = addExprAnnot $ return $ SimplifiedConstBool True
+simplifyExpression _ (ExprConst (CBool CBFalse)) = addExprAnnot $ return $ SimplifiedConstBool False
 simplifyExpression fn (ExprList list) = addExprAnnot $ simplifyList fn list
 simplifyExpression fn (ExprCompl expr) = addExprAnnot $ simplifyComplexExpression fn expr
 simplifyExpression fn ast@(ExprCall exp firstArg restArgs) = do

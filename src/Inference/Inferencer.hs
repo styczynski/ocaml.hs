@@ -173,9 +173,9 @@ inferE expr = do
 
 infer :: SimplifiedExpr -> Infer (Type, [TypeConstraint])
 infer SimplifiedSkip = return ((TypeStatic "Int"), [])
-infer (SimplifiedConst (LInt _)) = return ((TypeStatic "Int"), [])
-infer (SimplifiedConst (LBool _)) = return ((TypeStatic "Bool"), [])
-infer (SimplifiedConst (LString _)) = return ((TypeStatic "String"), [])
+infer (SimplifiedConstInt _) = return ((TypeStatic "Int"), [])
+infer (SimplifiedConstBool _) = return ((TypeStatic "Bool"), [])
+infer (SimplifiedConstString _) = return ((TypeStatic "String"), [])
 infer (SimplifiedAnnotated l t) = do
   s <- get
   put s{lastInferExpr = l}

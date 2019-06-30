@@ -10,7 +10,6 @@ data SimplifiedExpr
   | SimplifiedCall SimplifiedExpr SimplifiedExpr
   | SimplifiedFunction Ident SimplifiedExpr
   | SimplifiedLet Ident SimplifiedExpr SimplifiedExpr
-  | SimplifiedConst Lit
   | SimplifiedIf SimplifiedExpr SimplifiedExpr SimplifiedExpr
   | SimplifiedFixPoint SimplifiedExpr
   | SimplifiedBinaryOp BinaryOp SimplifiedExpr SimplifiedExpr
@@ -20,12 +19,9 @@ data SimplifiedExpr
   | SimplifiedExportEnv
   | SimplifiedTyped Scheme
   | SimplifiedAnnotated String SimplifiedExpr
-  deriving (Show, Eq)
-
-data Lit
-  = LInt Integer
-  | LBool Bool
-  | LString String
+  | SimplifiedConstBool Bool
+  | SimplifiedConstInt Integer
+  | SimplifiedConstString String
   deriving (Show, Eq)
 
 data BinaryOp = OpSemicolon | OpSame | OpCustom String | OpCons | OpTupleCons

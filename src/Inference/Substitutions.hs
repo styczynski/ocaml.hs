@@ -24,7 +24,7 @@ class Substitutable a where
   (.>)     :: Subst -> a -> a
   free   :: a -> Set.Set TypeVar
   isRecursive ::  TypeVar -> a -> Bool
-  isRecursive a t = a `Set.member` free t
+  isRecursive a t = Set.member a $ free t
 
 instance Bindable TypeVar Type where
   (<->) a t | t == (TypeVar a) = Right emptySubst
@@ -32,36 +32,35 @@ instance Bindable TypeVar Type where
             | otherwise = Right (Subst $ Map.singleton a t)
 
 instance Substitutable Type where
-  (.>) _ (TypeStatic a)       = TypeStatic a
+  (.>) _ (TypeStatic a) = TypeStatic a
   (.>) s (TypeComplex name deps) = TypeComplex name $ map (\a -> s .> a) deps
   (.>) (Subst s) t@(TypeVar a) = Map.findWithDefault t a s
-  (.>) s (t1 `TypeArrow` t2) = (s .> t1) `TypeArrow` (s .> t2)
-  (.>) s (t1 `TypeTuple` t2) = (s .> t1) `TypeTuple` (s .> t2)
+  (.>) s (t1 `TypeArrow` t2) = TypeArrow (s .> t1) (s .> t2)
+  (.>) s (t1 `TypeTuple` t2) = TypeTuple (s .> t1) (s .> t2)
   (.>) s (TypeList a) = TypeList $ s .> a
   (.>) s TypeUnit = TypeUnit
   (.>) s (TypeAnnotated v) = (TypeAnnotated v)
 
-  free TypeStatic{}         = Set.empty
-  free (TypeVar a)       = Set.singleton a
-  free (TypeList a)      = free a
-  free (TypeComplex name deps) = foldl (\acc el -> acc `Set.union` (free el)) (Set.empty) deps
-  free (t1 `TypeArrow` t2) = free t1 `Set.union` free t2
-  free (t1 `TypeTuple` t2) = free t1 `Set.union` free t2
+  free (TypeStatic a) = Set.empty
+  free (TypeVar a) = Set.singleton a
+  free (TypeList a) = free a
+  free (TypeComplex name deps) = foldl (\acc el -> Set.union acc $ free el) (Set.empty) deps
+  free (TypeArrow t1 t2) = Set.union (free t1) (free t2)
+  free (TypeTuple t1 t2) = Set.union (free t1) (free t2)
   free TypeUnit = Set.empty
   free (TypeAnnotated _) = Set.empty
 
 instance Substitutable Scheme where
-  (.>) (Subst s) (Forall as t)   = Forall as $ s' .> t
-                            where s' = Subst $ foldr Map.delete s as
-  free (Forall as t) = free t `Set.difference` Set.fromList as
+  (.>) (Subst s) (Forall vars t)   = Forall vars $ (Subst $ foldr Map.delete s vars) .> t
+  free (Forall vars t) = free t `Set.difference` Set.fromList vars
 
 instance Substitutable TypeConstraint where
    (.>) s (TypeConstraint _ (t1, t2)) = TypeConstraint EmptyPayload (s .> t1, s .> t2)
    free (TypeConstraint _ (t1, t2)) = free t1 `Set.union` free t2
 
-instance Substitutable a => Substitutable [a] where
+instance (Substitutable a) => Substitutable [a] where
   (.>) s = map (s .>)
-  free   = foldr (Set.union . free) Set.empty
+  free s = foldr (\el acc -> (free el) `Set.union` acc) Set.empty s
 
 instance Substitutable Env where
   (.>)  s (TypeEnv env) = TypeEnv $ Map.map (s .>) env
