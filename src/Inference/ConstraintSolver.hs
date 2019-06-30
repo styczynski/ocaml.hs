@@ -47,7 +47,7 @@ unifyMany :: [Type] -> [Type] -> Solve Subst
 unifyMany [] [] = return emptySubst
 unifyMany (t1 : ts1) (t2 : ts2) =
   do su1 <- unifies t1 t2
-     su2 <- unifyMany (apply su1 ts1) (apply su1 ts2)
+     su2 <- unifyMany (su1 .> ts1) (su1 .> ts2)
      return (su2 +> su1)
 unifyMany t1 t2 = do
   payl <- errSolvePayload
@@ -76,7 +76,7 @@ solver (su, cs) =
     ((AConstraint l (t1, t2)): cs0) -> do
       checkpointAnnotSolve (AConstraint l (t1, t2))
       su1  <- unifies t1 t2
-      solver (su1 +> su, apply su1 cs0)
+      solver (su1 +> su, su1 .> cs0)
 
 bind ::  TVar -> Type -> Solve Subst
 bind a t | t == TVar a     = return emptySubst
@@ -86,5 +86,5 @@ bind a t | t == TVar a     = return emptySubst
          | otherwise       = return (Subst $ Map.singleton a t)
 
 occursCheck ::  Substitutable a => TVar -> a -> Bool
-occursCheck a t = a `Set.member` ftv t
+occursCheck a t = a `Set.member` free t
 

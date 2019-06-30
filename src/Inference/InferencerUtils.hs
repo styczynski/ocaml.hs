@@ -105,11 +105,11 @@ instantiate ::  Scheme -> Infer Type
 instantiate (Forall as t) = do
     as' <- mapM (const fresh) as
     let s = Subst $ Map.fromList $ zip as as'
-    return $ apply s t
+    return $ s .> t
 
 generalize :: Env -> Type -> Scheme
 generalize env t  = Forall as t
-    where as = Set.toList $ ftv t `Set.difference` ftv env
+    where as = Set.toList $ free t `Set.difference` free env
 
 normalize :: Scheme -> Scheme
 normalize (Forall _ body) = Forall (map snd ord) (normtype body)

@@ -17,48 +17,48 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 class Substitutable a where
-  apply :: Subst -> a -> a
-  ftv   :: a -> Set.Set TVar
+  (.>)     :: Subst -> a -> a
+  free   :: a -> Set.Set TVar
 
 instance Substitutable Type where
-  apply _ (TCon a)       = TCon a
-  apply s (TDep name deps) = TDep name $ map (\a -> apply s a) deps
-  apply (Subst s) t@(TVar a) = Map.findWithDefault t a s
-  apply s (t1 `TArr` t2) = apply s t1 `TArr` apply s t2
-  apply s (t1 `TTuple` t2) = apply s t1 `TTuple` apply s t2
-  apply s (TList a) = TList $ apply s a
-  apply s TUnit = TUnit
-  apply s (TExport v) = (TExport v)
+  (.>) _ (TCon a)       = TCon a
+  (.>) s (TDep name deps) = TDep name $ map (\a -> s .> a) deps
+  (.>) (Subst s) t@(TVar a) = Map.findWithDefault t a s
+  (.>) s (t1 `TArr` t2) = (s .> t1) `TArr` (s .> t2)
+  (.>) s (t1 `TTuple` t2) = (s .> t1) `TTuple` (s .> t2)
+  (.>) s (TList a) = TList $ s .> a
+  (.>) s TUnit = TUnit
+  (.>) s (TExport v) = (TExport v)
 
-  ftv TCon{}         = Set.empty
-  ftv (TVar a)       = Set.singleton a
-  ftv (TList a)      = ftv a
-  ftv (TDep name deps) = foldl (\acc el -> acc `Set.union` (ftv el)) (Set.empty) deps
-  ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
-  ftv (t1 `TTuple` t2) = ftv t1 `Set.union` ftv t2
-  ftv TUnit = Set.empty
-  ftv (TExport _) = Set.empty
+  free TCon{}         = Set.empty
+  free (TVar a)       = Set.singleton a
+  free (TList a)      = free a
+  free (TDep name deps) = foldl (\acc el -> acc `Set.union` (free el)) (Set.empty) deps
+  free (t1 `TArr` t2) = free t1 `Set.union` free t2
+  free (t1 `TTuple` t2) = free t1 `Set.union` free t2
+  free TUnit = Set.empty
+  free (TExport _) = Set.empty
 
 instance Substitutable Scheme where
-  apply (Subst s) (Forall as t)   = Forall as $ apply s' t
+  (.>) (Subst s) (Forall as t)   = Forall as $ s' .> t
                             where s' = Subst $ foldr Map.delete s as
-  ftv (Forall as t) = ftv t `Set.difference` Set.fromList as
+  free (Forall as t) = free t `Set.difference` Set.fromList as
 
 instance Substitutable Constraint where
-   apply s (t1, t2) = (apply s t1, apply s t2)
-   ftv (t1, t2) = ftv t1 `Set.union` ftv t2
+   (.>) s (t1, t2) = (s .> t1, s .> t2)
+   free (t1, t2) = free t1 `Set.union` free t2
 
 instance Substitutable AConstraint where
-   apply s (AConstraint l (t1, t2)) = AConstraint l (apply s t1, apply s t2)
-   ftv (AConstraint _ (t1, t2)) = ftv t1 `Set.union` ftv t2
+   (.>) s (AConstraint l (t1, t2)) = AConstraint l (s .> t1, s .> t2)
+   free (AConstraint _ (t1, t2)) = free t1 `Set.union` free t2
 
 instance Substitutable a => Substitutable [a] where
-  apply = map . apply
-  ftv   = foldr (Set.union . ftv) Set.empty
+  (.>) s = map (s .>)
+  free   = foldr (Set.union . free) Set.empty
 
 instance Substitutable Env where
-  apply s (TypeEnv env) = TypeEnv $ Map.map (apply s) env
-  ftv (TypeEnv env) = ftv $ Map.elems env
+  (.>)  s (TypeEnv env) = TypeEnv $ Map.map (s .>) env
+  free (TypeEnv env) = free $ Map.elems env
 
 (+>) :: Subst -> Subst -> Subst
-(+>) (Subst s1) (Subst s2) = Subst $ Map.map (apply (Subst s1)) s2 `Map.union` s1
+(+>) (Subst s1) (Subst s2) = Subst $ Map.map ((Subst s1) .>) s2 `Map.union` s1

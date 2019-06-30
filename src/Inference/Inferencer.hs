@@ -40,7 +40,7 @@ solve r = case r of
     s <- runSolve cs
     case s of
       Left err -> return $ Left err
-      Right subst -> return $ Right $ closeOver $ apply subst ty
+      Right subst -> return $ Right $ closeOver $ subst .> ty
 
 unpackEnvTypeContraints :: Either TypeError ((Env, Type, [AConstraint]), InferState) -> Either TypeError (Type, [AConstraint])
 unpackEnvTypeContraints (Left r) = Left r
@@ -77,7 +77,7 @@ constraintsExpr env state ex = do
         Left err -> return $ Left err
         Right subst -> return $ Right (cs, subst, ty, sc)
           where
-            sc = closeOver $ apply subst ty
+            sc = closeOver $ subst .> ty
 
 -- | Canonicalize and return the polymorphic toplevel type.
 
@@ -254,8 +254,8 @@ infer (Let x e1 e2) = do
   case s of
     Left err -> throwError err
     Right sub -> do
-        let sc = generalize (apply sub env) (apply sub t1)
-        (t2, c2) <- (x, sc) ==> (local (apply sub) (infer e2))
+        let sc = generalize (sub .> env) (sub .> t1)
+        (t2, c2) <- (x, sc) ==> (local (sub .>) (infer e2))
         return (t2, c1 ++ c2)
 infer (Fix e1) = do
   (t1, c1) <- infer e1
