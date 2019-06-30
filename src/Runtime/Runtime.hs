@@ -2,8 +2,7 @@
 
 module Runtime.Runtime where
 
-import AbsSyntax
-import PrintSyntax
+import Syntax.Base
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -15,6 +14,7 @@ import qualified Data.Map as Map
 
 import Inference.Env
 import Inference.Inferencer
+import Inference.Errors
 import qualified Inference.Type as Type
 
 import System.IO

@@ -16,6 +16,7 @@ import Interpreter.Interpreter
 
 import Inference.Inferencer
 import Inference.Env
+import Inference.Errors
 import qualified Inference.Type as Type
 import Inference.Syntax
 

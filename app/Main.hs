@@ -10,9 +10,10 @@ import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 
 import Lib
-import InterpreterDefinitions
+import Interpreter.Definitions
 
 import qualified Inference.Type as Type
+import Inference.Errors
 import Inference.Inferencer
 
 runFile :: Verbosity -> FilePath -> IO ()

@@ -1,12 +1,12 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Inference.Inferencer where
 
 import Inference.Syntax
 import Inference.Env
 import Inference.Type
+import Inference.Substitutions
+import Inference.Errors
+import Inference.ConstraintSolver
+
 import AbsSyntax
 import PrintSyntax
 
@@ -35,102 +35,6 @@ data InferState = InferState { count :: Int, inferTrace :: [String], lastInferEx
 initInfer :: InferState
 initInfer = InferState { count = 0, inferTrace = [], lastInferExpr = "" }
 
-type Constraint = (Type, Type)
-
-type Unifier = (Subst, [AConstraint])
-
--- | Solve state
-data SolveState = SolveState { lastAnnot :: TypeErrorPayload }
-initSolve :: SolveState
-initSolve = SolveState { lastAnnot = EmptyPayload }
-
--- | Constraint solver monad
-type Solve a = (StateT
-                 SolveState
-                 (Except
-                   TypeError))
-                 a
-
-newtype Subst = Subst (Map.Map TVar Type)
-  deriving (Eq, Show, Monoid, Semigroup)
-
-class Substitutable a where
-  apply :: Subst -> a -> a
-  ftv   :: a -> Set.Set TVar
-
-instance Substitutable Type where
-  apply _ (TCon a)       = TCon a
-  apply s (TDep name deps) = TDep name $ map (\a -> apply s a) deps
-  apply (Subst s) t@(TVar a) = Map.findWithDefault t a s
-  apply s (t1 `TArr` t2) = apply s t1 `TArr` apply s t2
-  apply s (t1 `TTuple` t2) = apply s t1 `TTuple` apply s t2
-  apply s (TList a) = TList $ apply s a
-  apply s TUnit = TUnit
-  apply s (TExport v) = (TExport v)
-
-  ftv TCon{}         = Set.empty
-  ftv (TVar a)       = Set.singleton a
-  ftv (TList a)      = ftv a
-  ftv (TDep name deps) = foldl (\acc el -> acc `Set.union` (ftv el)) (Set.empty) deps
-  ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
-  ftv (t1 `TTuple` t2) = ftv t1 `Set.union` ftv t2
-  ftv TUnit = Set.empty
-  ftv (TExport _) = Set.empty
-
-instance Substitutable Scheme where
-  apply (Subst s) (Forall as t)   = Forall as $ apply s' t
-                            where s' = Subst $ foldr Map.delete s as
-  ftv (Forall as t) = ftv t `Set.difference` Set.fromList as
-
-instance Substitutable Constraint where
-   apply s (t1, t2) = (apply s t1, apply s t2)
-   ftv (t1, t2) = ftv t1 `Set.union` ftv t2
-
-instance Substitutable AConstraint where
-   apply s (AConstraint l (t1, t2)) = AConstraint l (apply s t1, apply s t2)
-   ftv (AConstraint _ (t1, t2)) = ftv t1 `Set.union` ftv t2
-
-instance Substitutable a => Substitutable [a] where
-  apply = map . apply
-  ftv   = foldr (Set.union . ftv) Set.empty
-
-instance Substitutable Env where
-  apply s (TypeEnv env) = TypeEnv $ Map.map (apply s) env
-  ftv (TypeEnv env) = ftv $ Map.elems env
-
-data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
-
-data TypeError
-  = UnificationFail TypeErrorPayload Type Type
-  | InfiniteType TypeErrorPayload TVar Type
-  | UnboundVariable TypeErrorPayload Ident
-  | Ambigious TypeErrorPayload [Constraint]
-  | UnificationMismatch TypeErrorPayload [Type] [Type]
-  | Debug TypeErrorPayload String
-  deriving (Show)
-
-constraintToStr :: Constraint -> String
-constraintToStr (a,b) = (typeToStr [] a) ++ " ~ " ++ (typeToStr [] b)
-
-constraintsListToStr :: [Constraint] -> String
-constraintsListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (constraintToStr t)) "" l) ++ "}"
-
-typesListToStr :: [Type] -> String
-typesListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (typeToStr [] t)) "" l) ++ "}"
-
---data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
-generateTypePayloadMessage :: TypeErrorPayload -> String
-generateTypePayloadMessage EmptyPayload = "Typechecking error:\nLocation: <unknown>\n\n"
-generateTypePayloadMessage (TypeErrorPayload ast) = "Typechecking error:\nLocation: " ++ ast ++ "\n\n"
-
-typeErrorToStr :: TypeError -> String
-typeErrorToStr (UnificationFail payl a b) = (generateTypePayloadMessage payl) ++ "Cannot match types, expected: " ++ (typeToStr [] b) ++ ", got: " ++ (typeToStr [] a)
-typeErrorToStr (Debug payl mes) = (generateTypePayloadMessage payl) ++ mes
-typeErrorToStr (UnificationMismatch payl a b) = (generateTypePayloadMessage payl) ++ "Cannot match types, mismatch when unyfying: " ++ (typesListToStr a) ++ " and " ++ (typesListToStr b)
-typeErrorToStr (Ambigious payl a) = (generateTypePayloadMessage payl) ++ "Cannot infer types, expression is ambigious: " ++ (constraintsListToStr a)
-typeErrorToStr (UnboundVariable payl (Ident a)) = (generateTypePayloadMessage payl) ++ "Variable not in scope: \"" ++ a ++ "\""
-typeErrorToStr (InfiniteType payl (TV v) t) = (generateTypePayloadMessage payl) ++ "Infinite type detected: " ++ v ++ "': " ++ (typeToStr [] t)
-typeErrorToStr e = (generateTypePayloadMessage EmptyPayload) ++ "Got unexpected error during type inference phase.\n" ++ (show e)
 
 -------------------------------------------------------------------------------
 -- Inference
@@ -706,8 +610,6 @@ inferE expr = do
   (t, c) <- infer expr
   return $ (env, t, c)
 
-data AConstraint = AConstraint TypeErrorPayload Constraint
-
 constraintDeannot :: AConstraint -> Constraint
 constraintDeannot (AConstraint _ ac) = ac
 
@@ -836,80 +738,3 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
       case Prelude.lookup a ord of
         Just x -> TVar x
         Nothing -> error "type variable not in signature"
-
--------------------------------------------------------------------------------
--- Constraint Solver
--------------------------------------------------------------------------------
-
-checkpointAnnotSolve :: AConstraint -> Solve ()
-checkpointAnnotSolve (AConstraint l _) = do
-    s <- get
-    put s{lastAnnot = l}
-    return ()
-
-errSolvePayload :: Solve TypeErrorPayload
-errSolvePayload = do
-  s <- get
-  lastAnnot <- return $ let SolveState { lastAnnot = lastAnnot } = s in lastAnnot
-  return lastAnnot
-
--- | The empty substitution
-emptySubst :: Subst
-emptySubst = mempty
-
--- | Compose substitutions
-compose :: Subst -> Subst -> Subst
-(Subst s1) `compose` (Subst s2) = Subst $ Map.map (apply (Subst s1)) s2 `Map.union` s1
-
--- | Run the constraint solver
-runSolve :: [AConstraint] -> Either TypeError Subst
-runSolve cs = let st = (emptySubst, cs) in
-  case runExcept $ runStateT (solver st) initSolve of
-    Left e -> Left e
-    Right (s, _) -> Right s
-
-unifyMany :: [Type] -> [Type] -> Solve Subst
-unifyMany [] [] = return emptySubst
-unifyMany (t1 : ts1) (t2 : ts2) =
-  do su1 <- unifies t1 t2
-     su2 <- unifyMany (apply su1 ts1) (apply su1 ts2)
-     return (su2 `compose` su1)
-unifyMany t1 t2 = do
-  payl <- errSolvePayload
-  throwError $ UnificationMismatch payl t1 t2
-
-unifies :: Type -> Type -> Solve Subst
-unifies t1 t2 | t1 == t2 = return emptySubst
-unifies (TVar v) t = v `bind` t
-unifies t (TVar v) = v `bind` t
-unifies t1@(TDep name1 deps1) t2@(TDep name2 deps2) = do
-  payl <- errSolvePayload
-  _ <- if not (name1 == name2) then throwError $ UnificationMismatch payl [t1] [t2] else return 0
-  unifyMany deps1 deps2
-unifies (TList t1) (TList t2) = unifyMany [t1] [t2]
-unifies (TTuple t1 t2) (TTuple t3 t4) = unifyMany [t1, t2] [t3, t4]
-unifies (TArr t1 t2) (TArr t3 t4) = unifyMany [t1, t2] [t3, t4]
-unifies t1 t2 = do
-  payl <- errSolvePayload
-  throwError $ UnificationFail payl t1 t2
-
--- Unification solver
-solver :: Unifier -> Solve Subst
-solver (su, cs) =
-  case cs of
-    [] -> return su
-    ((AConstraint l (t1, t2)): cs0) -> do
-      checkpointAnnotSolve (AConstraint l (t1, t2))
-      su1  <- unifies t1 t2
-      solver (su1 `compose` su, apply su1 cs0)
-
-bind ::  TVar -> Type -> Solve Subst
-bind a t | t == TVar a     = return emptySubst
-         | occursCheck a t = do
-                             payl <- errSolvePayload
-                             throwError $ InfiniteType payl a t
-         | otherwise       = return (Subst $ Map.singleton a t)
-
-occursCheck ::  Substitutable a => TVar -> a -> Bool
-occursCheck a t = a `Set.member` ftv t
-
