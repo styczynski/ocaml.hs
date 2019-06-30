@@ -24,16 +24,6 @@ import System.IO.Unsafe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
--------------------------------------------------------------------------------
--- Classes
--------------------------------------------------------------------------------
-
-
-
--------------------------------------------------------------------------------
--- Inference
--------------------------------------------------------------------------------
-
 -- | Run the inference monad
 runInfer :: Env -> InferState -> Infer (Env, Type, [AConstraint]) -> IO (Either TypeError ((Env, Type, [AConstraint]), InferState))
 runInfer env state fn = do
@@ -223,88 +213,73 @@ inferE expr = do
   return $ (env, t, c)
 
 infer :: Expr -> Infer (Type, [AConstraint])
-infer expr = case expr of
-  Skip -> return (typeInt, [])
-  Lit (LInt _)  -> return (typeInt, [])
-  Lit (LBool _) -> return (typeBool, [])
-  Lit (LString _) -> return (typeString, [])
-
-  Annot l t -> do
-    s <- get
-    put s{lastInferExpr = l}
-    infer t
-
-  Typed (Forall _ t) ->
+infer Skip = return ((TCon "Int"), [])
+infer (Lit (LInt _)) = return ((TCon "Int"), [])
+infer (Lit (LBool _)) = return ((TCon "Bool"), [])
+infer (Lit (LString _)) = return ((TCon "String"), [])
+infer (Annot l t) = do
+  s <- get
+  put s{lastInferExpr = l}
+  infer t
+infer (Typed (Forall _ t)) =
+  return (t, [])
+infer (Export) = do
+  env <- ask
+  return (TExport env, [])
+infer (Check e (Forall _ t)) = do
+  (t1, c1) <- infer e
+  ac <- constraintAnnotList [(t1, t)]
+  return (t1, c1 ++ ac)
+infer (Var x) = do
+    t <- lookupEnv x
     return (t, [])
-
-  Export -> do
-    env <- ask
-    return (TExport env, [])
-
-  Check e (Forall _ t) -> do
-    (t1, c1) <- infer e
-    ac <- constraintAnnotList [(t1, t)]
-    return (t1, c1 ++ ac)
-
-  Var x -> do
-      t <- lookupEnv x
-      return (t, [])
-
-  Lam x e -> do
-    tv <- fresh
-    (t, c) <- (x, Forall [] tv) ==> (infer e)
-    return (tv `TArr` t, c)
-
-  App e1 e2 -> do
-    (t1, c1) <- infer e1
-    (t2, c2) <- infer e2
-    tv <- fresh
-    ac <- constraintAnnotList [(t1, t2 `TArr` tv)]
-    return (tv, c1 ++ c2 ++ ac)
-
-  Let x e1 e2 -> do
-    env <- ask
-    (t1, c1) <- infer e1
-    case runSolve c1 of
-        Left err -> throwError err
-        Right sub -> do
-            let sc = generalize (apply sub env) (apply sub t1)
-            (t2, c2) <- (x, sc) ==> (local (apply sub) (infer e2))
-            return (t2, c1 ++ c2)
-
-  Fix e1 -> do
-    (t1, c1) <- infer e1
-    tv <- fresh
-    ac <- constraintAnnotList [(tv `TArr` tv, t1)]
-    return (tv, c1 ++ ac)
-
-  UniOp (OpCustomUni name) e1 -> do
-    infer (App (Var $ Ident name) e1)
-
-  UniOp op e1 -> do
-    (t1, c1) <- infer e1
-    tv <- fresh
-    u1 <- return $ t1 `TArr` tv
-    u2 <- opsUni op
-    ac <- constraintAnnotList [(u1, u2)]
-    return (tv, c1 ++ ac)
-
-  Op (OpCustom name) e1 e2 -> do
-    infer (App (App (Var $ Ident name) e1) e2)
-
-  Op op e1 e2 -> do
-    (t1, c1) <- infer e1
-    (t2, c2) <- infer e2
-    tv <- fresh
-    u1 <- return $ t1 `TArr` (t2 `TArr` tv)
-    u2 <- ops op
-    ac <- constraintAnnotList [(u1, u2)]
-    return (tv, c1 ++ c2 ++ ac)
-
-  If cond tr fl -> do
-    (t1, c1) <- infer cond
-    (t2, c2) <- infer tr
-    (t3, c3) <- infer fl
-    ac <- constraintAnnotList [(t1, typeBool), (t2, t3)]
-    return (t2, c1 ++ c2 ++ c3 ++ ac)
+infer (Lam x e) = do
+  tv <- fresh
+  (t, c) <- (x, Forall [] tv) ==> (infer e)
+  return (tv `TArr` t, c)
+infer (App e1 e2) = do
+  (t1, c1) <- infer e1
+  (t2, c2) <- infer e2
+  tv <- fresh
+  ac <- constraintAnnotList [(t1, t2 `TArr` tv)]
+  return (tv, c1 ++ c2 ++ ac)
+infer (Let x e1 e2) = do
+  env <- ask
+  (t1, c1) <- infer e1
+  case runSolve c1 of
+      Left err -> throwError err
+      Right sub -> do
+          let sc = generalize (apply sub env) (apply sub t1)
+          (t2, c2) <- (x, sc) ==> (local (apply sub) (infer e2))
+          return (t2, c1 ++ c2)
+infer (Fix e1) = do
+  (t1, c1) <- infer e1
+  tv <- fresh
+  ac <- constraintAnnotList [(tv `TArr` tv, t1)]
+  return (tv, c1 ++ ac)
+infer (UniOp (OpCustomUni name) e1) = do
+  infer (App (Var $ Ident name) e1)
+infer (UniOp op e1) = do
+  (t1, c1) <- infer e1
+  tv <- fresh
+  u1 <- return $ t1 `TArr` tv
+  u2 <- opsUni op
+  ac <- constraintAnnotList [(u1, u2)]
+  return (tv, c1 ++ ac)
+infer (Op (OpCustom name) e1 e2) = do
+  infer (App (App (Var $ Ident name) e1) e2)
+infer (Op op e1 e2) = do
+  (t1, c1) <- infer e1
+  (t2, c2) <- infer e2
+  tv <- fresh
+  u1 <- return $ t1 `TArr` (t2 `TArr` tv)
+  u2 <- ops op
+  ac <- constraintAnnotList [(u1, u2)]
+  return (tv, c1 ++ c2 ++ ac)
+infer (If cond tr fl) = do
+  (t1, c1) <- infer cond
+  (t2, c2) <- infer tr
+  (t3, c3) <- infer fl
+  ac <- constraintAnnotList [(t1, TCon "Bool"), (t2, t3)]
+  return (t2, c1 ++ c2 ++ c3 ++ ac)
 

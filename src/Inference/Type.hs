@@ -29,11 +29,6 @@ data Type
 data Scheme = Forall [TVar] Type
   deriving (Show, Eq)
 
-typeInt, typeBool, typeString :: Type
-typeInt  = TCon "Int"
-typeBool = TCon "Bool"
-typeString = TCon "String"
-
 getTypeFVNames :: Type -> [String]
 getTypeFVNames (TVar (TV name)) = [name]
 getTypeFVNames (TList t) = getTypeFVNames t
