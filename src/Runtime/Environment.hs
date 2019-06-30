@@ -207,18 +207,16 @@ callFunctionF _ _ _ = raise $ "Could not call non-functional value"
 callFunctionR :: RuntimeValue -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
 callFunctionR val args env = do
   def <- return $ getRefStorage val env
-  let argsInCount = length args in
-    case def of
-      RfFun sig body -> callFunctionF (RfFun sig body) args env
-      RfInvalid _ -> raise $ "Reference points nowhere"
+  case def of
+    RfFun sig body -> callFunctionF (RfFun sig body) args env
+    RfInvalid _ -> raise $ "Reference points nowhere"
 
 callFunction :: Ident -> [RuntimeValue] -> Environment -> Exec (RuntimeValue, Environment)
 callFunction name@(Ident nameStr) args env = do
   (def, env2) <- pullRefStorage name env
-  let argsInCount = length args in
-    case def of
-      RfFun sig body -> callFunctionF (RfFun sig body) args env2
-      RfInvalid _ -> raise $ "Reference " ++ nameStr ++ " points nowhere"
+  case def of
+    RfFun sig body -> callFunctionF (RfFun sig body) args env2
+    RfInvalid _ -> raise $ "Reference " ++ nameStr ++ " points nowhere"
 
 newFunction :: RFunSig -> RFunBody -> Environment -> (RuntimeValue, Environment)
 newFunction sig body env =
@@ -240,13 +238,13 @@ getProgramEnvironmentDefault _ envDefault = envDefault
 callOperator :: Ident -> Integer -> [RuntimeValue] -> Exec (RuntimeValue, Environment)
 callOperator name@(Ident nameStr) priority args = do
   env <- ask
-  (case getDef name env of
+  case getDef name env of
     DInvalid -> raise $ "Called operator do not exist: " ++ nameStr
     (DOperator opName opPrio opBody) ->
       if (opName == name && opPrio == priority) then
          callFunctionF (RfFun (RFunSig $ length args) opBody) args env
       else raise $ "Invalid operator called: " ++ nameStr
-    _ -> raise $ "Could not call: "++ nameStr ++ " it's not an operator. ")
+    _ -> raise $ "Could not call: "++ nameStr ++ " it's not an operator. "
 
 callOperatorF :: OperatorF -> RuntimeValue -> Exec (RuntimeValue, Environment)
 callOperatorF (OperatorF op) arg1 = callOperator (Ident op) 5 [arg1]
