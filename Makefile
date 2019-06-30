@@ -2,7 +2,7 @@ all: interpreter
 	echo "Done."
 
 format-code: install-deps
-    stack exec brittany -- --write-mode=inplace ./src/**/*.hs
+	stack exec brittany -- --write-mode=inplace ./src/**/*.hs
 
 web: interpreter-web
 	echo "Done."
