@@ -122,17 +122,17 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
     fv (TypeList a)  = fv a
     fv (TypeTuple a b) = fv a ++ fv b
     fv TypeUnit = []
-    fv (TExport _) = []
+    fv (TypeAnnotated _) = []
     fv (TypeStatic _)   = []
-    fv (TDep _ deps) = foldl (\acc el -> acc ++ (fv el)) [] deps
+    fv (TypeComplex _ deps) = foldl (\acc el -> acc ++ (fv el)) [] deps
 
     normtype TypeUnit = TypeUnit
-    normtype (TExport v) = (TExport v)
+    normtype (TypeAnnotated v) = (TypeAnnotated v)
     normtype (TypeArrow a b) = TypeArrow (normtype a) (normtype b)
     normtype (TypeTuple a b) = TypeTuple (normtype a) (normtype b)
     normtype (TypeList a) = TypeList (normtype a)
     normtype (TypeStatic a)   = TypeStatic a
-    normtype (TDep name deps) = TDep name $ map normtype deps
+    normtype (TypeComplex name deps) = TypeComplex name $ map normtype deps
     normtype (TypeVar a)   =
       case Prelude.lookup a ord of
         Just x -> TypeVar x

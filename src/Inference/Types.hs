@@ -15,6 +15,8 @@ newtype TypeVar = TV String
 data Env = TypeEnv { types :: Map.Map Ident Scheme }
   deriving (Eq, Show)
 
+data TypeAnnotation = AnnotationEnv Env deriving (Show, Eq)
+
 data Type
   = TypeVar TypeVar
   | TypeStatic String
@@ -22,8 +24,8 @@ data Type
   | TypeList Type
   | TypeTuple Type Type
   | TypeUnit
-  | TExport Env
-  | TDep String [Type]
+  | TypeComplex String [Type]
+  | TypeAnnotated TypeAnnotation
   deriving (Show, Eq)
 
 data Scheme = Forall [TypeVar] Type
@@ -33,7 +35,7 @@ getTypeFVNames :: Type -> [String]
 getTypeFVNames (TypeVar (TV name)) = [name]
 getTypeFVNames (TypeList t) = getTypeFVNames t
 getTypeFVNames (TypeArrow a b) = (getTypeFVNames a) ++ (getTypeFVNames b)
-getTypeFVNames (TDep name deps) = foldr (\t acc -> acc ++ (getTypeFVNames t)) [] deps
+getTypeFVNames (TypeComplex name deps) = foldr (\t acc -> acc ++ (getTypeFVNames t)) [] deps
 getTypeFVNames (TypeTuple a b) = (getTypeFVNames a) ++ (getTypeFVNames b)
 getTypeFVNames _ = []
 
@@ -42,10 +44,10 @@ remapTypesRec fvMap t@(TypeVar (TV name)) =
   case Map.lookup name fvMap of
     (Just newName) -> (TypeVar (TV newName))
     (Nothing) -> t
-remapTypesRec fvMap (TExport _) = TypeUnit
+remapTypesRec fvMap (TypeAnnotated _) = TypeUnit
 remapTypesRec fvMap (TypeList t) = TypeList $ remapTypesRec fvMap t
 remapTypesRec fvMap (TypeArrow a b) = TypeArrow (remapTypesRec fvMap a) (remapTypesRec fvMap b)
-remapTypesRec fvMap (TDep name deps) = TDep name $ map (remapTypesRec fvMap) deps
+remapTypesRec fvMap (TypeComplex name deps) = TypeComplex name $ map (remapTypesRec fvMap) deps
 remapTypesRec fvMap (TypeTuple a b) = TypeTuple (remapTypesRec fvMap a) (remapTypesRec fvMap b)
 remapTypesRec _ v = v
 
@@ -64,12 +66,12 @@ remapTypes t =
 
 typeToStrRec :: [TypeVar] -> Type -> String
 typeToStrRec vars TypeUnit = "()"
-typeToStrRec vars (TExport v) = "export{" ++ (show v) ++"}"
+typeToStrRec vars (TypeAnnotated (AnnotationEnv v)) = "export{" ++ (show v) ++"}"
 typeToStrRec vars (TypeList t) = "[" ++ (typeToStrRec vars t) ++ "]"
 typeToStrRec vars (TypeArrow a b) = "(" ++ (typeToStrRec vars a) ++ ") -> " ++ (typeToStrRec vars b)
 typeToStrRec vars (TypeVar (TV name)) = name
 typeToStrRec vars (TypeStatic name) = name
-typeToStrRec vars (TDep name deps) = name ++ " (" ++ (foldr (\el acc -> acc ++ (if length acc <= 0 then "" else ", ") ++ (typeToStrRec vars el)) "" deps) ++ ")"
+typeToStrRec vars (TypeComplex name deps) = name ++ " (" ++ (foldr (\el acc -> acc ++ (if length acc <= 0 then "" else ", ") ++ (typeToStrRec vars el)) "" deps) ++ ")"
 typeToStrRec vars (TypeTuple TypeUnit TypeUnit) = "()"
 typeToStrRec vars (TypeTuple a (TypeTuple TypeUnit TypeUnit)) = typeToStrRec vars a
 typeToStrRec vars (TypeTuple a b) = (typeToStrRec vars a) ++ " * " ++ (typeToStrRec vars b)

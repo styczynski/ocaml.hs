@@ -199,10 +199,11 @@ inferTypeDef ast@(TypeDefVarP typeParams name options) = do
 inferImplementationPhrase :: ImplPhrase -> Infer (Env, Type, [TypeConstraint])
 inferImplementationPhrase (IGlobalLetOperator recK opName restPatterns letExpr) = do
   (t, c) <- inferComplexExpression (ECLetOperator recK opName restPatterns letExpr $ ECExportEnv)
-  return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
-inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExpr) = do
+  return $ let (TypeAnnotated (AnnotationEnv exportedEnv)) = t in (exportedEnv, t, c)
+inferImplementationPhrase (IGlobalLet recK
+ pattern restPatterns typeAnnot letExpr) = do
   (t, c) <- inferComplexExpression (ECLet recK pattern restPatterns typeAnnot letExpr $ ECExportEnv)
-  return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
+  return $ let (TypeAnnotated (AnnotationEnv exportedEnv)) = t in (exportedEnv, t, c)
 inferImplementationPhrase (IDefType typeDef) = inferTypeDef typeDef
 
 inferComplexExpression :: ComplexExpression -> Infer (Type, [TypeConstraint])
@@ -229,7 +230,7 @@ infer (Typed (Forall _ t)) =
   return (t, [])
 infer (Export) = do
   env <- ask
-  return (TExport env, [])
+  return (TypeAnnotated (AnnotationEnv env), [])
 infer (Check e (Forall _ t)) = do
   (t1, c1) <- infer e
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (t1, t)]

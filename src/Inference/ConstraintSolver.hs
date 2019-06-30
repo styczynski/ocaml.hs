@@ -57,7 +57,7 @@ unifies :: Type -> Type -> Solve Subst
 unifies t1 t2 | t1 == t2 = return emptySubst
 unifies (TypeVar v) t = v `bind` t
 unifies t (TypeVar v) = v `bind` t
-unifies t1@(TDep name1 deps1) t2@(TDep name2 deps2) = do
+unifies t1@(TypeComplex name1 deps1) t2@(TypeComplex name2 deps2) = do
   payl <- errSolvePayload
   _ <- if not (name1 == name2) then throwError $ UnificationMismatch payl [t1] [t2] else return 0
   unifyMany deps1 deps2

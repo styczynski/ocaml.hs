@@ -94,10 +94,10 @@ resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJust firstParam restParams) 
   typeParams <- foldlM (\acc (TypeArgEl expr)-> do
       t <- resolveTypeExpressionRec fvs expr
       return $ [t] ++ acc) ([]) ([firstParam] ++ restParams)
-  return $ TDep name typeParams
+  return $ TypeComplex name typeParams
 resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJustOne param) (Ident name)) = do
   typeParam <- resolveTypeSimpleExpressionRec fvs param
-  return $ TDep name [typeParam]
+  return $ TypeComplex name [typeParam]
 resolveTypeExpressionRec fvs (TypeFun a b) = do
   t1 <- resolveTypeExpressionRec fvs a
   t2 <- resolveTypeExpressionRec fvs b

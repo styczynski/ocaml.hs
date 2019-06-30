@@ -22,22 +22,22 @@ class Substitutable a where
 
 instance Substitutable Type where
   (.>) _ (TypeStatic a)       = TypeStatic a
-  (.>) s (TDep name deps) = TDep name $ map (\a -> s .> a) deps
+  (.>) s (TypeComplex name deps) = TypeComplex name $ map (\a -> s .> a) deps
   (.>) (Subst s) t@(TypeVar a) = Map.findWithDefault t a s
   (.>) s (t1 `TypeArrow` t2) = (s .> t1) `TypeArrow` (s .> t2)
   (.>) s (t1 `TypeTuple` t2) = (s .> t1) `TypeTuple` (s .> t2)
   (.>) s (TypeList a) = TypeList $ s .> a
   (.>) s TypeUnit = TypeUnit
-  (.>) s (TExport v) = (TExport v)
+  (.>) s (TypeAnnotated v) = (TypeAnnotated v)
 
   free TypeStatic{}         = Set.empty
   free (TypeVar a)       = Set.singleton a
   free (TypeList a)      = free a
-  free (TDep name deps) = foldl (\acc el -> acc `Set.union` (free el)) (Set.empty) deps
+  free (TypeComplex name deps) = foldl (\acc el -> acc `Set.union` (free el)) (Set.empty) deps
   free (t1 `TypeArrow` t2) = free t1 `Set.union` free t2
   free (t1 `TypeTuple` t2) = free t1 `Set.union` free t2
   free TypeUnit = Set.empty
-  free (TExport _) = Set.empty
+  free (TypeAnnotated _) = Set.empty
 
 instance Substitutable Scheme where
   (.>) (Subst s) (Forall as t)   = Forall as $ s' .> t
