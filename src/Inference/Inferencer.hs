@@ -98,7 +98,7 @@ closeOver = normalize . generalize Inference.TypingEnvironment.empty
 -- | Extend type environment
 inEnv :: (Ident, Scheme) -> Infer a -> Infer a
 inEnv (x, sc) m = do
-  let scope e = (remove e x) `extend` (x, sc)
+  let scope e = (e --> x) ++> (x, sc)
   local scope m
 
 -- | Lookup type in the environment

@@ -38,7 +38,7 @@ annotateGlobalVariableTypeEnv env state name typeExpr = let ts = myLexer typeExp
     v <- runExceptT (runReaderT (runStateT (resolveTypeExpression tree) (state)) (env))
     case v of
       (Right (scheme, newState)) ->
-        return $ ( (extend env ((Ident name), scheme)), (newState) )
+        return $ ( (env ++> ((Ident name), scheme)), (newState) )
 
 data (UnpackableValue a, PackableValue b) => VarargFun a b = VarargFun ([a] -> b)
 instance (UnpackableValue a, PackableValue b) => PackableValue (VarargFun a b) where

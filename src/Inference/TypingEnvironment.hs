@@ -31,11 +31,11 @@ constraintsListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 t
 empty :: Env
 empty = TypeEnv Map.empty
 
-extend :: Env -> (Ident, Scheme) -> Env
-extend env (x, s) = env { types = Map.insert x s (types env) }
+(++>) :: Env -> (Ident, Scheme) -> Env
+(++>) env (x, s) = env { types = Map.insert x s (types env) }
 
-remove :: Env -> Ident -> Env
-remove (TypeEnv env) var = TypeEnv (Map.delete var env)
+(-->) :: Env -> Ident -> Env
+(-->) (TypeEnv env) var = TypeEnv (Map.delete var env)
 
 extends :: Env -> [(Ident, Scheme)] -> Env
 extends env xs = env { types = Map.union (Map.fromList xs) (types env) }
