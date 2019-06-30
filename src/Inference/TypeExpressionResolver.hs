@@ -10,8 +10,7 @@ import Inference.Simplifier
 import Inference.ConstraintSolver
 import Inference.InferencerUtils
 
-import AbsSyntax
-import PrintSyntax
+import Syntax.Base
 
 import Control.Monad.Except
 import Control.Monad.State

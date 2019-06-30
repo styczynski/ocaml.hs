@@ -6,7 +6,8 @@ import Control.Monad.Reader
 import Control.Monad.Identity
 import Data.Foldable
 
-import AbsSyntax
+import Syntax.Base hiding (TV)
+
 import qualified Data.Map as Map
 
 newtype TypeVar = TV String
