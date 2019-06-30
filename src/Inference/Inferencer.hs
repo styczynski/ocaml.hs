@@ -24,10 +24,8 @@ import System.IO.Unsafe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
--- | Run the inference monad
 runInfer :: Env -> InferState -> Infer (Env, Type, [TypeConstraint]) -> IO (Either TypeError ((Env, Type, [TypeConstraint]), InferState))
 runInfer env state fn = do
-  --let v = runExcept $ runStateT (runReaderT m env) state in
   v <- runExceptT (runReaderT (runStateT fn (state)) (env))
   case v of
     (Left e) -> return $ Left e
@@ -54,7 +52,6 @@ retrieveState :: Either TypeError ((Env, Type, [TypeConstraint]), InferState) ->
 retrieveState (Left r) = initInfer
 retrieveState (Right (_,state)) = state
 
--- | Solve for the toplevel type of an expression in a given environment
 inferAST :: Env -> InferState -> Implementation -> IO (Either TypeError (Scheme, Env, InferState))
 inferAST env state ex = do
   i <- runInfer env state (inferImplementation ex)
@@ -65,7 +62,6 @@ inferAST env state ex = do
     Left e -> return $ Left e
     Right s -> return $ Right (s, env, state)
 
--- | Return the internal constraints used in solving for the type of an expression
 constraintsExpr :: Env -> InferState -> SimplifiedExpr -> IO (Either TypeError ([TypeConstraint], Subst, Type, Scheme))
 constraintsExpr env state ex = do
   r <- runInfer env state (inferE ex)
@@ -78,48 +74,6 @@ constraintsExpr env state ex = do
         Right subst -> return $ Right (cs, subst, ty, sc)
           where
             sc = closeOver $ subst .> ty
-
--- | Canonicalize and return the polymorphic toplevel type.
-
-ops :: BinaryOp -> Infer Type
-ops OpSemicolon = do
-  tv1 <- fresh
-  tv2 <- fresh
-  return $ tv1 `TypeArrow` (tv2 `TypeArrow` tv2)
-ops OpSame = do
-  tv <- fresh
-  return $ tv `TypeArrow` (tv `TypeArrow` tv)
-ops OpCons = do
-  tv <- fresh
-  return $ (tv) `TypeArrow` ((TypeList tv) `TypeArrow` (TypeList tv) )
-ops OpTupleCons = do
-  tv <- fresh
-  tv2 <- fresh
-  tv3 <- fresh
-  return $ (tv) `TypeArrow` ((TypeTuple tv2 tv3) `TypeArrow` (TypeTuple tv (TypeTuple tv2 tv3)))
-
-opsUni :: UnaryOp -> Infer Type
-opsUni OpHead = do
-  tv <- fresh
-  return $ (TypeList tv) `TypeArrow` (tv)
-opsUni OpTails = do
-  tv <- fresh
-  return $ (TypeList tv) `TypeArrow` (TypeList tv)
-opsUni OpEmptyList = do
-  tv <- fresh
-  tv2 <- fresh
-  return $ tv `TypeArrow` (TypeList tv2)
-opsUni OpEmptyTuple = do
-  tv <- fresh
-  return $ tv `TypeArrow` (TypeTuple TypeUnit TypeUnit)
-opsUni OpListNth = do
-  tv <- fresh
-  return $ (TypeList tv) `TypeArrow` tv
-opsUni (OpTupleNth index len) = do
-  (tupleType, elsTypes) <- foldrM (\_ (tup, tvs) -> do
-    tv <- fresh
-    return $ ((TypeTuple tv tup), [tv] ++ tvs)) ((TypeTuple TypeUnit TypeUnit), []) (replicate len 0)
-  return $ (tupleType) `TypeArrow` (elsTypes !! index)
 
 inferImplementation :: Implementation -> Infer (Env, Type, [TypeConstraint])
 inferImplementation ast@(IRoot cores) = do
@@ -269,7 +223,7 @@ infer (SimplifiedUnaryOp op e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
   u1 <- return $ t1 `TypeArrow` tv
-  u2 <- opsUni op
+  u2 <- inferUnaryOperation op
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ ac)
 infer (SimplifiedBinaryOp (OpCustom name) e1 e2) = do
@@ -279,7 +233,7 @@ infer (SimplifiedBinaryOp op e1 e2) = do
   (t2, c2) <- infer e2
   tv <- fresh
   u1 <- return $ t1 `TypeArrow` (t2 `TypeArrow` tv)
-  u2 <- ops op
+  u2 <- inferBinaryOperation op
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ c2 ++ ac)
 infer (SimplifiedIf cond tr fl) = do
@@ -289,3 +243,42 @@ infer (SimplifiedIf cond tr fl) = do
   ac <- constraintAnnoTypeList [(TypeConstraint EmptyPayload (t1, TypeStatic "Bool")), (TypeConstraint EmptyPayload (t2, t3))]
   return (t2, c1 ++ c2 ++ c3 ++ ac)
 
+inferBinaryOperation :: BinaryOp -> Infer Type
+inferBinaryOperation OpSemicolon = do
+  tv1 <- fresh
+  tv2 <- fresh
+  return $ tv1 `TypeArrow` (tv2 `TypeArrow` tv2)
+inferBinaryOperation OpSame = do
+  tv <- fresh
+  return $ tv `TypeArrow` (tv `TypeArrow` tv)
+inferBinaryOperation OpCons = do
+  tv <- fresh
+  return $ (tv) `TypeArrow` ((TypeList tv) `TypeArrow` (TypeList tv) )
+inferBinaryOperation OpTupleCons = do
+  tv <- fresh
+  tv2 <- fresh
+  tv3 <- fresh
+  return $ (tv) `TypeArrow` ((TypeTuple tv2 tv3) `TypeArrow` (TypeTuple tv (TypeTuple tv2 tv3)))
+
+inferUnaryOperation :: UnaryOp -> Infer Type
+inferUnaryOperation OpHead = do
+  tv <- fresh
+  return $ (TypeList tv) `TypeArrow` (tv)
+inferUnaryOperation OpTails = do
+  tv <- fresh
+  return $ (TypeList tv) `TypeArrow` (TypeList tv)
+inferUnaryOperation OpEmptyList = do
+  tv <- fresh
+  tv2 <- fresh
+  return $ tv `TypeArrow` (TypeList tv2)
+inferUnaryOperation OpEmptyTuple = do
+  tv <- fresh
+  return $ tv `TypeArrow` (TypeTuple TypeUnit TypeUnit)
+inferUnaryOperation OpListNth = do
+  tv <- fresh
+  return $ (TypeList tv) `TypeArrow` tv
+inferUnaryOperation (OpTupleNth index len) = do
+  (tupleType, elsTypes) <- foldrM (\_ (tup, tvs) -> do
+    tv <- fresh
+    return $ ((TypeTuple tv tup), [tv] ++ tvs)) ((TypeTuple TypeUnit TypeUnit), []) (replicate len 0)
+  return $ (tupleType) `TypeArrow` (elsTypes !! index)

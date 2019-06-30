@@ -47,7 +47,6 @@ errPayload = do
   lastTraceStr <- return $ let InferState { lastInferExpr = lastInferExpr } = s in lastInferExpr
   return $ TypeErrorPayload lastTraceStr
 
--- | Lookup type in the environment
 lookupEnv :: Ident -> Infer Type
 lookupEnv name = do
   env <- ask
