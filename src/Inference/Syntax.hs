@@ -1,9 +1,9 @@
 module Inference.Syntax where
 
-import Syntax.Base
+import           Syntax.Base
 
-import Inference.Types
-import Inference.TypingEnvironment
+import           Inference.Types
+import           Inference.TypingEnvironment
 
 data SimplifiedExpr
   = SimplifiedVariable Ident
