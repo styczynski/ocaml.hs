@@ -17,6 +17,9 @@ import qualified Data.Map as Map
 
 newtype Subst = Subst (Map.Map TypeVar Type) deriving (Eq, Show)
 
+emptySubst :: Subst
+emptySubst = Subst $ Map.empty
+
 data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
 data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Show)

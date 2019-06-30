@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Inference.ConstraintSolver where
 
 import Inference.Syntax
@@ -15,11 +18,47 @@ import Data.Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+type Solve = StateT (SolveState) (ExceptT TypeError IO)
 data SolveState = SolveState { lastAnnot :: TypeErrorPayload }
+
 initSolve :: SolveState
 initSolve = SolveState { lastAnnot = EmptyPayload }
 
-type Solve = StateT (SolveState) (ExceptT TypeError IO)
+class BindableSolve a b where
+  (<-$->) :: a -> b -> Solve Subst
+
+instance BindableSolve TypeVar Type where
+  (<-$->) a t = do
+    payl <- errSolvePayload
+    case a <-> t of
+      Left (InfiniteType _ a t) -> throwError $ InfiniteType payl a t
+      (Left v) -> throwError v
+      (Right r) -> return r
+
+instance BindableSolve Type Type where
+  (<-$->) t1 t2 | t1 == t2 = return emptySubst
+  (<-$->) (TypeVar v) t = v <-$-> t
+  (<-$->) t (TypeVar v) = v <-$-> t
+  (<-$->) t1@(TypeComplex name1 deps1) t2@(TypeComplex name2 deps2) = do
+    payl <- errSolvePayload
+    _ <- if not (name1 == name2) then throwError $ UnificationMismatch payl [t1] [t2] else return 0
+    deps1 <-$-> deps2
+  (<-$->) (TypeList t1) (TypeList t2) = [t1] <-$-> [t2]
+  (<-$->) (TypeTuple t1 t2) (TypeTuple t3 t4) = [t1, t2] <-$-> [t3, t4]
+  (<-$->) (TypeArrow t1 t2) (TypeArrow t3 t4) = [t1, t2] <-$-> [t3, t4]
+  (<-$->) t1 t2 = do
+    payl <- errSolvePayload
+    throwError $ UnificationFail payl t1 t2
+
+instance BindableSolve [Type] [Type] where
+  (<-$->) [] [] = return emptySubst
+  (<-$->) (t1 : ts1) (t2 : ts2) =
+    do su1 <- t1 <-$-> t2
+       su2 <- (su1 .> ts1) <-$-> (su1 .> ts2)
+       return (su2 +> su1)
+  (<-$->) t1 t2 = do
+    payl <- errSolvePayload
+    throwError $ UnificationMismatch payl t1 t2
 
 checkpointAnnotSolve :: TypeConstraint -> Solve ()
 checkpointAnnotSolve (TypeConstraint l _) = do
@@ -33,40 +72,12 @@ errSolvePayload = do
   lastAnnot <- return $ let SolveState { lastAnnot = lastAnnot } = s in lastAnnot
   return lastAnnot
 
-emptySubst :: Subst
-emptySubst = Subst $ Map.empty
-
 runSolve :: [TypeConstraint] -> IO (Either TypeError Subst)
 runSolve cs = do
   r <- runExceptT (runStateT (solver (emptySubst, cs)) (initSolve))
   case r of
     Left e -> return $ Left e
     Right (s, _) -> return $ Right s
-
-unifyMany :: [Type] -> [Type] -> Solve Subst
-unifyMany [] [] = return emptySubst
-unifyMany (t1 : ts1) (t2 : ts2) =
-  do su1 <- unifies t1 t2
-     su2 <- unifyMany (su1 .> ts1) (su1 .> ts2)
-     return (su2 +> su1)
-unifyMany t1 t2 = do
-  payl <- errSolvePayload
-  throwError $ UnificationMismatch payl t1 t2
-
-unifies :: Type -> Type -> Solve Subst
-unifies t1 t2 | t1 == t2 = return emptySubst
-unifies (TypeVar v) t = v `bind` t
-unifies t (TypeVar v) = v `bind` t
-unifies t1@(TypeComplex name1 deps1) t2@(TypeComplex name2 deps2) = do
-  payl <- errSolvePayload
-  _ <- if not (name1 == name2) then throwError $ UnificationMismatch payl [t1] [t2] else return 0
-  unifyMany deps1 deps2
-unifies (TypeList t1) (TypeList t2) = unifyMany [t1] [t2]
-unifies (TypeTuple t1 t2) (TypeTuple t3 t4) = unifyMany [t1, t2] [t3, t4]
-unifies (TypeArrow t1 t2) (TypeArrow t3 t4) = unifyMany [t1, t2] [t3, t4]
-unifies t1 t2 = do
-  payl <- errSolvePayload
-  throwError $ UnificationFail payl t1 t2
 
 -- Unification solver
 solver :: Unifier -> Solve Subst
@@ -75,16 +86,7 @@ solver (su, cs) =
     [] -> return su
     ((TypeConstraint l (t1, t2)): cs0) -> do
       checkpointAnnotSolve (TypeConstraint l (t1, t2))
-      su1  <- unifies t1 t2
+      su1  <- t1 <-$-> t2
       solver (su1 +> su, su1 .> cs0)
 
-bind ::  TypeVar -> Type -> Solve Subst
-bind a t | t == TypeVar a     = return emptySubst
-         | occursCheck a t = do
-                             payl <- errSolvePayload
-                             throwError $ InfiniteType payl a t
-         | otherwise       = return (Subst $ Map.singleton a t)
-
-occursCheck ::  Substitutable a => TypeVar -> a -> Bool
-occursCheck a t = a `Set.member` free t
 

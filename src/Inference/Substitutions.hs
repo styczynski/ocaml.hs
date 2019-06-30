@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Inference.Substitutions where
 
 import Inference.Syntax
@@ -16,9 +17,19 @@ import Data.Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+class Bindable a b where
+  (<->)     :: a -> b -> Either TypeError Subst
+
 class Substitutable a where
   (.>)     :: Subst -> a -> a
   free   :: a -> Set.Set TypeVar
+  isRecursive ::  TypeVar -> a -> Bool
+  isRecursive a t = a `Set.member` free t
+
+instance Bindable TypeVar Type where
+  (<->) a t | t == (TypeVar a) = Right emptySubst
+            | isRecursive a t = Left $ InfiniteType EmptyPayload a t
+            | otherwise = Right (Subst $ Map.singleton a t)
 
 instance Substitutable Type where
   (.>) _ (TypeStatic a)       = TypeStatic a
