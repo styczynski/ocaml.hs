@@ -8,6 +8,7 @@ import Inference.Errors
 import Inference.Simplifier
 import Inference.ConstraintSolver
 import Inference.InferencerUtils
+import Inference.TypeExpressionResolver
 
 import AbsSyntax
 import PrintSyntax
@@ -210,97 +211,6 @@ inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExp
   return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
 inferImplementationPhrase (IDefType typeDef) = inferTypeDef typeDef
 
-getTypeSimpleExpressionFV :: TypeSimpleExpression -> Infer (Map.Map String TVar)
-getTypeSimpleExpressionFV (TypeSExprList listType) = getTypeExpressionFV listType
-getTypeSimpleExpressionFV (TypeSExprIdent _) = return Map.empty
-getTypeSimpleExpressionFV TypeSExprEmpty = return Map.empty
-getTypeSimpleExpressionFV (TypeSExprAbstract (TypeIdentAbstract name)) = do
-  tvv <- fresh
-  return $ let (TVar tv) = tvv in Map.singleton name tv
-
-getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TVar)
-getTypeExpressionFV  (TypeExprSimple simpl) = getTypeSimpleExpressionFV simpl
-getTypeExpressionFV (TypeExprIdent (TypeArgJustOne param) _) = getTypeSimpleExpressionFV param
-getTypeExpressionFV (TypeExprIdent (TypeArgJust firstParam restParams) _) = do
-  foldlM (\acc (TypeArgEl el) -> do
-    r <- getTypeExpressionFV el
-    return $ acc `Map.union` r) Map.empty ([firstParam] ++ restParams)
-getTypeExpressionFV (TypeFun a b) = do
-  t1 <- (getTypeExpressionFV a)
-  t2 <- (getTypeExpressionFV b)
-  return $ t1 `Map.union` t2
-getTypeExpressionFV (TypeExprTuple fstEl restEls) =
-  foldlM (\acc el -> do
-    t <- (getTypeExpressionFV el)
-    return $ acc `Map.union` t) Map.empty ([fstEl] ++ restEls)
-getTypeExpressionFV _ = return Map.empty
-
-resolveTypeSimpleExpressionFVNames :: TypeSimpleExpression -> Infer (Set.Set String)
-resolveTypeSimpleExpressionFVNames TypeSExprEmpty = return $ Set.empty
-resolveTypeSimpleExpressionFVNames (TypeSExprList expr) = resolveTypeExpressionFVNames expr
-resolveTypeSimpleExpressionFVNames (TypeSExprAbstract (TypeIdentAbstract name)) = return $ Set.singleton name
-resolveTypeSimpleExpressionFVNames (TypeSExprIdent _) = return $ Set.empty
-
-resolveTypeExpressionFVNames :: TypeExpression -> Infer (Set.Set String)
-resolveTypeExpressionFVNames (TypeExprSimple simpl) = resolveTypeSimpleExpressionFVNames simpl
-resolveTypeExpressionFVNames (TypeExprIdent (TypeArgJustOne simpl) _) = resolveTypeSimpleExpressionFVNames simpl
-resolveTypeExpressionFVNames (TypeExprIdent (TypeArgJust firstParam restParams) _) = do
-  foldlM (\acc (TypeArgEl el) -> do
-    r <- resolveTypeExpressionFVNames el
-    return $ acc `Set.union` r) Set.empty ([firstParam] ++ restParams)
-resolveTypeExpressionFVNames (TypeFun a b) = do
-  x <- resolveTypeExpressionFVNames a
-  y <- resolveTypeExpressionFVNames b
-  return $ x `Set.union` y
-resolveTypeExpressionFVNames (TypeExprTuple firstElem restElems) = do
-  x <- resolveTypeExpressionFVNames firstElem
-  foldrM (\el acc -> do
-    y <- resolveTypeExpressionFVNames el
-    return $ acc `Set.union` y) x restElems
-
-resolveTypeSimpleExpressionRec :: (Map.Map String TVar) -> TypeSimpleExpression -> Infer Type
-resolveTypeSimpleExpressionRec fvs TypeSExprEmpty = return TUnit
-resolveTypeSimpleExpressionRec fvs (TypeSExprIdent (Ident name)) = return $ TCon name
-resolveTypeSimpleExpressionRec fvs (TypeSExprList expr) = do
-  t <- resolveTypeExpressionRec fvs expr
-  return $ TList t
-resolveTypeSimpleExpressionRec fvs (TypeSExprAbstract (TypeIdentAbstract name)) = do
-  parsedName <- return $ [ x | x <- name, not (x `elem` "'") ]
-  validFvs <- return $ name `Map.member` fvs
-  if not validFvs then do
-    payl <- errPayload
-    throwError $ Debug payl $ "Type name " ++ name ++ " is not a valid polymorhic type name"
-  else
-    let (Just tv) = Map.lookup name fvs in
-    return $ TVar tv
-
-resolveTypeExpressionRec :: (Map.Map String TVar) -> TypeExpression -> Infer Type
-resolveTypeExpressionRec fvs (TypeExprSimple simpl) = resolveTypeSimpleExpressionRec fvs simpl
-resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJust firstParam restParams) (Ident name)) = do
-  typeParams <- foldlM (\acc (TypeArgEl expr)-> do
-      t <- resolveTypeExpressionRec fvs expr
-      return $ [t] ++ acc) ([]) ([firstParam] ++ restParams)
-  return $ TDep name typeParams
-resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJustOne param) (Ident name)) = do
-  typeParam <- resolveTypeSimpleExpressionRec fvs param
-  return $ TDep name [typeParam]
-resolveTypeExpressionRec fvs (TypeFun a b) = do
-  t1 <- resolveTypeExpressionRec fvs a
-  t2 <- resolveTypeExpressionRec fvs b
-  return $ TArr t1 t2
-resolveTypeExpressionRec fvs (TypeExprTuple fstEl restEls) = do
-  tupleT <- foldlM (\acc expr-> do
-    t <- resolveTypeExpressionRec fvs expr
-    return $ TTuple t acc) (TTuple TUnit TUnit) ([fstEl] ++ restEls)
-  return tupleT
-
-resolveTypeExpression :: TypeExpression -> Infer Scheme
-resolveTypeExpression exp = do
-  fvs <- getTypeExpressionFV exp
-  t <- resolveTypeExpressionRec fvs exp
-  fvsT <- return $ Map.elems fvs
-  return $ Forall fvsT t
-
 inferComplexExpression :: ComplexExpression -> Infer (Type, [AConstraint])
 inferComplexExpression ast = do
   tree <- simplifyComplexExpression resolveTypeExpression ast
@@ -311,23 +221,6 @@ inferE expr = do
   env <- ask
   (t, c) <- infer expr
   return $ (env, t, c)
-
-constraintDeannot :: AConstraint -> Constraint
-constraintDeannot (AConstraint _ ac) = ac
-
-constraintDeannotList :: [AConstraint] -> [Constraint]
-constraintDeannotList acl = map constraintDeannot acl
-
-constraintAnnot :: Constraint -> Infer AConstraint
-constraintAnnot constrnt = do
-  payl <- errPayload
-  return $ AConstraint payl constrnt
-
-constraintAnnotList :: [Constraint] -> Infer [AConstraint]
-constraintAnnotList cs = do
-  foldrM (\c acc -> do
-    ca <- constraintAnnot c
-    return $ [ca] ++ acc)  [] cs
 
 infer :: Expr -> Infer (Type, [AConstraint])
 infer expr = case expr of

@@ -19,6 +19,7 @@ import Syntax.Base
 
 import Inference.TypingEnvironment
 import Inference.Inferencer
+import Inference.TypeExpressionResolver
 import qualified Inference.Type as Type
 
 setNativeVariable :: (PackableValue a) => String -> String -> a -> Exec (RuntimeValue, Environment)

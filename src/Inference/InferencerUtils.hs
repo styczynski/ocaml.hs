@@ -82,6 +82,17 @@ withTypeAnnot TypeConstrEmpty e = return e
 withTypeAnnot (TypeConstrDef texpr) e = do
   return $ ECChecked e texpr
 
+constraintAnnot :: Constraint -> Infer AConstraint
+constraintAnnot constrnt = do
+  payl <- errPayload
+  return $ AConstraint payl constrnt
+
+constraintAnnotList :: [Constraint] -> Infer [AConstraint]
+constraintAnnotList cs = do
+  foldrM (\c acc -> do
+    ca <- constraintAnnot c
+    return $ [ca] ++ acc)  [] cs
+
 getConstScheme :: Constant -> Scheme
 getConstScheme (CInt _) = Forall [] (TCon "Int")
 getConstScheme (CBool _) = Forall [] (TCon "Bool")

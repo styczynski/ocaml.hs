@@ -44,6 +44,12 @@ constraintToStr (a,b) = (typeToStr [] a) ++ " ~ " ++ (typeToStr [] b)
 constraintsListToStr :: [Constraint] -> String
 constraintsListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (constraintToStr t)) "" l) ++ "}"
 
+constraintDeannot :: AConstraint -> Constraint
+constraintDeannot (AConstraint _ ac) = ac
+
+constraintDeannotList :: [AConstraint] -> [Constraint]
+constraintDeannotList acl = map constraintDeannot acl
+
 empty :: Env
 empty = TypeEnv Map.empty
 
