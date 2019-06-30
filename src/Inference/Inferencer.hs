@@ -26,14 +26,6 @@ import qualified Data.Set as Set
 -- Classes
 -------------------------------------------------------------------------------
 
-type Infer = StateT (InferState) (ReaderT (Env) (ExceptT TypeError IO))
-
--- | Inference state
-data InferState = InferState { count :: Int, inferTrace :: [String], lastInferExpr :: String }
-
--- | Initial inference state
-initInfer :: InferState
-initInfer = InferState { count = 0, inferTrace = [], lastInferExpr = "" }
 
 
 -------------------------------------------------------------------------------
@@ -94,12 +86,6 @@ constraintsExpr env state ex = do
 -- | Canonicalize and return the polymorphic toplevel type.
 closeOver :: Type -> Scheme
 closeOver = normalize . generalize Inference.TypingEnvironment.empty
-
--- | Extend type environment
-inEnv :: (Ident, Scheme) -> Infer a -> Infer a
-inEnv (x, sc) m = do
-  let scope e = (e --> x) ++> (x, sc)
-  local scope m
 
 -- | Lookup type in the environment
 lookupEnv :: Ident -> Infer Type
@@ -657,7 +643,7 @@ infer expr = case expr of
 
   Lam x e -> do
     tv <- fresh
-    (t, c) <- inEnv (x, Forall [] tv) (infer e)
+    (t, c) <- (x, Forall [] tv) ==> (infer e)
     return (tv `TArr` t, c)
 
   App e1 e2 -> do
@@ -674,7 +660,7 @@ infer expr = case expr of
         Left err -> throwError err
         Right sub -> do
             let sc = generalize (apply sub env) (apply sub t1)
-            (t2, c2) <- inEnv (x, sc) $ local (apply sub) (infer e2)
+            (t2, c2) <- (x, sc) ==> (local (apply sub) (infer e2))
             return (t2, c1 ++ c2)
 
   Fix e1 -> do

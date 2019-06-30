@@ -6,15 +6,6 @@ import Inference.Syntax
 import Inference.TypingEnvironment
 import Inference.Type
 
-data TypeError
-  = UnificationFail TypeErrorPayload Type Type
-  | InfiniteType TypeErrorPayload TVar Type
-  | UnboundVariable TypeErrorPayload Ident
-  | Ambigious TypeErrorPayload [Constraint]
-  | UnificationMismatch TypeErrorPayload [Type] [Type]
-  | Debug TypeErrorPayload String
-  deriving (Show)
-
 typesListToStr :: [Type] -> String
 typesListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (typeToStr [] t)) "" l) ++ "}"
 
