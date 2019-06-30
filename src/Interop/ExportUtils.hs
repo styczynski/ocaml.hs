@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module ExportUtils where
+module Interop.ExportUtils where
 
 import Control.Monad.Except
 import Control.Monad.State

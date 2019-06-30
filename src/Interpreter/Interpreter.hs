@@ -14,7 +14,8 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import Data.Foldable
 
-import Startup
+import Interop.Startup
+
 import qualified Inference.Type as Type
 
 exec :: Implementation -> Exec (RuntimeValue, Environment)

@@ -1,4 +1,4 @@
-module Startup where
+module Interop.Startup where
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -8,9 +8,9 @@ import Control.Monad.Reader
 import Runtime.Runtime
 import Runtime.Environment
 
-import ExportUtils
-import Arithmetics
-import Printf
+import Interop.ExportUtils
+import Interop.Arithmetics
+import Interop.Printf
 
 failwith :: String -> IO ()
 failwith str = error $ "Failed with: " ++ str

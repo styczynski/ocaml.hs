@@ -1,4 +1,4 @@
-module Arithmetics where
+module Interop.Arithmetics where
 
 import Control.Monad.Except
 import Control.Monad.State

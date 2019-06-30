@@ -1,5 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Printf where
+module Interop.Printf where
 
 import Control.Monad.Except
 import Control.Monad.State

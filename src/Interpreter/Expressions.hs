@@ -11,7 +11,8 @@ import Runtime.Environment
 import Interpreter.Definitions
 import Interpreter.Patterns
 
-import Arithmetics
+import Interop.Arithmetics
+
 import qualified Data.Map as Map
 
 import Syntax.Base

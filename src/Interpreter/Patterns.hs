@@ -10,7 +10,7 @@ import Data.Foldable
 import Runtime.Runtime
 import Runtime.Environment
 
-import Arithmetics
+import Interop.Arithmetics
 
 import Syntax.Base
 

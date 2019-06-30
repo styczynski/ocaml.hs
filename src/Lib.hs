@@ -10,7 +10,7 @@ import Syntax.Base
 import Runtime.Runtime
 import Runtime.Environment
 
-import Startup
+import Interop.Startup
 import Interpreter.Definitions
 import Interpreter.Interpreter
 
