@@ -26,14 +26,7 @@ import qualified Data.Set as Set
 -- Classes
 -------------------------------------------------------------------------------
 
--- | Inference monad
-type Infer a = (ReaderT
-                  Env             -- Typing environment
-                  (StateT         -- Inference state
-                  InferState
-                  (Except         -- Inference errors
-                    TypeError))
-                  a)              -- Result
+type Infer = StateT (InferState) (ReaderT (Env) (ExceptT TypeError IO))
 
 -- | Inference state
 data InferState = InferState { count :: Int, inferTrace :: [String], lastInferExpr :: String }
@@ -144,12 +137,13 @@ typeErrorToStr e = (generateTypePayloadMessage EmptyPayload) ++ "Got unexpected 
 -------------------------------------------------------------------------------
 
 -- | Run the inference monad
-runInfer :: Env -> InferState -> Infer (Env, Type, [AConstraint]) -> Either TypeError ((Env, Type, [AConstraint]), InferState)
-runInfer env state m =
-  let v = runExcept $ runStateT (runReaderT m env) state in
+runInfer :: Env -> InferState -> Infer (Env, Type, [AConstraint]) -> IO (Either TypeError ((Env, Type, [AConstraint]), InferState))
+runInfer env state fn = do
+  --let v = runExcept $ runStateT (runReaderT m env) state in
+  v <- runExceptT (runReaderT (runStateT fn (state)) (env))
   case v of
-    (Left e) -> Left e
-    (Right ((env, t, c), state)) -> Right ((env, t, c), state)
+    (Left e) -> return $ Left e
+    (Right ((env, t, c), state)) -> return $ Right ((env, t, c), state)
 
 solve :: Either TypeError (Type, [AConstraint]) -> Either TypeError Scheme
 solve r = case r of
@@ -171,25 +165,27 @@ retrieveState (Left r) = initInfer
 retrieveState (Right (_,state)) = state
 
 -- | Solve for the toplevel type of an expression in a given environment
-inferAST :: Env -> InferState -> Implementation -> Either TypeError (Scheme, Env, InferState)
-inferAST env state ex =
-  let i = runInfer env state (inferImplementation ex) in
-  let env = retrieveEnv i in
-  let state = retrieveState i in
-  let scheme = solve $ unpackEnvTypeContraints i in
+inferAST :: Env -> InferState -> Implementation -> IO (Either TypeError (Scheme, Env, InferState))
+inferAST env state ex = do
+  i <- runInfer env state (inferImplementation ex)
+  env <- return $ retrieveEnv i
+  state <- return $ retrieveState i
+  scheme <- return $ solve $ unpackEnvTypeContraints i
   case scheme of
-    Left e -> Left e
-    Right s -> Right (s, env, state)
+    Left e -> return $ Left e
+    Right s -> return $ Right (s, env, state)
 
 -- | Return the internal constraints used in solving for the type of an expression
-constraintsExpr :: Env -> InferState -> Expr -> Either TypeError ([AConstraint], Subst, Type, Scheme)
-constraintsExpr env state ex = case runInfer env state (inferE ex) of
-  Left err -> Left err
-  Right ((_, ty, cs), state) -> case runSolve cs of
-    Left err -> Left err
-    Right subst -> Right (cs, subst, ty, sc)
-      where
-        sc = closeOver $ apply subst ty
+constraintsExpr :: Env -> InferState -> Expr -> IO (Either TypeError ([AConstraint], Subst, Type, Scheme))
+constraintsExpr env state ex = do
+  r <- runInfer env state (inferE ex)
+  case r of
+    Left err -> return $ Left err
+    Right ((_, ty, cs), state) -> case runSolve cs of
+      Left err -> return $ Left err
+      Right subst -> return $ Right (cs, subst, ty, sc)
+        where
+          sc = closeOver $ apply subst ty
 
 -- | Canonicalize and return the polymorphic toplevel type.
 closeOver :: Type -> Scheme

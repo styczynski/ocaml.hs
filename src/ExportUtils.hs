@@ -31,16 +31,16 @@ setNativeVariable name typeExpr val = do
 exportGlobalVariableType :: String -> String -> Exec (RuntimeValue, Environment)
 exportGlobalVariableType name typeExpr = do
   env <- ask
-  (envT, envS) <- return $ annotateGlobalVariableTypeEnv (getTypesEnv env) (getTypesState env) name typeExpr
+  (envT, envS) <- lift $ lift $ lift $ annotateGlobalVariableTypeEnv (getTypesEnv env) (getTypesState env) name typeExpr
   return (REmpty, (setTypesState envS (setTypesEnv envT env)))
 
-annotateGlobalVariableTypeEnv :: Env -> InferState -> String -> String -> (Env, InferState)
+annotateGlobalVariableTypeEnv :: Env -> InferState -> String -> String -> IO (Env, InferState)
 annotateGlobalVariableTypeEnv env state name typeExpr = let ts = myLexer typeExpr in case pTypeExpression ts of
   Ok  tree -> do
-    let v = runExcept $ runStateT (runReaderT (resolveTypeExpression tree) env) state in
-      case v of
-        (Right (scheme, newState)) ->
-          ( (extend env ((Ident name), scheme)), (newState) )
+    v <- runExceptT (runReaderT (runStateT (resolveTypeExpression tree) (state)) (env))
+    case v of
+      (Right (scheme, newState)) ->
+        return $ ( (extend env ((Ident name), scheme)), (newState) )
 
 data (UnpackableValue a, PackableValue b) => VarargFun a b = VarargFun ([a] -> b)
 instance (UnpackableValue a, PackableValue b) => PackableValue (VarargFun a b) where

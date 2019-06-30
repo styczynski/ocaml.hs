@@ -24,11 +24,6 @@ import Data.Semigroup
 import Data.Foldable hiding (toList)
 import qualified Data.Map as Map
 
--------------------------------------------------------------------------------
--- Typing Environment
--------------------------------------------------------------------------------
-
-
 empty :: Env
 empty = TypeEnv Map.empty
 
