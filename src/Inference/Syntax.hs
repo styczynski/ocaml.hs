@@ -13,8 +13,8 @@ data SimplifiedExpr
   | SimplifiedConst Lit
   | SimplifiedIf SimplifiedExpr SimplifiedExpr SimplifiedExpr
   | SimplifiedFixPoint SimplifiedExpr
-  | Op Binop SimplifiedExpr SimplifiedExpr
-  | UniOp Uniop SimplifiedExpr
+  | SimplifiedBinaryOp BinaryOp SimplifiedExpr SimplifiedExpr
+  | SimplifiedUnaryOp UnaryOp SimplifiedExpr
   | SimplifiedSkip
   | SimplifiedCheck SimplifiedExpr Scheme
   | SimplifiedExportEnv
@@ -28,10 +28,10 @@ data Lit
   | LString String
   deriving (Show, Eq)
 
-data Binop = OpSemicolon | OpSame | OpCustom String | OpCons | OpTupleCons
+data BinaryOp = OpSemicolon | OpSame | OpCustom String | OpCons | OpTupleCons
   deriving (Eq, Ord, Show)
 
-data Uniop = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int | OpListNth
+data UnaryOp = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int | OpListNth
   deriving (Eq, Ord, Show)
 
 data Program = Program [Decl] SimplifiedExpr deriving Eq

@@ -81,7 +81,7 @@ constraintsExpr env state ex = do
 
 -- | Canonicalize and return the polymorphic toplevel type.
 
-ops :: Binop -> Infer Type
+ops :: BinaryOp -> Infer Type
 ops OpSemicolon = do
   tv1 <- fresh
   tv2 <- fresh
@@ -98,7 +98,7 @@ ops OpTupleCons = do
   tv3 <- fresh
   return $ (tv) `TypeArrow` ((TypeTuple tv2 tv3) `TypeArrow` (TypeTuple tv (TypeTuple tv2 tv3)))
 
-opsUni :: Uniop -> Infer Type
+opsUni :: UnaryOp -> Infer Type
 opsUni OpHead = do
   tv <- fresh
   return $ (TypeList tv) `TypeArrow` (tv)
@@ -263,18 +263,18 @@ infer (SimplifiedFixPoint e1) = do
   tv <- fresh
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (tv `TypeArrow` tv, t1)]
   return (tv, c1 ++ ac)
-infer (UniOp (OpCustomUni name) e1) = do
+infer (SimplifiedUnaryOp (OpCustomUni name) e1) = do
   infer (SimplifiedCall (SimplifiedVariable $ Ident name) e1)
-infer (UniOp op e1) = do
+infer (SimplifiedUnaryOp op e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
   u1 <- return $ t1 `TypeArrow` tv
   u2 <- opsUni op
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ ac)
-infer (Op (OpCustom name) e1 e2) = do
+infer (SimplifiedBinaryOp (OpCustom name) e1 e2) = do
   infer (SimplifiedCall (SimplifiedCall (SimplifiedVariable $ Ident name) e1) e2)
-infer (Op op e1 e2) = do
+infer (SimplifiedBinaryOp op e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
   tv <- fresh

@@ -42,7 +42,7 @@ simplifyPattern fn recMode (PatConstr (Ident nameStr) pat) letExpr expr = do
 simplifyPattern fn recMode ast@(PatList (PList list)) letExpr expr = do
   markTrace ast
   (simpl, _) <- foldrM (\(PListElement pat) (expr, n) -> do
-    patSimpl <- simplifyPattern fn recMode pat (UniOp OpListNth letExpr) expr
+    patSimpl <- simplifyPattern fn recMode pat (SimplifiedUnaryOp OpListNth letExpr) expr
     return (patSimpl, n+1)) (expr, 0) list
   unmarkTrace ast
   addExprAnnot $ return simpl
@@ -58,15 +58,15 @@ simplifyPattern _ True (PatIdent name) letExpr expr =
   addExprAnnot $ return $ SimplifiedLet name (SimplifiedFixPoint (SimplifiedFunction name letExpr)) expr
 simplifyPattern fn recMode ast@(PatCons hPat tPat) letExpr expr = do
   markTrace ast
-  hSimpl <- simplifyPattern fn recMode hPat (UniOp OpHead letExpr) expr
-  tSimpl <- simplifyPattern fn recMode tPat (UniOp OpTails letExpr) hSimpl
+  hSimpl <- simplifyPattern fn recMode hPat (SimplifiedUnaryOp OpHead letExpr) expr
+  tSimpl <- simplifyPattern fn recMode tPat (SimplifiedUnaryOp OpTails letExpr) hSimpl
   unmarkTrace ast
   addExprAnnot $ return tSimpl
 simplifyPattern fn recMode ast@(PatTuple (PTuple el restEls)) letExpr expr = do
   markTrace ast
   tupleCount <- return $ 1 + length restEls
   (tSimpl, _) <- foldrM (\(PTupleElement el) (expr, k) -> do
-    pSimpl <- simplifyPattern fn recMode el (UniOp (OpTupleNth k tupleCount) letExpr) expr
+    pSimpl <- simplifyPattern fn recMode el (SimplifiedUnaryOp (OpTupleNth k tupleCount) letExpr) expr
     return (pSimpl, k+1)) (expr, 0) ([el] ++ restEls)
   unmarkTrace ast
   addExprAnnot $ return tSimpl
@@ -84,7 +84,7 @@ simplifyComplexExpression fn ast@(ECFor varName initExpr dir endExpr bodyExpr) =
   endSimplCheck <- return $ SimplifiedCheck endSimpl forCheckType
   bodySimpl <- simplifyComplexExpression fn bodyExpr
   unmarkTrace ast
-  addExprAnnot $ return $ SimplifiedLet varName (Op OpSame initSimplCheck endSimplCheck) bodySimpl
+  addExprAnnot $ return $ SimplifiedLet varName (SimplifiedBinaryOp OpSame initSimplCheck endSimplCheck) bodySimpl
 simplifyComplexExpression fn ast@(ECWhile condExpr bodyExpr) = do
   markTrace ast
   whileCheckType <- return $ Forall [] $ (TypeStatic "Bool")
@@ -111,7 +111,7 @@ simplifyComplexExpression fn ast@(ECMatch expr _ clauses) = do
     return $ [r] ++ acc) [] clauses
   r <- simplifyComplexExpression fn $ ECExpr $ ExprList $ DList clausesList
   unmarkTrace ast
-  addExprAnnot $ return $ UniOp OpHead r
+  addExprAnnot $ return $ SimplifiedUnaryOp OpHead r
 simplifyComplexExpression fn ast@(ECFunction bPip matchClauses) = do
   id <- freshIdent
   markTrace ast
@@ -156,50 +156,50 @@ simplifyTuple :: InferenceFn -> DTuple -> Infer SimplifiedExpr
 simplifyTuple fn (DTuple firstElem elems) = do
   elemsSimpl <- foldM (\expr (DTupleElement el) -> do
     k <- simplifyExpression fn el
-    return $ Op OpTupleCons k expr) (UniOp OpEmptyTuple SimplifiedSkip) ([firstElem] ++ elems)
+    return $ SimplifiedBinaryOp OpTupleCons k expr) (SimplifiedUnaryOp OpEmptyTuple SimplifiedSkip) ([firstElem] ++ elems)
   addExprAnnot $ return $ elemsSimpl
 
 simplifyList :: InferenceFn -> DList -> Infer SimplifiedExpr
 simplifyList fn (DList elems) = do
   elemsSimpl <- foldM (\expr (ListElement el) -> do
     k <- simplifyComplexExpression fn el
-    return $ Op OpCons k expr) (UniOp OpEmptyList SimplifiedSkip) elems
+    return $ SimplifiedBinaryOp OpCons k expr) (SimplifiedUnaryOp OpEmptyList SimplifiedSkip) elems
   addExprAnnot $ return $ elemsSimpl
 
 simplifyExpression :: InferenceFn -> Expression -> Infer SimplifiedExpr
 simplifyExpression fn (ExprSemi expA expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
-  addExprAnnot $ return $ Op OpSemicolon simplA simplB
+  addExprAnnot $ return $ SimplifiedBinaryOp OpSemicolon simplA simplB
 simplifyExpression _ (ExprOp opName) = do
   addExprAnnot $ return $ SimplifiedVariable $ Ident $ getOperatorName opName
 simplifyExpression fn (Expr1 expA (OperatorA name) expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
-  addExprAnnot $ return $ Op (OpCustom name) simplA simplB
+  addExprAnnot $ return $ SimplifiedBinaryOp (OpCustom name) simplA simplB
 simplifyExpression fn (Expr2 expA (OperatorB name) expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
-  addExprAnnot $ return $ Op (OpCustom name) simplA simplB
+  addExprAnnot $ return $ SimplifiedBinaryOp (OpCustom name) simplA simplB
 simplifyExpression fn (Expr3 expA (OperatorC name) expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
-  addExprAnnot $ return $ Op (OpCustom name) simplA simplB
+  addExprAnnot $ return $ SimplifiedBinaryOp (OpCustom name) simplA simplB
 simplifyExpression fn (Expr4 expA (OperatorD name) expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
-  addExprAnnot $ return $ Op (OpCustom name) simplA simplB
+  addExprAnnot $ return $ SimplifiedBinaryOp (OpCustom name) simplA simplB
 simplifyExpression fn (Expr4S expA OperatorDS expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
-  addExprAnnot $ return $ Op (OpCustom "*") simplA simplB
+  addExprAnnot $ return $ SimplifiedBinaryOp (OpCustom "*") simplA simplB
 simplifyExpression fn (Expr5 expA (OperatorE name) expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
-  addExprAnnot $ return $ Op (OpCustom name) simplA simplB
+  addExprAnnot $ return $ SimplifiedBinaryOp (OpCustom name) simplA simplB
 simplifyExpression fn (Expr6 (OperatorF name) exp) = do
   simpl <- simplifyExpression fn exp
-  addExprAnnot $ return $ UniOp (OpCustomUni name) simpl
+  addExprAnnot $ return $ SimplifiedUnaryOp (OpCustomUni name) simpl
 simplifyExpression _ (ExprVar name) = addExprAnnot $ return $ SimplifiedVariable name
 simplifyExpression _ (ExprConst (CInt val)) = addExprAnnot $ return $ SimplifiedConst $ LInt val
 simplifyExpression _ (ExprConst (CString val)) = addExprAnnot $ return $ SimplifiedConst $ LString val
