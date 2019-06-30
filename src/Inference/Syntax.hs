@@ -2,7 +2,7 @@ module Inference.Syntax where
 
 import AbsSyntax
 import Inference.Type
-import Inference.Env
+import Inference.TypingEnvironment
 
 data Expr
   = Var Ident

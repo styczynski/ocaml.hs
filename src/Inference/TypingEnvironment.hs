@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Inference.Env where
+module Inference.TypingEnvironment where
 
 import Inference.Type
 
@@ -14,7 +14,6 @@ import qualified Data.Map as Map
 
 newtype Subst = Subst (Map.Map TVar Type)
   deriving (Eq, Show, Monoid, Semigroup)
-
 
 data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 

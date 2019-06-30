@@ -17,7 +17,7 @@ import Runtime.Environment
 
 import Syntax.Base
 
-import Inference.Env
+import Inference.TypingEnvironment
 import Inference.Inferencer
 import qualified Inference.Type as Type
 

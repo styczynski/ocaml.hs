@@ -3,7 +3,7 @@ module Inference.Errors where
 import Syntax.Base hiding (TV)
 
 import Inference.Syntax
-import Inference.Env
+import Inference.TypingEnvironment
 import Inference.Type
 
 data TypeError

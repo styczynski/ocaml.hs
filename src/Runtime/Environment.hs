@@ -10,7 +10,7 @@ import AbsSyntax
 
 import Runtime.Runtime
 
-import Inference.Env
+import Inference.TypingEnvironment
 import Inference.Inferencer
 import qualified Inference.Type as Type
 

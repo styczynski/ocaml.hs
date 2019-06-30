@@ -1,7 +1,7 @@
 module Inference.Inferencer where
 
 import Inference.Syntax
-import Inference.Env
+import Inference.TypingEnvironment
 import Inference.Type
 import Inference.Substitutions
 import Inference.Errors
@@ -93,7 +93,7 @@ constraintsExpr env state ex = do
 
 -- | Canonicalize and return the polymorphic toplevel type.
 closeOver :: Type -> Scheme
-closeOver = normalize . generalize Inference.Env.empty
+closeOver = normalize . generalize Inference.TypingEnvironment.empty
 
 -- | Extend type environment
 inEnv :: (Ident, Scheme) -> Infer a -> Infer a

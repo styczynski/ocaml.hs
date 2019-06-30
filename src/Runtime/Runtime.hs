@@ -12,7 +12,7 @@ import Data.Text.Internal.Search
 import qualified Data.Text as T
 import qualified Data.Map as Map
 
-import Inference.Env
+import Inference.TypingEnvironment
 import Inference.Inferencer
 import Inference.Errors
 import qualified Inference.Type as Type

@@ -1,7 +1,7 @@
 module Inference.ConstraintSolver where
 
 import Inference.Syntax
-import Inference.Env
+import Inference.TypingEnvironment
 import Inference.Substitutions
 import Inference.Errors
 import Inference.Type
