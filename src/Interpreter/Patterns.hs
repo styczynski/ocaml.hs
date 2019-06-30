@@ -1,4 +1,4 @@
-module InterpreterPatterns where
+module Interpreter.Patterns where
 
 import Control.Monad.Except
 import Control.Monad.State

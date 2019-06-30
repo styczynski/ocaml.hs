@@ -11,8 +11,8 @@ import Runtime.Runtime
 import Runtime.Environment
 
 import Startup
-import InterpreterDefinitions
-import Interpreter
+import Interpreter.Definitions
+import Interpreter.Interpreter
 
 import Inference.Inferencer
 import Inference.Env

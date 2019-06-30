@@ -1,4 +1,4 @@
-module InterpreterExpressions where
+module Interpreter.Expressions where
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -8,9 +8,10 @@ import Control.Monad.Reader
 import Runtime.Runtime
 import Runtime.Environment
 
-import InterpreterDefinitions
+import Interpreter.Definitions
+import Interpreter.Patterns
+
 import Arithmetics
-import InterpreterPatterns
 import qualified Data.Map as Map
 
 import Syntax.Base

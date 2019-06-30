@@ -1,10 +1,10 @@
-module Interpreter where
+module Interpreter.Interpreter where
 
 import Runtime.Environment
 import Runtime.Runtime
 
-import InterpreterDefinitions
-import InterpreterExpressions
+import Interpreter.Definitions
+import Interpreter.Expressions
 
 import Syntax.Base
 
