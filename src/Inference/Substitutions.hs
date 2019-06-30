@@ -5,7 +5,7 @@ module Inference.Substitutions where
 
 import Inference.Syntax
 import Inference.TypingEnvironment
-import Inference.Type
+import Inference.Types
 
 import Control.Monad.Except
 import Control.Monad.State

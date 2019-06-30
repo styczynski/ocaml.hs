@@ -12,7 +12,7 @@ import System.Exit ( exitFailure, exitSuccess )
 import Lib
 import Interpreter.Definitions
 
-import qualified Inference.Type as Type
+import qualified Inference.Types as Types
 import Inference.Errors
 import Inference.Inferencer
 
@@ -36,7 +36,7 @@ runBlockI v s = do
                     hPutStrLn stderr s
                     exitFailure
      Executed v t env -> do
-                    putStrLn $ "- : " ++ (Type.typeToStr [] t) ++ " = " ++ (valueToStr env v)
+                    putStrLn $ "- : " ++ (Types.typeToStr [] t) ++ " = " ++ (valueToStr env v)
                     exitSuccess
 
 runBlock = runBlockI

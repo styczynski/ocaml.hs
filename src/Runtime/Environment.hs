@@ -12,7 +12,7 @@ import Runtime.Runtime
 
 import Inference.TypingEnvironment
 import Inference.Inferencer
-import qualified Inference.Type as Type
+import qualified Inference.Types as Types
 
 emptyEnv = Environment {
   variables = Map.empty,
@@ -49,11 +49,11 @@ getTypesState env =
   let Environment { stypes = stypes } = env in
   stypes
 
-setTypesEnv :: Type.Env -> Environment -> Environment
+setTypesEnv :: Types.Env -> Environment -> Environment
 setTypesEnv e env =
   env { itypes = e }
 
-getTypesEnv :: Environment -> Type.Env
+getTypesEnv :: Environment -> Types.Env
 getTypesEnv env =
   let Environment { itypes = itypes } = env in
   itypes

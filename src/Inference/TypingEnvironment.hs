@@ -2,7 +2,7 @@
 
 module Inference.TypingEnvironment where
 
-import Inference.Type
+import Inference.Types
 
 import Syntax.Base hiding (TypeConstraint)
 

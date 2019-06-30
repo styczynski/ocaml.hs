@@ -1,7 +1,7 @@
 module Inference.Syntax where
 
 import AbsSyntax
-import Inference.Type
+import Inference.Types
 import Inference.TypingEnvironment
 
 data Expr

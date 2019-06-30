@@ -2,7 +2,7 @@ module Inference.Inferencer where
 
 import Inference.Syntax
 import Inference.TypingEnvironment
-import Inference.Type
+import Inference.Types
 import Inference.Substitutions
 import Inference.Errors
 import Inference.Simplifier

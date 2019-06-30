@@ -1,4 +1,4 @@
-module Inference.Type where
+module Inference.Types where
 
 import Control.Monad.Except
 import Control.Monad.State

@@ -4,7 +4,7 @@ import Syntax.Base hiding (TV)
 
 import Inference.Syntax
 import Inference.TypingEnvironment
-import Inference.Type
+import Inference.Types
 
 typesListToStr :: [Type] -> String
 typesListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (typeToStr [] t)) "" l) ++ "}"

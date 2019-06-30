@@ -15,7 +15,7 @@ import qualified Data.Map as Map
 import Inference.TypingEnvironment
 import Inference.Inferencer
 import Inference.Errors
-import qualified Inference.Type as Type
+import qualified Inference.Types as Types
 
 import System.IO
 import System.IO.Unsafe
@@ -26,7 +26,7 @@ data Environment = Environment {
   defs            :: (Map.Map Ident RuntimeDef),
   nextFreeRef     :: Integer,
   nextFreeNameId  :: Integer,
-  itypes           :: Type.Env,
+  itypes           :: Types.Env,
   stypes           :: InferState
 }
 
@@ -37,7 +37,7 @@ data InterpreterState = InterpreterState {
   globalExportEnv :: (Maybe Environment)
 }
 
-data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Type.Type Environment | FailedTypechecking TypeError
+data ExecutionResult = FailedParse String | FailedExecution String | Executed RuntimeValue Types.Type Environment | FailedTypechecking TypeError
 type Exec = StateT (InterpreterState) (ReaderT (Environment) (ExceptT String IO))
 
 type RFunBody = [RuntimeValue] -> Exec (RuntimeValue, Environment)
