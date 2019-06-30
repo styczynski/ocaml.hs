@@ -18,25 +18,25 @@ import qualified Data.Set as Set
 
 class Substitutable a where
   (.>)     :: Subst -> a -> a
-  free   :: a -> Set.Set TVar
+  free   :: a -> Set.Set TypeVar
 
 instance Substitutable Type where
-  (.>) _ (TCon a)       = TCon a
+  (.>) _ (TypeStatic a)       = TypeStatic a
   (.>) s (TDep name deps) = TDep name $ map (\a -> s .> a) deps
-  (.>) (Subst s) t@(TVar a) = Map.findWithDefault t a s
-  (.>) s (t1 `TArr` t2) = (s .> t1) `TArr` (s .> t2)
-  (.>) s (t1 `TTuple` t2) = (s .> t1) `TTuple` (s .> t2)
-  (.>) s (TList a) = TList $ s .> a
-  (.>) s TUnit = TUnit
+  (.>) (Subst s) t@(TypeVar a) = Map.findWithDefault t a s
+  (.>) s (t1 `TypeArrow` t2) = (s .> t1) `TypeArrow` (s .> t2)
+  (.>) s (t1 `TypeTuple` t2) = (s .> t1) `TypeTuple` (s .> t2)
+  (.>) s (TypeList a) = TypeList $ s .> a
+  (.>) s TypeUnit = TypeUnit
   (.>) s (TExport v) = (TExport v)
 
-  free TCon{}         = Set.empty
-  free (TVar a)       = Set.singleton a
-  free (TList a)      = free a
+  free TypeStatic{}         = Set.empty
+  free (TypeVar a)       = Set.singleton a
+  free (TypeList a)      = free a
   free (TDep name deps) = foldl (\acc el -> acc `Set.union` (free el)) (Set.empty) deps
-  free (t1 `TArr` t2) = free t1 `Set.union` free t2
-  free (t1 `TTuple` t2) = free t1 `Set.union` free t2
-  free TUnit = Set.empty
+  free (t1 `TypeArrow` t2) = free t1 `Set.union` free t2
+  free (t1 `TypeTuple` t2) = free t1 `Set.union` free t2
+  free TypeUnit = Set.empty
   free (TExport _) = Set.empty
 
 instance Substitutable Scheme where

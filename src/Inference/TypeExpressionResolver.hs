@@ -24,15 +24,15 @@ import System.IO.Unsafe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-getTypeSimpleExpressionFV :: TypeSimpleExpression -> Infer (Map.Map String TVar)
+getTypeSimpleExpressionFV :: TypeSimpleExpression -> Infer (Map.Map String TypeVar)
 getTypeSimpleExpressionFV (TypeSExprList listType) = getTypeExpressionFV listType
 getTypeSimpleExpressionFV (TypeSExprIdent _) = return Map.empty
 getTypeSimpleExpressionFV TypeSExprEmpty = return Map.empty
 getTypeSimpleExpressionFV (TypeSExprAbstract (TypeIdentAbstract name)) = do
   tvv <- fresh
-  return $ let (TVar tv) = tvv in Map.singleton name tv
+  return $ let (TypeVar tv) = tvv in Map.singleton name tv
 
-getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TVar)
+getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TypeVar)
 getTypeExpressionFV  (TypeExprSimple simpl) = getTypeSimpleExpressionFV simpl
 getTypeExpressionFV (TypeExprIdent (TypeArgJustOne param) _) = getTypeSimpleExpressionFV param
 getTypeExpressionFV (TypeExprIdent (TypeArgJust firstParam restParams) _) = do
@@ -72,12 +72,12 @@ resolveTypeExpressionFVNames (TypeExprTuple firstElem restElems) = do
     y <- resolveTypeExpressionFVNames el
     return $ acc `Set.union` y) x restElems
 
-resolveTypeSimpleExpressionRec :: (Map.Map String TVar) -> TypeSimpleExpression -> Infer Type
-resolveTypeSimpleExpressionRec fvs TypeSExprEmpty = return TUnit
-resolveTypeSimpleExpressionRec fvs (TypeSExprIdent (Ident name)) = return $ TCon name
+resolveTypeSimpleExpressionRec :: (Map.Map String TypeVar) -> TypeSimpleExpression -> Infer Type
+resolveTypeSimpleExpressionRec fvs TypeSExprEmpty = return TypeUnit
+resolveTypeSimpleExpressionRec fvs (TypeSExprIdent (Ident name)) = return $ TypeStatic name
 resolveTypeSimpleExpressionRec fvs (TypeSExprList expr) = do
   t <- resolveTypeExpressionRec fvs expr
-  return $ TList t
+  return $ TypeList t
 resolveTypeSimpleExpressionRec fvs (TypeSExprAbstract (TypeIdentAbstract name)) = do
   parsedName <- return $ [ x | x <- name, not (x `elem` "'") ]
   validFvs <- return $ name `Map.member` fvs
@@ -86,9 +86,9 @@ resolveTypeSimpleExpressionRec fvs (TypeSExprAbstract (TypeIdentAbstract name)) 
     throwError $ Debug payl $ "Type name " ++ name ++ " is not a valid polymorhic type name"
   else
     let (Just tv) = Map.lookup name fvs in
-    return $ TVar tv
+    return $ TypeVar tv
 
-resolveTypeExpressionRec :: (Map.Map String TVar) -> TypeExpression -> Infer Type
+resolveTypeExpressionRec :: (Map.Map String TypeVar) -> TypeExpression -> Infer Type
 resolveTypeExpressionRec fvs (TypeExprSimple simpl) = resolveTypeSimpleExpressionRec fvs simpl
 resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJust firstParam restParams) (Ident name)) = do
   typeParams <- foldlM (\acc (TypeArgEl expr)-> do
@@ -101,11 +101,11 @@ resolveTypeExpressionRec fvs (TypeExprIdent (TypeArgJustOne param) (Ident name))
 resolveTypeExpressionRec fvs (TypeFun a b) = do
   t1 <- resolveTypeExpressionRec fvs a
   t2 <- resolveTypeExpressionRec fvs b
-  return $ TArr t1 t2
+  return $ TypeArrow t1 t2
 resolveTypeExpressionRec fvs (TypeExprTuple fstEl restEls) = do
   tupleT <- foldlM (\acc expr-> do
     t <- resolveTypeExpressionRec fvs expr
-    return $ TTuple t acc) (TTuple TUnit TUnit) ([fstEl] ++ restEls)
+    return $ TypeTuple t acc) (TypeTuple TypeUnit TypeUnit) ([fstEl] ++ restEls)
   return tupleT
 
 resolveTypeExpression :: TypeExpression -> Infer Scheme

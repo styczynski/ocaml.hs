@@ -55,15 +55,15 @@ unifyMany t1 t2 = do
 
 unifies :: Type -> Type -> Solve Subst
 unifies t1 t2 | t1 == t2 = return emptySubst
-unifies (TVar v) t = v `bind` t
-unifies t (TVar v) = v `bind` t
+unifies (TypeVar v) t = v `bind` t
+unifies t (TypeVar v) = v `bind` t
 unifies t1@(TDep name1 deps1) t2@(TDep name2 deps2) = do
   payl <- errSolvePayload
   _ <- if not (name1 == name2) then throwError $ UnificationMismatch payl [t1] [t2] else return 0
   unifyMany deps1 deps2
-unifies (TList t1) (TList t2) = unifyMany [t1] [t2]
-unifies (TTuple t1 t2) (TTuple t3 t4) = unifyMany [t1, t2] [t3, t4]
-unifies (TArr t1 t2) (TArr t3 t4) = unifyMany [t1, t2] [t3, t4]
+unifies (TypeList t1) (TypeList t2) = unifyMany [t1] [t2]
+unifies (TypeTuple t1 t2) (TypeTuple t3 t4) = unifyMany [t1, t2] [t3, t4]
+unifies (TypeArrow t1 t2) (TypeArrow t3 t4) = unifyMany [t1, t2] [t3, t4]
 unifies t1 t2 = do
   payl <- errSolvePayload
   throwError $ UnificationFail payl t1 t2
@@ -78,13 +78,13 @@ solver (su, cs) =
       su1  <- unifies t1 t2
       solver (su1 +> su, su1 .> cs0)
 
-bind ::  TVar -> Type -> Solve Subst
-bind a t | t == TVar a     = return emptySubst
+bind ::  TypeVar -> Type -> Solve Subst
+bind a t | t == TypeVar a     = return emptySubst
          | occursCheck a t = do
                              payl <- errSolvePayload
                              throwError $ InfiniteType payl a t
          | otherwise       = return (Subst $ Map.singleton a t)
 
-occursCheck ::  Substitutable a => TVar -> a -> Bool
+occursCheck ::  Substitutable a => TypeVar -> a -> Bool
 occursCheck a t = a `Set.member` free t
 

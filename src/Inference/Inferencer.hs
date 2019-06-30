@@ -85,41 +85,41 @@ ops :: Binop -> Infer Type
 ops OpSemicolon = do
   tv1 <- fresh
   tv2 <- fresh
-  return $ tv1 `TArr` (tv2 `TArr` tv2)
+  return $ tv1 `TypeArrow` (tv2 `TypeArrow` tv2)
 ops OpSame = do
   tv <- fresh
-  return $ tv `TArr` (tv `TArr` tv)
+  return $ tv `TypeArrow` (tv `TypeArrow` tv)
 ops OpCons = do
   tv <- fresh
-  return $ (tv) `TArr` ((TList tv) `TArr` (TList tv) )
+  return $ (tv) `TypeArrow` ((TypeList tv) `TypeArrow` (TypeList tv) )
 ops OpTupleCons = do
   tv <- fresh
   tv2 <- fresh
   tv3 <- fresh
-  return $ (tv) `TArr` ((TTuple tv2 tv3) `TArr` (TTuple tv (TTuple tv2 tv3)))
+  return $ (tv) `TypeArrow` ((TypeTuple tv2 tv3) `TypeArrow` (TypeTuple tv (TypeTuple tv2 tv3)))
 
 opsUni :: Uniop -> Infer Type
 opsUni OpHead = do
   tv <- fresh
-  return $ (TList tv) `TArr` (tv)
+  return $ (TypeList tv) `TypeArrow` (tv)
 opsUni OpTails = do
   tv <- fresh
-  return $ (TList tv) `TArr` (TList tv)
+  return $ (TypeList tv) `TypeArrow` (TypeList tv)
 opsUni OpEmptyList = do
   tv <- fresh
   tv2 <- fresh
-  return $ tv `TArr` (TList tv2)
+  return $ tv `TypeArrow` (TypeList tv2)
 opsUni OpEmptyTuple = do
   tv <- fresh
-  return $ tv `TArr` (TTuple TUnit TUnit)
+  return $ tv `TypeArrow` (TypeTuple TypeUnit TypeUnit)
 opsUni OpListNth = do
   tv <- fresh
-  return $ (TList tv) `TArr` tv
+  return $ (TypeList tv) `TypeArrow` tv
 opsUni (OpTupleNth index len) = do
   (tupleType, elsTypes) <- foldrM (\_ (tup, tvs) -> do
     tv <- fresh
-    return $ ((TTuple tv tup), [tv] ++ tvs)) ((TTuple TUnit TUnit), []) (replicate len 0)
-  return $ (tupleType) `TArr` (elsTypes !! index)
+    return $ ((TypeTuple tv tup), [tv] ++ tvs)) ((TypeTuple TypeUnit TypeUnit), []) (replicate len 0)
+  return $ (tupleType) `TypeArrow` (elsTypes !! index)
 
 inferImplementation :: Implementation -> Infer (Env, Type, [TypeConstraint])
 inferImplementation ast@(IRoot cores) = do
@@ -127,7 +127,7 @@ inferImplementation ast@(IRoot cores) = do
   env <- ask
   r <- foldlM (\(envAcc, _, _) core -> do
     i <- local (\_ -> envAcc) $ inferImplementationCore core
-    return i) (env, TUnit, []) cores
+    return i) (env, TypeUnit, []) cores
   unmarkTrace ast
   return r
 
@@ -143,7 +143,7 @@ inferImplementationCore ast@(IRootDef phrases) = do
   env <- ask
   r <- foldlM (\(envAcc, _, _) phrase -> do
     i <- local (\_ -> envAcc) $ inferImplementationPhrase phrase
-    return i) (env, TUnit, []) phrases
+    return i) (env, TypeUnit, []) phrases
   unmarkTrace ast
   return r
 
@@ -184,7 +184,7 @@ inferTypeDef ast@(TypeDefVar typeParams name options) = do
   env <- ask
   r <- foldlM (\(envAcc, _, _) option -> do
     i <- local (\_ -> envAcc) $ inferVariantOption (typeParamsToList typeParams) name option
-    return i) (env, TUnit, []) options
+    return i) (env, TypeUnit, []) options
   unmarkTrace ast
   return r
 inferTypeDef ast@(TypeDefVarP typeParams name options) = do
@@ -192,7 +192,7 @@ inferTypeDef ast@(TypeDefVarP typeParams name options) = do
   env <- ask
   r <- foldlM (\(envAcc, _, _) option -> do
     i <- local (\_ -> envAcc) $ inferVariantOption (typeParamsToList typeParams) name option
-    return i) (env, TUnit, []) options
+    return i) (env, TypeUnit, []) options
   unmarkTrace ast
   return r
 
@@ -217,10 +217,10 @@ inferE expr = do
   return $ (env, t, c)
 
 infer :: Expr -> Infer (Type, [TypeConstraint])
-infer Skip = return ((TCon "Int"), [])
-infer (Lit (LInt _)) = return ((TCon "Int"), [])
-infer (Lit (LBool _)) = return ((TCon "Bool"), [])
-infer (Lit (LString _)) = return ((TCon "String"), [])
+infer Skip = return ((TypeStatic "Int"), [])
+infer (Lit (LInt _)) = return ((TypeStatic "Int"), [])
+infer (Lit (LBool _)) = return ((TypeStatic "Bool"), [])
+infer (Lit (LString _)) = return ((TypeStatic "String"), [])
 infer (Annot l t) = do
   s <- get
   put s{lastInferExpr = l}
@@ -232,7 +232,7 @@ infer (Export) = do
   return (TExport env, [])
 infer (Check e (Forall _ t)) = do
   (t1, c1) <- infer e
-  ac <- constraintAnnotList [TypeConstraint EmptyPayload (t1, t)]
+  ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (t1, t)]
   return (t1, c1 ++ ac)
 infer (Var x) = do
     t <- lookupEnv x
@@ -240,12 +240,12 @@ infer (Var x) = do
 infer (Lam x e) = do
   tv <- fresh
   (t, c) <- (x, Forall [] tv) ==> (infer e)
-  return (tv `TArr` t, c)
+  return (tv `TypeArrow` t, c)
 infer (App e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
   tv <- fresh
-  ac <- constraintAnnotList [TypeConstraint EmptyPayload (t1, t2 `TArr` tv)]
+  ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (t1, t2 `TypeArrow` tv)]
   return (tv, c1 ++ c2 ++ ac)
 infer (Let x e1 e2) = do
   env <- ask
@@ -260,16 +260,16 @@ infer (Let x e1 e2) = do
 infer (Fix e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
-  ac <- constraintAnnotList [TypeConstraint EmptyPayload (tv `TArr` tv, t1)]
+  ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (tv `TypeArrow` tv, t1)]
   return (tv, c1 ++ ac)
 infer (UniOp (OpCustomUni name) e1) = do
   infer (App (Var $ Ident name) e1)
 infer (UniOp op e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
-  u1 <- return $ t1 `TArr` tv
+  u1 <- return $ t1 `TypeArrow` tv
   u2 <- opsUni op
-  ac <- constraintAnnotList [TypeConstraint EmptyPayload (u1, u2)]
+  ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ ac)
 infer (Op (OpCustom name) e1 e2) = do
   infer (App (App (Var $ Ident name) e1) e2)
@@ -277,14 +277,14 @@ infer (Op op e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
   tv <- fresh
-  u1 <- return $ t1 `TArr` (t2 `TArr` tv)
+  u1 <- return $ t1 `TypeArrow` (t2 `TypeArrow` tv)
   u2 <- ops op
-  ac <- constraintAnnotList [TypeConstraint EmptyPayload (u1, u2)]
+  ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ c2 ++ ac)
 infer (If cond tr fl) = do
   (t1, c1) <- infer cond
   (t2, c2) <- infer tr
   (t3, c3) <- infer fl
-  ac <- constraintAnnotList [(TypeConstraint EmptyPayload (t1, TCon "Bool")), (TypeConstraint EmptyPayload (t2, t3))]
+  ac <- constraintAnnoTypeList [(TypeConstraint EmptyPayload (t1, TypeStatic "Bool")), (TypeConstraint EmptyPayload (t2, t3))]
   return (t2, c1 ++ c2 ++ c3 ++ ac)
 

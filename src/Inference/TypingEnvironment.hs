@@ -15,7 +15,7 @@ import Control.Monad.Identity
 import Data.Foldable hiding (toList)
 import qualified Data.Map as Map
 
-newtype Subst = Subst (Map.Map TVar Type) deriving (Eq, Show)
+newtype Subst = Subst (Map.Map TypeVar Type) deriving (Eq, Show)
 
 data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
@@ -27,7 +27,7 @@ data InferState = InferState { count :: Int, inferTrace :: [String], lastInferEx
 
 data TypeError
   = UnificationFail TypeErrorPayload Type Type
-  | InfiniteType TypeErrorPayload TVar Type
+  | InfiniteType TypeErrorPayload TypeVar Type
   | UnboundVariable TypeErrorPayload Ident
   | Ambigious TypeErrorPayload [TypeConstraint]
   | UnificationMismatch TypeErrorPayload [Type] [Type]

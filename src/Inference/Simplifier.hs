@@ -48,7 +48,7 @@ simplifyPattern fn recMode ast@(PatList (PList list)) letExpr expr = do
   addExprAnnot $ return simpl
 simplifyPattern _ _ (PatConst const) letExpr expr = do
   id <- freshIdent
-  addExprAnnot $ return $ Let id (Check letExpr $ getConstScheme const) expr
+  addExprAnnot $ return $ Let id (Check letExpr $ geTypeStaticstScheme const) expr
 simplifyPattern fn recMode (PatCheck name typeExpr) letExpr expr = do
   scheme <- fn typeExpr
   addExprAnnot $ simplifyPattern fn recMode (PatIdent name) (Check letExpr scheme) expr
@@ -77,7 +77,7 @@ simplifyComplexExpression fn (ECTyped typeExpr) = do
   addExprAnnot $ return $ Typed scheme
 simplifyComplexExpression fn ast@(ECFor varName initExpr dir endExpr bodyExpr) = do
   markTrace ast
-  forCheckType <- return $ Forall [] $ (TCon "Int")
+  forCheckType <- return $ Forall [] $ (TypeStatic "Int")
   initSimpl <- simplifyComplexExpression fn initExpr
   endSimpl <- simplifyComplexExpression fn endExpr
   initSimplCheck <- return $ Check initSimpl forCheckType
@@ -87,7 +87,7 @@ simplifyComplexExpression fn ast@(ECFor varName initExpr dir endExpr bodyExpr) =
   addExprAnnot $ return $ Let varName (Op OpSame initSimplCheck endSimplCheck) bodySimpl
 simplifyComplexExpression fn ast@(ECWhile condExpr bodyExpr) = do
   markTrace ast
-  whileCheckType <- return $ Forall [] $ (TCon "Bool")
+  whileCheckType <- return $ Forall [] $ (TypeStatic "Bool")
   condSimpl <- simplifyComplexExpression fn condExpr
   bodySimpl <- simplifyComplexExpression fn bodyExpr
   condSimplCheck <- return $ Check condSimpl whileCheckType

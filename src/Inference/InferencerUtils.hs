@@ -72,7 +72,7 @@ fresh :: Infer Type
 fresh = do
     s <- get
     put s{count = count s + 1}
-    return $ TVar $ TV (letters !! count s)
+    return $ TypeVar $ TV (letters !! count s)
 
 isRec :: LetRecKeyword -> Bool
 isRec LetRecYes = True
@@ -88,16 +88,16 @@ constraintAnnot (TypeConstraint _ constrnt) = do
   payl <- errPayload
   return $ TypeConstraint payl constrnt
 
-constraintAnnotList :: [TypeConstraint] -> Infer [TypeConstraint]
-constraintAnnotList cs = do
+constraintAnnoTypeList :: [TypeConstraint] -> Infer [TypeConstraint]
+constraintAnnoTypeList cs = do
   foldrM (\c acc -> do
     ca <- constraintAnnot c
     return $ [ca] ++ acc)  [] cs
 
-getConstScheme :: Constant -> Scheme
-getConstScheme (CInt _) = Forall [] (TCon "Int")
-getConstScheme (CBool _) = Forall [] (TCon "Bool")
-getConstScheme (CString _) = Forall [] (TCon "String")
+geTypeStaticstScheme :: Constant -> Scheme
+geTypeStaticstScheme (CInt _) = Forall [] (TypeStatic "Int")
+geTypeStaticstScheme (CBool _) = Forall [] (TypeStatic "Bool")
+geTypeStaticstScheme (CString _) = Forall [] (TypeStatic "String")
 
 closeOver :: Type -> Scheme
 closeOver = normalize . generalize Inference.TypingEnvironment.empty
@@ -117,23 +117,23 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
   where
     ord = zip (nub $ fv body) (map TV letters)
 
-    fv (TVar a)   = [a]
-    fv (TArr a b) = fv a ++ fv b
-    fv (TList a)  = fv a
-    fv (TTuple a b) = fv a ++ fv b
-    fv TUnit = []
+    fv (TypeVar a)   = [a]
+    fv (TypeArrow a b) = fv a ++ fv b
+    fv (TypeList a)  = fv a
+    fv (TypeTuple a b) = fv a ++ fv b
+    fv TypeUnit = []
     fv (TExport _) = []
-    fv (TCon _)   = []
+    fv (TypeStatic _)   = []
     fv (TDep _ deps) = foldl (\acc el -> acc ++ (fv el)) [] deps
 
-    normtype TUnit = TUnit
+    normtype TypeUnit = TypeUnit
     normtype (TExport v) = (TExport v)
-    normtype (TArr a b) = TArr (normtype a) (normtype b)
-    normtype (TTuple a b) = TTuple (normtype a) (normtype b)
-    normtype (TList a) = TList (normtype a)
-    normtype (TCon a)   = TCon a
+    normtype (TypeArrow a b) = TypeArrow (normtype a) (normtype b)
+    normtype (TypeTuple a b) = TypeTuple (normtype a) (normtype b)
+    normtype (TypeList a) = TypeList (normtype a)
+    normtype (TypeStatic a)   = TypeStatic a
     normtype (TDep name deps) = TDep name $ map normtype deps
-    normtype (TVar a)   =
+    normtype (TypeVar a)   =
       case Prelude.lookup a ord of
-        Just x -> TVar x
+        Just x -> TypeVar x
         Nothing -> error "type variable not in signature"
