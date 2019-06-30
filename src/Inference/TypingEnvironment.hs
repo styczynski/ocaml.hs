@@ -23,7 +23,6 @@ type Constraint = (Type, Type)
 data AConstraint = AConstraint TypeErrorPayload Constraint
 type Unifier = (Subst, [AConstraint])
 
-
 type Infer = StateT (InferState) (ReaderT (Env) (ExceptT TypeError IO))
 data InferState = InferState { count :: Int, inferTrace :: [String], lastInferExpr :: String }
 
@@ -35,7 +34,6 @@ data TypeError
   | UnificationMismatch TypeErrorPayload [Type] [Type]
   | Debug TypeErrorPayload String
   deriving (Show)
-
 
 initInfer :: InferState
 initInfer = InferState { count = 0, inferTrace = [], lastInferExpr = "" }
@@ -50,37 +48,15 @@ empty :: Env
 empty = TypeEnv Map.empty
 
 (++>) :: Env -> (Ident, Scheme) -> Env
-(++>) env (x, s) = env { types = Map.insert x s (types env) }
+(++>) env (name, scheme) =
+  let newEnv = env { types = Map.insert name scheme (types env) } in
+  newEnv
 
 (-->) :: Env -> Ident -> Env
-(-->) (TypeEnv env) var = TypeEnv (Map.delete var env)
+(-->) (TypeEnv env) name = TypeEnv (Map.delete name env)
 
 (==>) :: (Ident, Scheme) -> Infer a -> Infer a
-(==>) (x, sc) m = do
-  let scope e = (e --> x) ++> (x, sc)
-  local scope m
+(==>) (x, sc) m = local (\env -> (env --> x) ++> (x, sc)) m
 
-extends :: Env -> [(Ident, Scheme)] -> Env
-extends env xs = env { types = Map.union (Map.fromList xs) (types env) }
-
-lookup :: Ident -> Env -> Maybe Scheme
-lookup key (TypeEnv tys) = Map.lookup key tys
-
-merge :: Env -> Env -> Env
-merge (TypeEnv a) (TypeEnv b) = TypeEnv (Map.union a b)
-
-mergeEnvs :: [Env] -> Env
-mergeEnvs = foldl' merge empty
-
-singleton :: Ident -> Scheme -> Env
-singleton x y = TypeEnv (Map.singleton x y)
-
-keys :: Env -> [Ident]
-keys (TypeEnv env) = Map.keys env
-
-fromList :: [(Ident, Scheme)] -> Env
-fromList xs = TypeEnv (Map.fromList xs)
-
-toList :: Env -> [(Ident, Scheme)]
-toList (TypeEnv env) = Map.toList env
-
+(??) :: Env -> Ident -> Maybe Scheme
+(??) (TypeEnv env) name = Map.lookup name env
