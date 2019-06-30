@@ -33,12 +33,14 @@ runInfer env state fn = do
     (Left e) -> return $ Left e
     (Right ((env, t, c), state)) -> return $ Right ((env, t, c), state)
 
-solve :: Either TypeError (Type, [AConstraint]) -> Either TypeError Scheme
+solve :: Either TypeError (Type, [AConstraint]) -> IO (Either TypeError Scheme)
 solve r = case r of
-  Left err -> Left err
-  Right (ty, cs) -> case runSolve cs of
-    Left err -> Left err
-    Right subst -> Right $ closeOver $ apply subst ty
+  Left err -> return $ Left err
+  Right (ty, cs) -> do
+    s <- runSolve cs
+    case s of
+      Left err -> return $ Left err
+      Right subst -> return $ Right $ closeOver $ apply subst ty
 
 unpackEnvTypeContraints :: Either TypeError ((Env, Type, [AConstraint]), InferState) -> Either TypeError (Type, [AConstraint])
 unpackEnvTypeContraints (Left r) = Left r
@@ -58,7 +60,7 @@ inferAST env state ex = do
   i <- runInfer env state (inferImplementation ex)
   env <- return $ retrieveEnv i
   state <- return $ retrieveState i
-  scheme <- return $ solve $ unpackEnvTypeContraints i
+  scheme <- solve $ unpackEnvTypeContraints i
   case scheme of
     Left e -> return $ Left e
     Right s -> return $ Right (s, env, state)
@@ -69,11 +71,13 @@ constraintsExpr env state ex = do
   r <- runInfer env state (inferE ex)
   case r of
     Left err -> return $ Left err
-    Right ((_, ty, cs), state) -> case runSolve cs of
-      Left err -> return $ Left err
-      Right subst -> return $ Right (cs, subst, ty, sc)
-        where
-          sc = closeOver $ apply subst ty
+    Right ((_, ty, cs), state) -> do
+      s <- runSolve cs
+      case s of
+        Left err -> return $ Left err
+        Right subst -> return $ Right (cs, subst, ty, sc)
+          where
+            sc = closeOver $ apply subst ty
 
 -- | Canonicalize and return the polymorphic toplevel type.
 
@@ -246,12 +250,13 @@ infer (App e1 e2) = do
 infer (Let x e1 e2) = do
   env <- ask
   (t1, c1) <- infer e1
-  case runSolve c1 of
-      Left err -> throwError err
-      Right sub -> do
-          let sc = generalize (apply sub env) (apply sub t1)
-          (t2, c2) <- (x, sc) ==> (local (apply sub) (infer e2))
-          return (t2, c1 ++ c2)
+  s <- lift $ lift $ lift $ runSolve c1
+  case s of
+    Left err -> throwError err
+    Right sub -> do
+        let sc = generalize (apply sub env) (apply sub t1)
+        (t2, c2) <- (x, sc) ==> (local (apply sub) (infer e2))
+        return (t2, c1 ++ c2)
 infer (Fix e1) = do
   (t1, c1) <- infer e1
   tv <- fresh

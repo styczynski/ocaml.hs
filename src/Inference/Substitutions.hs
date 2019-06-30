@@ -59,3 +59,6 @@ instance Substitutable a => Substitutable [a] where
 instance Substitutable Env where
   apply s (TypeEnv env) = TypeEnv $ Map.map (apply s) env
   ftv (TypeEnv env) = ftv $ Map.elems env
+
+(+>) :: Subst -> Subst -> Subst
+(+>) (Subst s1) (Subst s2) = Subst $ Map.map (apply (Subst s1)) s2 `Map.union` s1

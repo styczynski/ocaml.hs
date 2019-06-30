@@ -15,22 +15,11 @@ import Data.Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
--- | Solve state
 data SolveState = SolveState { lastAnnot :: TypeErrorPayload }
 initSolve :: SolveState
 initSolve = SolveState { lastAnnot = EmptyPayload }
 
-
--- | Constraint solver monad
-type Solve a = (StateT
-                 SolveState
-                 (Except
-                   TypeError))
-                 a
-
--------------------------------------------------------------------------------
--- Constraint Solver
--------------------------------------------------------------------------------
+type Solve = StateT (SolveState) (ExceptT TypeError IO)
 
 checkpointAnnotSolve :: AConstraint -> Solve ()
 checkpointAnnotSolve (AConstraint l _) = do
@@ -44,27 +33,22 @@ errSolvePayload = do
   lastAnnot <- return $ let SolveState { lastAnnot = lastAnnot } = s in lastAnnot
   return lastAnnot
 
--- | The empty substitution
 emptySubst :: Subst
 emptySubst = Subst $ Map.empty
 
--- | Compose substitutions
-compose :: Subst -> Subst -> Subst
-(Subst s1) `compose` (Subst s2) = Subst $ Map.map (apply (Subst s1)) s2 `Map.union` s1
-
--- | Run the constraint solver
-runSolve :: [AConstraint] -> Either TypeError Subst
-runSolve cs = let st = (emptySubst, cs) in
-  case runExcept $ runStateT (solver st) initSolve of
-    Left e -> Left e
-    Right (s, _) -> Right s
+runSolve :: [AConstraint] -> IO (Either TypeError Subst)
+runSolve cs = do
+  r <- runExceptT (runStateT (solver (emptySubst, cs)) (initSolve))
+  case r of
+    Left e -> return $ Left e
+    Right (s, _) -> return $ Right s
 
 unifyMany :: [Type] -> [Type] -> Solve Subst
 unifyMany [] [] = return emptySubst
 unifyMany (t1 : ts1) (t2 : ts2) =
   do su1 <- unifies t1 t2
      su2 <- unifyMany (apply su1 ts1) (apply su1 ts2)
-     return (su2 `compose` su1)
+     return (su2 +> su1)
 unifyMany t1 t2 = do
   payl <- errSolvePayload
   throwError $ UnificationMismatch payl t1 t2
@@ -92,7 +76,7 @@ solver (su, cs) =
     ((AConstraint l (t1, t2)): cs0) -> do
       checkpointAnnotSolve (AConstraint l (t1, t2))
       su1  <- unifies t1 t2
-      solver (su1 `compose` su, apply su1 cs0)
+      solver (su1 +> su, apply su1 cs0)
 
 bind ::  TVar -> Type -> Solve Subst
 bind a t | t == TVar a     = return emptySubst
