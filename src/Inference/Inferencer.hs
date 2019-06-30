@@ -218,37 +218,37 @@ inferE expr = do
   return $ (env, t, c)
 
 infer :: SimplifiedExpr -> Infer (Type, [TypeConstraint])
-infer SSkip = return ((TypeStatic "Int"), [])
-infer (SConst (LInt _)) = return ((TypeStatic "Int"), [])
-infer (SConst (LBool _)) = return ((TypeStatic "Bool"), [])
-infer (SConst (LString _)) = return ((TypeStatic "String"), [])
-infer (SAnnotated l t) = do
+infer SimplifiedSkip = return ((TypeStatic "Int"), [])
+infer (SimplifiedConst (LInt _)) = return ((TypeStatic "Int"), [])
+infer (SimplifiedConst (LBool _)) = return ((TypeStatic "Bool"), [])
+infer (SimplifiedConst (LString _)) = return ((TypeStatic "String"), [])
+infer (SimplifiedAnnotated l t) = do
   s <- get
   put s{lastInferExpr = l}
   infer t
-infer (STyped (Forall _ t)) =
+infer (SimplifiedTyped (Forall _ t)) =
   return (t, [])
-infer (SExportEnv) = do
+infer (SimplifiedExportEnv) = do
   env <- ask
   return (TypeAnnotated (AnnotationEnv env), [])
-infer (SCheck e (Forall _ t)) = do
+infer (SimplifiedCheck e (Forall _ t)) = do
   (t1, c1) <- infer e
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (t1, t)]
   return (t1, c1 ++ ac)
-infer (SVariable x) = do
+infer (SimplifiedVariable x) = do
     t <- lookupEnv x
     return (t, [])
-infer (SFunction x e) = do
+infer (SimplifiedFunction x e) = do
   tv <- fresh
   (t, c) <- (x, Forall [] tv) ==> (infer e)
   return (tv `TypeArrow` t, c)
-infer (SCall e1 e2) = do
+infer (SimplifiedCall e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
   tv <- fresh
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (t1, t2 `TypeArrow` tv)]
   return (tv, c1 ++ c2 ++ ac)
-infer (SLet x e1 e2) = do
+infer (SimplifiedLet x e1 e2) = do
   env <- ask
   (t1, c1) <- infer e1
   s <- lift $ lift $ lift $ runSolve c1
@@ -258,13 +258,13 @@ infer (SLet x e1 e2) = do
         let sc = generalize (sub .> env) (sub .> t1)
         (t2, c2) <- (x, sc) ==> (local (sub .>) (infer e2))
         return (t2, c1 ++ c2)
-infer (SFixPoint e1) = do
+infer (SimplifiedFixPoint e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (tv `TypeArrow` tv, t1)]
   return (tv, c1 ++ ac)
 infer (UniOp (OpCustomUni name) e1) = do
-  infer (SCall (SVariable $ Ident name) e1)
+  infer (SimplifiedCall (SimplifiedVariable $ Ident name) e1)
 infer (UniOp op e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
@@ -273,7 +273,7 @@ infer (UniOp op e1) = do
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ ac)
 infer (Op (OpCustom name) e1 e2) = do
-  infer (SCall (SCall (SVariable $ Ident name) e1) e2)
+  infer (SimplifiedCall (SimplifiedCall (SimplifiedVariable $ Ident name) e1) e2)
 infer (Op op e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
@@ -282,7 +282,7 @@ infer (Op op e1 e2) = do
   u2 <- ops op
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ c2 ++ ac)
-infer (SIf cond tr fl) = do
+infer (SimplifiedIf cond tr fl) = do
   (t1, c1) <- infer cond
   (t2, c2) <- infer tr
   (t3, c3) <- infer fl

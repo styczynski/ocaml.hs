@@ -1,24 +1,25 @@
 module Inference.Syntax where
 
-import AbsSyntax
+import Syntax.Base
+
 import Inference.Types
 import Inference.TypingEnvironment
 
 data SimplifiedExpr
-  = SVariable Ident
-  | SCall SimplifiedExpr SimplifiedExpr
-  | SFunction Ident SimplifiedExpr
-  | SLet Ident SimplifiedExpr SimplifiedExpr
-  | SConst Lit
-  | SIf SimplifiedExpr SimplifiedExpr SimplifiedExpr
-  | SFixPoint SimplifiedExpr
+  = SimplifiedVariable Ident
+  | SimplifiedCall SimplifiedExpr SimplifiedExpr
+  | SimplifiedFunction Ident SimplifiedExpr
+  | SimplifiedLet Ident SimplifiedExpr SimplifiedExpr
+  | SimplifiedConst Lit
+  | SimplifiedIf SimplifiedExpr SimplifiedExpr SimplifiedExpr
+  | SimplifiedFixPoint SimplifiedExpr
   | Op Binop SimplifiedExpr SimplifiedExpr
   | UniOp Uniop SimplifiedExpr
-  | SSkip
-  | SCheck SimplifiedExpr Scheme
-  | SExportEnv
-  | STyped Scheme
-  | SAnnotated String SimplifiedExpr
+  | SimplifiedSkip
+  | SimplifiedCheck SimplifiedExpr Scheme
+  | SimplifiedExportEnv
+  | SimplifiedTyped Scheme
+  | SimplifiedAnnotated String SimplifiedExpr
   deriving (Show, Eq)
 
 data Lit

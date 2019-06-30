@@ -25,7 +25,7 @@ addExprAnnot inExpr = do
   s <- get
   inferTraceTop <- return $ let InferState { inferTrace = inferTrace } = s in let (h:_) = inferTrace in h
   e <- inExpr
-  return $ SAnnotated inferTraceTop e
+  return $ SimplifiedAnnotated inferTraceTop e
 
 markTrace :: (Show a, Print a) => a -> Infer ()
 markTrace a = do
