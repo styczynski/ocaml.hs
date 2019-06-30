@@ -1,9 +1,10 @@
 module Interpreter where
 
+import Runtime.Environment
+import Runtime.Runtime
+
 import InterpreterDefinitions
 import InterpreterExpressions
-import Environment
-import Runtime
 import AbsSyntax
 
 import Control.Monad.Except

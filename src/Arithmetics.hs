@@ -9,8 +9,9 @@ import Data.List.Split
 import Data.Foldable
 
 import AbsSyntax
-import Runtime
-import Environment
+
+import Runtime.Runtime
+import Runtime.Environment
 
 valueStringifyRaw :: RuntimeValue -> String
 valueStringifyRaw (RString v) = v

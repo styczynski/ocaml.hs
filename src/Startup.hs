@@ -5,8 +5,9 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 
-import Runtime
-import Environment
+import Runtime.Runtime
+import Runtime.Environment
+
 import ExportUtils
 import Arithmetics
 import Printf

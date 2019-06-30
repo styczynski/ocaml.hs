@@ -5,10 +5,11 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 
+import Runtime.Runtime
+import Runtime.Environment
+
 import InterpreterDefinitions
-import Runtime
 import Arithmetics
-import Environment
 import InterpreterPatterns
 import qualified Data.Map as Map
 

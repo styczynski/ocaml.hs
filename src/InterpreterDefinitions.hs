@@ -6,8 +6,9 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Data.Map as Map
 
-import Runtime
-import Environment
+import Runtime.Runtime
+import Runtime.Environment
+
 import AbsSyntax
 
 createVariant :: Ident -> Environment -> TDefVariant -> Exec Environment

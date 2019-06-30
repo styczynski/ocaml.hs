@@ -1,5 +1,7 @@
 module Main where
 
+import Runtime.Runtime
+
 import Options.Applicative
 import Data.Semigroup ((<>))
 
@@ -8,7 +10,6 @@ import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 
 import Lib
-import Runtime
 import InterpreterDefinitions
 
 import qualified Inference.Type as Type

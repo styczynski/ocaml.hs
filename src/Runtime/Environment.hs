@@ -1,4 +1,4 @@
-module Environment where
+module Runtime.Environment where
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -7,7 +7,8 @@ import Control.Monad.Reader
 import qualified Data.Map as Map
 
 import AbsSyntax
-import Runtime
+
+import Runtime.Runtime
 
 import Inference.Env
 import Inference.Inferencer

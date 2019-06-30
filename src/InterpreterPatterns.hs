@@ -7,8 +7,9 @@ import Control.Monad.Reader
 import qualified Data.Map as Map
 import Data.Foldable
 
-import Runtime
-import Environment
+import Runtime.Runtime
+import Runtime.Environment
+
 import Arithmetics
 import AbsSyntax
 

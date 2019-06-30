@@ -12,8 +12,9 @@ import Data.Typeable
 import Data.Foldable
 import qualified Data.Map as Map
 
-import Runtime
-import Environment
+import Runtime.Runtime
+import Runtime.Environment
+
 import PrintSyntax
 import LexSyntax
 import ParSyntax

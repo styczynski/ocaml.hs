@@ -12,9 +12,10 @@ import SkelSyntax
 import AbsSyntax
 import ErrM
 
+import Runtime.Runtime
+import Runtime.Environment
+
 import Startup
-import Runtime
-import Environment
 import InterpreterDefinitions
 import Interpreter
 

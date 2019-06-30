@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Runtime where
+module Runtime.Runtime where
 
 import AbsSyntax
 import PrintSyntax
