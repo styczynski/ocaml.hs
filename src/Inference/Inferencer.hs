@@ -66,7 +66,7 @@ inferAST env state ex = do
     Right s -> return $ Right (s, env, state)
 
 -- | Return the internal constraints used in solving for the type of an expression
-constraintsExpr :: Env -> InferState -> Expr -> IO (Either TypeError ([TypeConstraint], Subst, Type, Scheme))
+constraintsExpr :: Env -> InferState -> SimplifiedExpr -> IO (Either TypeError ([TypeConstraint], Subst, Type, Scheme))
 constraintsExpr env state ex = do
   r <- runInfer env state (inferE ex)
   case r of
@@ -211,44 +211,44 @@ inferComplexExpression ast = do
   tree <- simplifyComplexExpression resolveTypeExpression ast
   infer tree
 
-inferE :: Expr -> Infer (Env, Type, [TypeConstraint])
+inferE :: SimplifiedExpr -> Infer (Env, Type, [TypeConstraint])
 inferE expr = do
   env <- ask
   (t, c) <- infer expr
   return $ (env, t, c)
 
-infer :: Expr -> Infer (Type, [TypeConstraint])
-infer Skip = return ((TypeStatic "Int"), [])
-infer (Lit (LInt _)) = return ((TypeStatic "Int"), [])
-infer (Lit (LBool _)) = return ((TypeStatic "Bool"), [])
-infer (Lit (LString _)) = return ((TypeStatic "String"), [])
-infer (Annot l t) = do
+infer :: SimplifiedExpr -> Infer (Type, [TypeConstraint])
+infer SSkip = return ((TypeStatic "Int"), [])
+infer (SConst (LInt _)) = return ((TypeStatic "Int"), [])
+infer (SConst (LBool _)) = return ((TypeStatic "Bool"), [])
+infer (SConst (LString _)) = return ((TypeStatic "String"), [])
+infer (SAnnotated l t) = do
   s <- get
   put s{lastInferExpr = l}
   infer t
-infer (Typed (Forall _ t)) =
+infer (STyped (Forall _ t)) =
   return (t, [])
-infer (Export) = do
+infer (SExportEnv) = do
   env <- ask
   return (TypeAnnotated (AnnotationEnv env), [])
-infer (Check e (Forall _ t)) = do
+infer (SCheck e (Forall _ t)) = do
   (t1, c1) <- infer e
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (t1, t)]
   return (t1, c1 ++ ac)
-infer (Var x) = do
+infer (SVariable x) = do
     t <- lookupEnv x
     return (t, [])
-infer (Lam x e) = do
+infer (SFunction x e) = do
   tv <- fresh
   (t, c) <- (x, Forall [] tv) ==> (infer e)
   return (tv `TypeArrow` t, c)
-infer (App e1 e2) = do
+infer (SCall e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
   tv <- fresh
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (t1, t2 `TypeArrow` tv)]
   return (tv, c1 ++ c2 ++ ac)
-infer (Let x e1 e2) = do
+infer (SLet x e1 e2) = do
   env <- ask
   (t1, c1) <- infer e1
   s <- lift $ lift $ lift $ runSolve c1
@@ -258,13 +258,13 @@ infer (Let x e1 e2) = do
         let sc = generalize (sub .> env) (sub .> t1)
         (t2, c2) <- (x, sc) ==> (local (sub .>) (infer e2))
         return (t2, c1 ++ c2)
-infer (Fix e1) = do
+infer (SFixPoint e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (tv `TypeArrow` tv, t1)]
   return (tv, c1 ++ ac)
 infer (UniOp (OpCustomUni name) e1) = do
-  infer (App (Var $ Ident name) e1)
+  infer (SCall (SVariable $ Ident name) e1)
 infer (UniOp op e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
@@ -273,7 +273,7 @@ infer (UniOp op e1) = do
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ ac)
 infer (Op (OpCustom name) e1 e2) = do
-  infer (App (App (Var $ Ident name) e1) e2)
+  infer (SCall (SCall (SVariable $ Ident name) e1) e2)
 infer (Op op e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
@@ -282,7 +282,7 @@ infer (Op op e1 e2) = do
   u2 <- ops op
   ac <- constraintAnnoTypeList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ c2 ++ ac)
-infer (If cond tr fl) = do
+infer (SIf cond tr fl) = do
   (t1, c1) <- infer cond
   (t2, c2) <- infer tr
   (t3, c3) <- infer fl

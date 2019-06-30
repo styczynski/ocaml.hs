@@ -4,21 +4,21 @@ import AbsSyntax
 import Inference.Types
 import Inference.TypingEnvironment
 
-data Expr
-  = Var Ident
-  | App Expr Expr
-  | Lam Ident Expr
-  | Let Ident Expr Expr
-  | Lit Lit
-  | If Expr Expr Expr
-  | Fix Expr
-  | Op Binop Expr Expr
-  | UniOp Uniop Expr
-  | Skip
-  | Check Expr Scheme
-  | Export
-  | Typed Scheme
-  | Annot String Expr
+data SimplifiedExpr
+  = SVariable Ident
+  | SCall SimplifiedExpr SimplifiedExpr
+  | SFunction Ident SimplifiedExpr
+  | SLet Ident SimplifiedExpr SimplifiedExpr
+  | SConst Lit
+  | SIf SimplifiedExpr SimplifiedExpr SimplifiedExpr
+  | SFixPoint SimplifiedExpr
+  | Op Binop SimplifiedExpr SimplifiedExpr
+  | UniOp Uniop SimplifiedExpr
+  | SSkip
+  | SCheck SimplifiedExpr Scheme
+  | SExportEnv
+  | STyped Scheme
+  | SAnnotated String SimplifiedExpr
   deriving (Show, Eq)
 
 data Lit
@@ -33,6 +33,6 @@ data Binop = OpSemicolon | OpSame | OpCustom String | OpCons | OpTupleCons
 data Uniop = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int | OpListNth
   deriving (Eq, Ord, Show)
 
-data Program = Program [Decl] Expr deriving Eq
+data Program = Program [Decl] SimplifiedExpr deriving Eq
 
-type Decl = (String, Expr)
+type Decl = (String, SimplifiedExpr)

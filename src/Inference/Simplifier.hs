@@ -29,16 +29,16 @@ getOperatorName (OperatorAnyDS (OperatorDS)) = "*"
 getOperatorName (OperatorAnyE (OperatorE name)) = name
 getOperatorName (OperatorAnyF (OperatorF name)) = name
 
-simplifyPattern :: InferenceFn -> Bool -> SimplePattern -> Expr -> Expr -> Infer Expr
+simplifyPattern :: InferenceFn -> Bool -> SimplePattern -> SimplifiedExpr -> SimplifiedExpr -> Infer SimplifiedExpr
 simplifyPattern _ _ PatNone _ expr = addExprAnnot $ return expr
 simplifyPattern fn _ ast@(PatList (PList [])) letExpr expr = do
   markTrace ast
   scheme <- fn (TypeExprSimple $ TypeSExprList $ TypeExprSimple $ TypeSExprAbstract $ TypeIdentAbstract "'a")
   id <- freshIdent
   unmarkTrace ast
-  addExprAnnot $ return $ Let id (Check letExpr scheme) expr
+  addExprAnnot $ return $ SLet id (SCheck letExpr scheme) expr
 simplifyPattern fn recMode (PatConstr (Ident nameStr) pat) letExpr expr = do
-  addExprAnnot $ simplifyPattern fn recMode pat (App (Var $ Ident $ nameStr ++ "_reverse") letExpr) expr
+  addExprAnnot $ simplifyPattern fn recMode pat (SCall (SVariable $ Ident $ nameStr ++ "_reverse") letExpr) expr
 simplifyPattern fn recMode ast@(PatList (PList list)) letExpr expr = do
   markTrace ast
   (simpl, _) <- foldrM (\(PListElement pat) (expr, n) -> do
@@ -48,14 +48,14 @@ simplifyPattern fn recMode ast@(PatList (PList list)) letExpr expr = do
   addExprAnnot $ return simpl
 simplifyPattern _ _ (PatConst const) letExpr expr = do
   id <- freshIdent
-  addExprAnnot $ return $ Let id (Check letExpr $ geTypeStaticstScheme const) expr
+  addExprAnnot $ return $ SLet id (SCheck letExpr $ geTypeStaticstScheme const) expr
 simplifyPattern fn recMode (PatCheck name typeExpr) letExpr expr = do
   scheme <- fn typeExpr
-  addExprAnnot $ simplifyPattern fn recMode (PatIdent name) (Check letExpr scheme) expr
+  addExprAnnot $ simplifyPattern fn recMode (PatIdent name) (SCheck letExpr scheme) expr
 simplifyPattern _ False (PatIdent name) letExpr expr =
-  addExprAnnot $ return $ Let name letExpr expr
+  addExprAnnot $ return $ SLet name letExpr expr
 simplifyPattern _ True (PatIdent name) letExpr expr =
-  addExprAnnot $ return $ Let name (Fix (Lam name letExpr)) expr
+  addExprAnnot $ return $ SLet name (SFixPoint (SFunction name letExpr)) expr
 simplifyPattern fn recMode ast@(PatCons hPat tPat) letExpr expr = do
   markTrace ast
   hSimpl <- simplifyPattern fn recMode hPat (UniOp OpHead letExpr) expr
@@ -71,30 +71,30 @@ simplifyPattern fn recMode ast@(PatTuple (PTuple el restEls)) letExpr expr = do
   unmarkTrace ast
   addExprAnnot $ return tSimpl
 
-simplifyComplexExpression :: InferenceFn -> ComplexExpression -> Infer Expr
+simplifyComplexExpression :: InferenceFn -> ComplexExpression -> Infer SimplifiedExpr
 simplifyComplexExpression fn (ECTyped typeExpr) = do
   scheme <- fn typeExpr
-  addExprAnnot $ return $ Typed scheme
+  addExprAnnot $ return $ STyped scheme
 simplifyComplexExpression fn ast@(ECFor varName initExpr dir endExpr bodyExpr) = do
   markTrace ast
   forCheckType <- return $ Forall [] $ (TypeStatic "Int")
   initSimpl <- simplifyComplexExpression fn initExpr
   endSimpl <- simplifyComplexExpression fn endExpr
-  initSimplCheck <- return $ Check initSimpl forCheckType
-  endSimplCheck <- return $ Check endSimpl forCheckType
+  initSimplCheck <- return $ SCheck initSimpl forCheckType
+  endSimplCheck <- return $ SCheck endSimpl forCheckType
   bodySimpl <- simplifyComplexExpression fn bodyExpr
   unmarkTrace ast
-  addExprAnnot $ return $ Let varName (Op OpSame initSimplCheck endSimplCheck) bodySimpl
+  addExprAnnot $ return $ SLet varName (Op OpSame initSimplCheck endSimplCheck) bodySimpl
 simplifyComplexExpression fn ast@(ECWhile condExpr bodyExpr) = do
   markTrace ast
   whileCheckType <- return $ Forall [] $ (TypeStatic "Bool")
   condSimpl <- simplifyComplexExpression fn condExpr
   bodySimpl <- simplifyComplexExpression fn bodyExpr
-  condSimplCheck <- return $ Check condSimpl whileCheckType
+  condSimplCheck <- return $ SCheck condSimpl whileCheckType
   id <- freshIdent
   unmarkTrace ast
-  addExprAnnot $ return $ Let id condSimplCheck bodySimpl
-simplifyComplexExpression _ ECExportEnv = addExprAnnot $ return Export
+  addExprAnnot $ return $ SLet id condSimplCheck bodySimpl
+simplifyComplexExpression _ ECExportEnv = addExprAnnot $ return SExportEnv
 simplifyComplexExpression fn (ECTuple tuple) = addExprAnnot $ simplifyTuple fn tuple
 simplifyComplexExpression fn (ECExpr expr) = addExprAnnot $ simplifyExpression fn expr
 simplifyComplexExpression fn ast@(ECIf cond exprThen exprElse) = do
@@ -103,7 +103,7 @@ simplifyComplexExpression fn ast@(ECIf cond exprThen exprElse) = do
   thenSimpl <- simplifyComplexExpression fn exprThen
   elseSimpl <- simplifyComplexExpression fn exprElse
   unmarkTrace ast
-  addExprAnnot $ return $ If condSimpl thenSimpl elseSimpl
+  addExprAnnot $ return $ SIf condSimpl thenSimpl elseSimpl
 simplifyComplexExpression fn ast@(ECMatch expr _ clauses) = do
   markTrace ast
   clausesList <- foldrM (\(MatchClause pat clauseExpr) acc -> do
@@ -138,7 +138,7 @@ simplifyComplexExpression fn ast@(ECLet recK pat [] typeAnnot letExpr expr) = do
 simplifyComplexExpression fn (ECChecked expr typeExpr) = do
   simpl <- simplifyComplexExpression fn expr
   s <- fn typeExpr
-  addExprAnnot $ return $ Check simpl s
+  addExprAnnot $ return $ SCheck simpl s
 simplifyComplexExpression fn ast@(ECLet recK pat argsPats typeAnnot letExpr expr) = do
   markTrace ast
   expr <- withTypeAnnot typeAnnot expr
@@ -146,33 +146,33 @@ simplifyComplexExpression fn ast@(ECLet recK pat argsPats typeAnnot letExpr expr
   exprSimpl <- simplifyComplexExpression fn expr
   letSimplAcc <- foldrM (\pat expr -> do
     id <- freshIdent
-    s <- simplifyPattern fn False pat (Var $ id) expr
-    return $ Lam id s) letSimpl argsPats
+    s <- simplifyPattern fn False pat (SVariable $ id) expr
+    return $ SFunction id s) letSimpl argsPats
   r <- simplifyPattern fn (isRec recK) pat letSimplAcc exprSimpl
   unmarkTrace ast
   addExprAnnot $ return r
 
-simplifyTuple :: InferenceFn -> DTuple -> Infer Expr
+simplifyTuple :: InferenceFn -> DTuple -> Infer SimplifiedExpr
 simplifyTuple fn (DTuple firstElem elems) = do
   elemsSimpl <- foldM (\expr (DTupleElement el) -> do
     k <- simplifyExpression fn el
-    return $ Op OpTupleCons k expr) (UniOp OpEmptyTuple Skip) ([firstElem] ++ elems)
+    return $ Op OpTupleCons k expr) (UniOp OpEmptyTuple SSkip) ([firstElem] ++ elems)
   addExprAnnot $ return $ elemsSimpl
 
-simplifyList :: InferenceFn -> DList -> Infer Expr
+simplifyList :: InferenceFn -> DList -> Infer SimplifiedExpr
 simplifyList fn (DList elems) = do
   elemsSimpl <- foldM (\expr (ListElement el) -> do
     k <- simplifyComplexExpression fn el
-    return $ Op OpCons k expr) (UniOp OpEmptyList Skip) elems
+    return $ Op OpCons k expr) (UniOp OpEmptyList SSkip) elems
   addExprAnnot $ return $ elemsSimpl
 
-simplifyExpression :: InferenceFn -> Expression -> Infer Expr
+simplifyExpression :: InferenceFn -> Expression -> Infer SimplifiedExpr
 simplifyExpression fn (ExprSemi expA expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
   addExprAnnot $ return $ Op OpSemicolon simplA simplB
 simplifyExpression _ (ExprOp opName) = do
-  addExprAnnot $ return $ Var $ Ident $ getOperatorName opName
+  addExprAnnot $ return $ SVariable $ Ident $ getOperatorName opName
 simplifyExpression fn (Expr1 expA (OperatorA name) expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB
@@ -200,11 +200,11 @@ simplifyExpression fn (Expr5 expA (OperatorE name) expB) = do
 simplifyExpression fn (Expr6 (OperatorF name) exp) = do
   simpl <- simplifyExpression fn exp
   addExprAnnot $ return $ UniOp (OpCustomUni name) simpl
-simplifyExpression _ (ExprVar name) = addExprAnnot $ return $ Var name
-simplifyExpression _ (ExprConst (CInt val)) = addExprAnnot $ return $ Lit $ LInt val
-simplifyExpression _ (ExprConst (CString val)) = addExprAnnot $ return $ Lit $ LString val
-simplifyExpression _ (ExprConst (CBool CBTrue)) = addExprAnnot $ return $ Lit $ LBool True
-simplifyExpression _ (ExprConst (CBool CBFalse)) = addExprAnnot $ return $ Lit $ LBool False
+simplifyExpression _ (ExprVar name) = addExprAnnot $ return $ SVariable name
+simplifyExpression _ (ExprConst (CInt val)) = addExprAnnot $ return $ SConst $ LInt val
+simplifyExpression _ (ExprConst (CString val)) = addExprAnnot $ return $ SConst $ LString val
+simplifyExpression _ (ExprConst (CBool CBTrue)) = addExprAnnot $ return $ SConst $ LBool True
+simplifyExpression _ (ExprConst (CBool CBFalse)) = addExprAnnot $ return $ SConst $ LBool False
 simplifyExpression fn (ExprList list) = addExprAnnot $ simplifyList fn list
 simplifyExpression fn (ExprCompl expr) = addExprAnnot $ simplifyComplexExpression fn expr
 simplifyExpression fn ast@(ExprCall exp firstArg restArgs) = do
@@ -212,11 +212,11 @@ simplifyExpression fn ast@(ExprCall exp firstArg restArgs) = do
   fnExpr <- simplifyExpression fn exp
   r <- foldlM (\simpl argExp -> do
     argSimpl <- simplifySimpleExpression fn argExp
-    return $ App simpl argSimpl) (fnExpr) ([firstArg] ++ restArgs)
+    return $ SCall simpl argSimpl) (fnExpr) ([firstArg] ++ restArgs)
   unmarkTrace ast
   addExprAnnot $ return r
 
-simplifySimpleExpression :: InferenceFn -> SimpleExpression -> Infer Expr
+simplifySimpleExpression :: InferenceFn -> SimpleExpression -> Infer SimplifiedExpr
 simplifySimpleExpression fn (ESOp opName) = simplifyExpression fn $ ExprOp opName
 simplifySimpleExpression fn (ESConst const) = simplifyExpression fn $ ExprConst const
 simplifySimpleExpression fn (ESIdent name) = simplifyExpression fn $ ExprVar name

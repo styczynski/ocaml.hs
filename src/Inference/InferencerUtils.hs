@@ -20,12 +20,12 @@ import Data.List (nub)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-addExprAnnot :: Infer Expr -> Infer Expr
+addExprAnnot :: Infer SimplifiedExpr -> Infer SimplifiedExpr
 addExprAnnot inExpr = do
   s <- get
   inferTraceTop <- return $ let InferState { inferTrace = inferTrace } = s in let (h:_) = inferTrace in h
   e <- inExpr
-  return $ Annot inferTraceTop e
+  return $ SAnnotated inferTraceTop e
 
 markTrace :: (Show a, Print a) => a -> Infer ()
 markTrace a = do
