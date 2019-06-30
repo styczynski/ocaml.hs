@@ -1,8 +1,8 @@
-module Syntax where
+module Inference.Syntax where
 
 import AbsSyntax
-import Type
-import Env
+import Inference.Type
+import Inference.Env
 
 data Expr
   = Var Ident

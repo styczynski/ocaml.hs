@@ -6,10 +6,12 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Data.Map as Map
 
-import Env
 import AbsSyntax
 import Runtime
-import Infer
+
+import Inference.Env
+import Inference.Inferencer
+import qualified Inference.Type as Type
 
 emptyEnv = Environment {
   variables = Map.empty,
@@ -46,11 +48,11 @@ getTypesState env =
   let Environment { stypes = stypes } = env in
   stypes
 
-setTypesEnv :: Env -> Environment -> Environment
+setTypesEnv :: Type.Env -> Environment -> Environment
 setTypesEnv e env =
   env { itypes = e }
 
-getTypesEnv :: Environment -> Env
+getTypesEnv :: Environment -> Type.Env
 getTypesEnv env =
   let Environment { itypes = itypes } = env in
   itypes

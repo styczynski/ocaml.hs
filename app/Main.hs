@@ -10,8 +10,9 @@ import System.Exit ( exitFailure, exitSuccess )
 import Lib
 import Runtime
 import InterpreterDefinitions
-import Type
-import Infer
+
+import qualified Inference.Type as Type
+import Inference.Inferencer
 
 runFile :: Verbosity -> FilePath -> IO ()
 runFile v f = putStrLn f >> readFile f >>= runBlock v

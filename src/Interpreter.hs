@@ -13,7 +13,7 @@ import Control.Monad.Reader
 import Data.Foldable
 
 import Startup
-import qualified Type as Type
+import qualified Inference.Type as Type
 
 exec :: Implementation -> Exec (RuntimeValue, Environment)
 exec (IRoot implCores) = do

@@ -14,14 +14,16 @@ import qualified Data.Map as Map
 
 import Runtime
 import Environment
-import Env
 import PrintSyntax
 import LexSyntax
 import ParSyntax
 import SkelSyntax
 import AbsSyntax
 import ErrM
-import Infer
+
+import Inference.Env
+import Inference.Inferencer
+import qualified Inference.Type as Type
 
 setNativeVariable :: (PackableValue a) => String -> String -> a -> Exec (RuntimeValue, Environment)
 setNativeVariable name typeExpr val = do
@@ -34,7 +36,7 @@ exportGlobalVariableType name typeExpr = do
   (envT, envS) <- lift $ lift $ lift $ annotateGlobalVariableTypeEnv (getTypesEnv env) (getTypesState env) name typeExpr
   return (REmpty, (setTypesState envS (setTypesEnv envT env)))
 
-annotateGlobalVariableTypeEnv :: Env -> InferState -> String -> String -> IO (Env, InferState)
+annotateGlobalVariableTypeEnv :: Type.Env -> InferState -> String -> String -> IO (Type.Env, InferState)
 annotateGlobalVariableTypeEnv env state name typeExpr = let ts = myLexer typeExpr in case pTypeExpression ts of
   Ok  tree -> do
     v <- runExceptT (runReaderT (runStateT (resolveTypeExpression tree) (state)) (env))

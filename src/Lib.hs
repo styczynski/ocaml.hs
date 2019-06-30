@@ -18,15 +18,14 @@ import Environment
 import InterpreterDefinitions
 import Interpreter
 
-import Infer
-import Syntax
-import Type
-import Env
-import Environment
+import Inference.Inferencer
+import Inference.Env
+import qualified Inference.Type as Type
+import Inference.Syntax
 
 type Verbosity = Int
 
-runTIWith :: Verbosity -> String -> Environment -> IO (Either TypeError (Scheme, Environment))
+runTIWith :: Verbosity -> String -> Environment -> IO (Either TypeError (Type.Scheme, Environment))
 runTIWith v s e = let state = getTypesState e in let env = getTypesEnv e in let ts = myLexer s in case pImplementation ts of
           Bad s    -> return $ Left $ Debug EmptyPayload $ s
           Ok  tree -> do
@@ -51,7 +50,7 @@ runWith v s env = do
   i <- runTIWith v s env
   (case i of
     (Left e) -> return $ FailedTypechecking e
-    (Right ((Forall _ inferType), initEnv)) -> do
+    (Right ((Type.Forall _ inferType), initEnv)) -> do
       r <- runIWith v s initEnv
       return $ case r of
         (Executed v _ env) -> Executed v inferType env

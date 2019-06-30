@@ -2,11 +2,11 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Infer where
+module Inference.Inferencer where
 
-import Syntax
-import Env
-import Type
+import Inference.Syntax
+import Inference.Env
+import Inference.Type
 import AbsSyntax
 import PrintSyntax
 
@@ -189,7 +189,7 @@ constraintsExpr env state ex = do
 
 -- | Canonicalize and return the polymorphic toplevel type.
 closeOver :: Type -> Scheme
-closeOver = normalize . generalize Env.empty
+closeOver = normalize . generalize Inference.Env.empty
 
 -- | Extend type environment
 inEnv :: (Ident, Scheme) -> Infer a -> Infer a

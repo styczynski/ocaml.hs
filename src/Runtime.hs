@@ -13,13 +13,12 @@ import Data.Text.Internal.Search
 import qualified Data.Text as T
 import qualified Data.Map as Map
 
-import Env
-import Infer
+import Inference.Env
+import Inference.Inferencer
+import qualified Inference.Type as Type
 
 import System.IO
 import System.IO.Unsafe
-
-import qualified Type as Type
 
 data Environment = Environment {
   variables       :: (Map.Map Ident RuntimeValue),
@@ -27,7 +26,7 @@ data Environment = Environment {
   defs            :: (Map.Map Ident RuntimeDef),
   nextFreeRef     :: Integer,
   nextFreeNameId  :: Integer,
-  itypes           :: Env,
+  itypes           :: Type.Env,
   stypes           :: InferState
 }
 

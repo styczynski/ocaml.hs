@@ -1,23 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Env (
-  Env(..),
-  empty,
-  lookup,
-  remove,
-  extend,
-  extends,
-  merge,
-  mergeEnvs,
-  singleton,
-  keys,
-  fromList,
-  toList,
-) where
+module Inference.Env where
+
+import Inference.Type
 
 import Prelude hiding (lookup)
 import AbsSyntax
-import Type
 
 import Data.Monoid
 import Data.Semigroup
