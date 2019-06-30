@@ -10,8 +10,8 @@ import Inference.ConstraintSolver
 import Inference.InferencerUtils
 import Inference.TypeExpressionResolver
 
-import AbsSyntax
-import PrintSyntax
+import Syntax.Base hiding (TypeConstraint)
+import qualified Syntax.Base as Syntax
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -25,7 +25,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 -- | Run the inference monad
-runInfer :: Env -> InferState -> Infer (Env, Type, [AConstraint]) -> IO (Either TypeError ((Env, Type, [AConstraint]), InferState))
+runInfer :: Env -> InferState -> Infer (Env, Type, [TypeConstraint]) -> IO (Either TypeError ((Env, Type, [TypeConstraint]), InferState))
 runInfer env state fn = do
   --let v = runExcept $ runStateT (runReaderT m env) state in
   v <- runExceptT (runReaderT (runStateT fn (state)) (env))
@@ -33,7 +33,7 @@ runInfer env state fn = do
     (Left e) -> return $ Left e
     (Right ((env, t, c), state)) -> return $ Right ((env, t, c), state)
 
-solve :: Either TypeError (Type, [AConstraint]) -> IO (Either TypeError Scheme)
+solve :: Either TypeError (Type, [TypeConstraint]) -> IO (Either TypeError Scheme)
 solve r = case r of
   Left err -> return $ Left err
   Right (ty, cs) -> do
@@ -42,15 +42,15 @@ solve r = case r of
       Left err -> return $ Left err
       Right subst -> return $ Right $ closeOver $ subst .> ty
 
-unpackEnvTypeContraints :: Either TypeError ((Env, Type, [AConstraint]), InferState) -> Either TypeError (Type, [AConstraint])
+unpackEnvTypeContraints :: Either TypeError ((Env, Type, [TypeConstraint]), InferState) -> Either TypeError (Type, [TypeConstraint])
 unpackEnvTypeContraints (Left r) = Left r
 unpackEnvTypeContraints (Right ((_, t, c),_)) = Right (t, c)
 
-retrieveEnv :: Either TypeError ((Env, Type, [AConstraint]), InferState) -> Env
+retrieveEnv :: Either TypeError ((Env, Type, [TypeConstraint]), InferState) -> Env
 retrieveEnv (Left r) = empty
 retrieveEnv (Right ((e,_,_),_)) = e
 
-retrieveState :: Either TypeError ((Env, Type, [AConstraint]), InferState) -> InferState
+retrieveState :: Either TypeError ((Env, Type, [TypeConstraint]), InferState) -> InferState
 retrieveState (Left r) = initInfer
 retrieveState (Right (_,state)) = state
 
@@ -66,7 +66,7 @@ inferAST env state ex = do
     Right s -> return $ Right (s, env, state)
 
 -- | Return the internal constraints used in solving for the type of an expression
-constraintsExpr :: Env -> InferState -> Expr -> IO (Either TypeError ([AConstraint], Subst, Type, Scheme))
+constraintsExpr :: Env -> InferState -> Expr -> IO (Either TypeError ([TypeConstraint], Subst, Type, Scheme))
 constraintsExpr env state ex = do
   r <- runInfer env state (inferE ex)
   case r of
@@ -121,7 +121,7 @@ opsUni (OpTupleNth index len) = do
     return $ ((TTuple tv tup), [tv] ++ tvs)) ((TTuple TUnit TUnit), []) (replicate len 0)
   return $ (tupleType) `TArr` (elsTypes !! index)
 
-inferImplementation :: Implementation -> Infer (Env, Type, [AConstraint])
+inferImplementation :: Implementation -> Infer (Env, Type, [TypeConstraint])
 inferImplementation ast@(IRoot cores) = do
   markTrace ast
   env <- ask
@@ -131,7 +131,7 @@ inferImplementation ast@(IRoot cores) = do
   unmarkTrace ast
   return r
 
-inferImplementationCore :: ImplementationCore -> Infer (Env, Type, [AConstraint])
+inferImplementationCore :: ImplementationCore -> Infer (Env, Type, [TypeConstraint])
 inferImplementationCore ast@(IRootExpr expr) = do
   markTrace ast
   env <- ask
@@ -154,7 +154,7 @@ createTypeExpressionAbstractArgConstructor typeName names@(hNames:tNames) =
   let (identHead:identTail) = map (\e -> TypeArgEl $ TypeExprSimple $ TypeSExprAbstract $ TypeIdentAbstract $ e) names in
    TypeExprIdent (TypeArgJust identHead identTail) typeName
 
-inferVariantOption :: [String] -> Ident -> TDefVariant -> Infer (Env, Type, [AConstraint])
+inferVariantOption :: [String] -> Ident -> TDefVariant -> Infer (Env, Type, [TypeConstraint])
 inferVariantOption typeVars typeName (TDefVarSimpl name@(Ident nameStr)) = do
   retType <- return $ createTypeExpressionAbstractArgConstructor typeName typeVars
   reverseType <- return $ TypeFun retType retType
@@ -178,7 +178,7 @@ typeParamsToList TypeParamNone = []
 typeParamsToList (TypeParamJust names) = map (\(TypeIdentAbstract name) -> name) names
 typeParamsToList (TypeParamJustOne (TypeIdentAbstract name)) = [name]
 
-inferTypeDef :: TypeDef -> Infer (Env, Type, [AConstraint])
+inferTypeDef :: TypeDef -> Infer (Env, Type, [TypeConstraint])
 inferTypeDef ast@(TypeDefVar typeParams name options) = do
   markTrace ast
   env <- ask
@@ -196,7 +196,7 @@ inferTypeDef ast@(TypeDefVarP typeParams name options) = do
   unmarkTrace ast
   return r
 
-inferImplementationPhrase :: ImplPhrase -> Infer (Env, Type, [AConstraint])
+inferImplementationPhrase :: ImplPhrase -> Infer (Env, Type, [TypeConstraint])
 inferImplementationPhrase (IGlobalLetOperator recK opName restPatterns letExpr) = do
   (t, c) <- inferComplexExpression (ECLetOperator recK opName restPatterns letExpr $ ECExportEnv)
   return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
@@ -205,18 +205,18 @@ inferImplementationPhrase (IGlobalLet recK pattern restPatterns typeAnnot letExp
   return $ let (TExport exportedEnv) = t in (exportedEnv, t, c)
 inferImplementationPhrase (IDefType typeDef) = inferTypeDef typeDef
 
-inferComplexExpression :: ComplexExpression -> Infer (Type, [AConstraint])
+inferComplexExpression :: ComplexExpression -> Infer (Type, [TypeConstraint])
 inferComplexExpression ast = do
   tree <- simplifyComplexExpression resolveTypeExpression ast
   infer tree
 
-inferE :: Expr -> Infer (Env, Type, [AConstraint])
+inferE :: Expr -> Infer (Env, Type, [TypeConstraint])
 inferE expr = do
   env <- ask
   (t, c) <- infer expr
   return $ (env, t, c)
 
-infer :: Expr -> Infer (Type, [AConstraint])
+infer :: Expr -> Infer (Type, [TypeConstraint])
 infer Skip = return ((TCon "Int"), [])
 infer (Lit (LInt _)) = return ((TCon "Int"), [])
 infer (Lit (LBool _)) = return ((TCon "Bool"), [])
@@ -232,7 +232,7 @@ infer (Export) = do
   return (TExport env, [])
 infer (Check e (Forall _ t)) = do
   (t1, c1) <- infer e
-  ac <- constraintAnnotList [(t1, t)]
+  ac <- constraintAnnotList [TypeConstraint EmptyPayload (t1, t)]
   return (t1, c1 ++ ac)
 infer (Var x) = do
     t <- lookupEnv x
@@ -245,7 +245,7 @@ infer (App e1 e2) = do
   (t1, c1) <- infer e1
   (t2, c2) <- infer e2
   tv <- fresh
-  ac <- constraintAnnotList [(t1, t2 `TArr` tv)]
+  ac <- constraintAnnotList [TypeConstraint EmptyPayload (t1, t2 `TArr` tv)]
   return (tv, c1 ++ c2 ++ ac)
 infer (Let x e1 e2) = do
   env <- ask
@@ -260,7 +260,7 @@ infer (Let x e1 e2) = do
 infer (Fix e1) = do
   (t1, c1) <- infer e1
   tv <- fresh
-  ac <- constraintAnnotList [(tv `TArr` tv, t1)]
+  ac <- constraintAnnotList [TypeConstraint EmptyPayload (tv `TArr` tv, t1)]
   return (tv, c1 ++ ac)
 infer (UniOp (OpCustomUni name) e1) = do
   infer (App (Var $ Ident name) e1)
@@ -269,7 +269,7 @@ infer (UniOp op e1) = do
   tv <- fresh
   u1 <- return $ t1 `TArr` tv
   u2 <- opsUni op
-  ac <- constraintAnnotList [(u1, u2)]
+  ac <- constraintAnnotList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ ac)
 infer (Op (OpCustom name) e1 e2) = do
   infer (App (App (Var $ Ident name) e1) e2)
@@ -279,12 +279,12 @@ infer (Op op e1 e2) = do
   tv <- fresh
   u1 <- return $ t1 `TArr` (t2 `TArr` tv)
   u2 <- ops op
-  ac <- constraintAnnotList [(u1, u2)]
+  ac <- constraintAnnotList [TypeConstraint EmptyPayload (u1, u2)]
   return (tv, c1 ++ c2 ++ ac)
 infer (If cond tr fl) = do
   (t1, c1) <- infer cond
   (t2, c2) <- infer tr
   (t3, c3) <- infer fl
-  ac <- constraintAnnotList [(t1, TCon "Bool"), (t2, t3)]
+  ac <- constraintAnnotList [(TypeConstraint EmptyPayload (t1, TCon "Bool")), (TypeConstraint EmptyPayload (t2, t3))]
   return (t2, c1 ++ c2 ++ c3 ++ ac)
 

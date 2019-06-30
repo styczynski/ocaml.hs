@@ -4,7 +4,7 @@ module Inference.TypingEnvironment where
 
 import Inference.Type
 
-import Syntax.Base
+import Syntax.Base hiding (TypeConstraint)
 
 import Prelude hiding (lookup)
 
@@ -19,9 +19,8 @@ newtype Subst = Subst (Map.Map TVar Type) deriving (Eq, Show)
 
 data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
-type Constraint = (Type, Type)
-data AConstraint = AConstraint TypeErrorPayload Constraint
-type Unifier = (Subst, [AConstraint])
+data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Show)
+type Unifier = (Subst, [TypeConstraint])
 
 type Infer = StateT (InferState) (ReaderT (Env) (ExceptT TypeError IO))
 data InferState = InferState { count :: Int, inferTrace :: [String], lastInferExpr :: String }
@@ -30,7 +29,7 @@ data TypeError
   = UnificationFail TypeErrorPayload Type Type
   | InfiniteType TypeErrorPayload TVar Type
   | UnboundVariable TypeErrorPayload Ident
-  | Ambigious TypeErrorPayload [Constraint]
+  | Ambigious TypeErrorPayload [TypeConstraint]
   | UnificationMismatch TypeErrorPayload [Type] [Type]
   | Debug TypeErrorPayload String
   deriving (Show)
@@ -38,17 +37,11 @@ data TypeError
 initInfer :: InferState
 initInfer = InferState { count = 0, inferTrace = [], lastInferExpr = "" }
 
-constraintToStr :: Constraint -> String
-constraintToStr (a,b) = (typeToStr [] a) ++ " ~ " ++ (typeToStr [] b)
+constraintToStr :: TypeConstraint -> String
+constraintToStr (TypeConstraint _ (a,b)) = (typeToStr [] a) ++ " ~ " ++ (typeToStr [] b)
 
-constraintsListToStr :: [Constraint] -> String
+constraintsListToStr :: [TypeConstraint] -> String
 constraintsListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (constraintToStr t)) "" l) ++ "}"
-
-constraintDeannot :: AConstraint -> Constraint
-constraintDeannot (AConstraint _ ac) = ac
-
-constraintDeannotList :: [AConstraint] -> [Constraint]
-constraintDeannotList acl = map constraintDeannot acl
 
 empty :: Env
 empty = TypeEnv Map.empty

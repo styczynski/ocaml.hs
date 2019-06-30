@@ -44,13 +44,9 @@ instance Substitutable Scheme where
                             where s' = Subst $ foldr Map.delete s as
   free (Forall as t) = free t `Set.difference` Set.fromList as
 
-instance Substitutable Constraint where
-   (.>) s (t1, t2) = (s .> t1, s .> t2)
-   free (t1, t2) = free t1 `Set.union` free t2
-
-instance Substitutable AConstraint where
-   (.>) s (AConstraint l (t1, t2)) = AConstraint l (s .> t1, s .> t2)
-   free (AConstraint _ (t1, t2)) = free t1 `Set.union` free t2
+instance Substitutable TypeConstraint where
+   (.>) s (TypeConstraint _ (t1, t2)) = TypeConstraint EmptyPayload (s .> t1, s .> t2)
+   free (TypeConstraint _ (t1, t2)) = free t1 `Set.union` free t2
 
 instance Substitutable a => Substitutable [a] where
   (.>) s = map (s .>)

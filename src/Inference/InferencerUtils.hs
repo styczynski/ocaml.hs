@@ -1,6 +1,7 @@
 module Inference.InferencerUtils where
 
-import Syntax.Base hiding (TV)
+import Syntax.Base hiding (TV, TypeConstraint)
+import qualified Syntax.Base as Syntax
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -77,17 +78,17 @@ isRec :: LetRecKeyword -> Bool
 isRec LetRecYes = True
 isRec LetRecNo = False
 
-withTypeAnnot :: TypeConstraint -> ComplexExpression -> Infer ComplexExpression
+withTypeAnnot :: Syntax.TypeConstraint -> ComplexExpression -> Infer ComplexExpression
 withTypeAnnot TypeConstrEmpty e = return e
 withTypeAnnot (TypeConstrDef texpr) e = do
   return $ ECChecked e texpr
 
-constraintAnnot :: Constraint -> Infer AConstraint
-constraintAnnot constrnt = do
+constraintAnnot :: TypeConstraint -> Infer TypeConstraint
+constraintAnnot (TypeConstraint _ constrnt) = do
   payl <- errPayload
-  return $ AConstraint payl constrnt
+  return $ TypeConstraint payl constrnt
 
-constraintAnnotList :: [Constraint] -> Infer [AConstraint]
+constraintAnnotList :: [TypeConstraint] -> Infer [TypeConstraint]
 constraintAnnotList cs = do
   foldrM (\c acc -> do
     ca <- constraintAnnot c

@@ -21,8 +21,8 @@ initSolve = SolveState { lastAnnot = EmptyPayload }
 
 type Solve = StateT (SolveState) (ExceptT TypeError IO)
 
-checkpointAnnotSolve :: AConstraint -> Solve ()
-checkpointAnnotSolve (AConstraint l _) = do
+checkpointAnnotSolve :: TypeConstraint -> Solve ()
+checkpointAnnotSolve (TypeConstraint l _) = do
     s <- get
     put s{lastAnnot = l}
     return ()
@@ -36,7 +36,7 @@ errSolvePayload = do
 emptySubst :: Subst
 emptySubst = Subst $ Map.empty
 
-runSolve :: [AConstraint] -> IO (Either TypeError Subst)
+runSolve :: [TypeConstraint] -> IO (Either TypeError Subst)
 runSolve cs = do
   r <- runExceptT (runStateT (solver (emptySubst, cs)) (initSolve))
   case r of
@@ -73,8 +73,8 @@ solver :: Unifier -> Solve Subst
 solver (su, cs) =
   case cs of
     [] -> return su
-    ((AConstraint l (t1, t2)): cs0) -> do
-      checkpointAnnotSolve (AConstraint l (t1, t2))
+    ((TypeConstraint l (t1, t2)): cs0) -> do
+      checkpointAnnotSolve (TypeConstraint l (t1, t2))
       su1  <- unifies t1 t2
       solver (su1 +> su, su1 .> cs0)
 
