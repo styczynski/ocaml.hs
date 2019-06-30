@@ -61,12 +61,47 @@ packages:
   original:
     hackage: text-1.2.3.1
 - completed:
-    hackage: split-0.1.2.3@sha256:2d679f5247d5c6da6bf06b832533bdee15c0b7c6dadb29f0739a46fa63021038,753
+    hackage: split-0.2.3.3@sha256:f1c7b12865e38d1e241ceef74c85eb81d82301022fea1a5012d8d9803af5e26f,2614
     pantry-tree:
-      size: 425
-      sha256: 930e71f5538abb93584b4220889f73061114a4af4a9bb4a5d305525f0969db78
+      size: 439
+      sha256: 848511e5b76e7c7d0f4f9afa1bae2a956a9c97d74029698afc4fb93b235df145
   original:
-    hackage: split-0.1.2.3
+    hackage: split-0.2.3.3
+- completed:
+    hackage: butcher-1.3.2.3@sha256:a3628cf0a41f2fec4e5cd128dd900f4608119f203385373cf0bf65c60291c396,3113
+    pantry-tree:
+      size: 1197
+      sha256: 5e230dd54452e9bd3bca7900092e3522c94781490a31ce935d4c8bb7586f5a9c
+  original:
+    hackage: butcher-1.3.2.3
+- completed:
+    hackage: multistate-0.8.0.2@sha256:fbb0d8ade9ef73c8ed92488f5804d0ebe75d3a9c24bf53452bc3a4f32b34cb2e,3713
+    pantry-tree:
+      size: 2143
+      sha256: 1753828d37b456e1e0241766d893b29f385ef7769fa79610f507b747935b77cb
+  original:
+    hackage: multistate-0.8.0.2
+- completed:
+    hackage: brittany-0.12.0.0@sha256:10185245dce19ea17d1751c498a9954d2de2e38b7bd9e50eb4298aa68fef7ab2,8802
+    pantry-tree:
+      size: 4588
+      sha256: 5fd46ce01efb64c5540828f50e644696c36d18b51011e1bd3aa349de6fce1b0a
+  original:
+    hackage: brittany-0.12.0.0
+- completed:
+    hackage: deque-0.4.2.3@sha256:7cc8ddfc77df351ff9c16e838ccdb4a89f055c80a3111e27eba8d90e8edde7d0,1853
+    pantry-tree:
+      size: 807
+      sha256: 7f584c71e9e912935f829cb4667411ae3c3048fcd8b935170fb5a45188019403
+  original:
+    hackage: deque-0.4.2.3
+- completed:
+    hackage: strict-list-0.1.4@sha256:0fa869e2c21b710b7133e8628169f120fe6299342628edd3d5087ded299bc941,1631
+    pantry-tree:
+      size: 340
+      sha256: bbb22fd014867dc48697ddd8598d4a9fb03fa2d58ef79bed94f208a9b6d94224
+  original:
+    hackage: strict-list-0.1.4
 snapshots:
 - completed:
     size: 498180

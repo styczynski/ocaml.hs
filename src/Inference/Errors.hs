@@ -9,7 +9,6 @@ import Inference.Types
 typesListToStr :: [Type] -> String
 typesListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (typeToStr [] t)) "" l) ++ "}"
 
---data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 generateTypePayloadMessage :: TypeErrorPayload -> String
 generateTypePayloadMessage EmptyPayload = "Typechecking error:\nLocation: <unknown>\n\n"
 generateTypePayloadMessage (TypeErrorPayload ast) = "Typechecking error:\nLocation: " ++ ast ++ "\n\n"
