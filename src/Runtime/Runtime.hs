@@ -140,12 +140,10 @@ getType ((RVariant name option val), env) = TVariant name option $ getType (val,
 getType ((RTuple elems), env) = TTuple $ map (\e -> getType (e,env)) elems
 getType ((RList []), _) = TListEmpty
 getType ((RList (h:t)), env) = TList $ getType (h,env)
-getType ((RRef id), env) =
-  let Environment { refs = refs } = env in
-    case Map.findWithDefault (RfInvalid RInvalid) id refs of
-      RfInvalid _ -> TInvalid
-      RfFun sig body -> TFun sig
-      RfVal val -> TRef $ getType (val, env)
+getType ((RRef id), env) = let Environment { refs = refs } = env in case Map.findWithDefault (RfInvalid RInvalid) id refs of
+  RfInvalid _ -> TInvalid
+  RfFun sig body -> TFun sig
+  RfVal val -> TRef $ getType (val, env)
 
 typeToStr :: RuntimeType -> String
 typeToStr (TVar name) = name ++ "'"
@@ -195,9 +193,9 @@ envToStr :: Environment -> String
 --     ) "" variables) ++ " }"
 envToStr env =
   let Environment { refs = refs, variables = variables } = env in
-    let strRefs = (" { " ++ (Map.foldlWithKey (\acc id val -> if (acc == "") then (show id) ++ "=" ++ (refToStr val) else acc ++ "\n " ++ (show id) ++ "=" ++ (refToStr val)) "" refs) ++ " }") in
-    let strVals = (" { " ++ (Map.foldlWithKey (\acc (Ident name) val -> if (acc == "") then name ++ "=" ++ (valueToStr env val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr env val)) "" variables) ++ " }") in
-      strRefs ++ strVals
+  let strRefs = (" { " ++ (Map.foldlWithKey (\acc id val -> if (acc == "") then (show id) ++ "=" ++ (refToStr val) else acc ++ "\n " ++ (show id) ++ "=" ++ (refToStr val)) "" refs) ++ " }") in
+  let strVals = (" { " ++ (Map.foldlWithKey (\acc (Ident name) val -> if (acc == "") then name ++ "=" ++ (valueToStr env val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr env val)) "" variables) ++ " }") in
+  strRefs ++ strVals
 
 debug ast = do
   env <- ask
@@ -227,13 +225,12 @@ unproceed = do
 
 raise :: String -> Exec a
 raise errorText = do
-  state <- get
-  let InterpreterState { lastNode = lastNode, lastNodeDetail = lastNodeDetail, trace = trace } = state in
-    let traceStr = foldl (\acc el -> acc ++ "     | Execute: " ++ el ++ "\n") "" trace in
-      case indices (T.pack lastNodeDetail) (T.pack lastNode) of
-        (fInd : _) -> let pointerText = (T.unpack (T.replicate fInd (T.pack " "))) ++ "^" in
-          throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n   " ++ pointerText ++ "\n    " ++ errorText ++ "\n" ++ traceStr
-        _ -> throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n    " ++ errorText ++ "\n" ++ traceStr
+  (InterpreterState { lastNode = lastNode, lastNodeDetail = lastNodeDetail, trace = trace }) <- get
+  traceStr <- return $ foldl (\acc el -> acc ++ "     | Execute: " ++ el ++ "\n") "" trace
+  case indices (T.pack lastNodeDetail) (T.pack lastNode) of
+    (fInd : _) -> let pointerText = (T.unpack (T.replicate fInd (T.pack " "))) ++ "^" in
+      throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n   " ++ pointerText ++ "\n    " ++ errorText ++ "\n" ++ traceStr
+    _ -> throwError $ " RuntimeError:\n" ++ "   " ++ lastNode ++ "\n    " ++ errorText ++ "\n" ++ traceStr
 
 resultToStr :: ExecutionResult -> String
 resultToStr (Executed val _ env) = valueToStr env val
@@ -261,8 +258,7 @@ valueToStrRec env (RList vals) = "[" ++ (foldl (\acc el ->
 valueToStrRec Nothing (RRef fr) = "<ref: " ++ (show fr) ++ ">"
 valueToStrRec (Just env) (RRef fr) =
   let Environment { refs = oldRefs } = env in
-  let r = Map.findWithDefault (RfInvalid RInvalid) fr oldRefs in
-  case r of
+  let r = Map.findWithDefault (RfInvalid RInvalid) fr oldRefs in case r of
     (RfInvalid _) -> "<dangling_ref>"
     (RfFun _ _) -> "<function>"
     (RfVal v) -> valueToStrRec (Just env) v
