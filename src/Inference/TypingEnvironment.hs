@@ -12,8 +12,7 @@ import Data.Semigroup
 import Data.Foldable hiding (toList)
 import qualified Data.Map as Map
 
-newtype Subst = Subst (Map.Map TVar Type)
-  deriving (Eq, Show, Monoid, Semigroup)
+newtype Subst = Subst (Map.Map TVar Type) deriving (Eq, Show)
 
 data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
@@ -26,7 +25,6 @@ constraintToStr (a,b) = (typeToStr [] a) ++ " ~ " ++ (typeToStr [] b)
 
 constraintsListToStr :: [Constraint] -> String
 constraintsListToStr l = "{" ++ (foldr (\t acc -> acc ++ (if (length acc) <= 0 then "" else ", ") ++ (constraintToStr t)) "" l) ++ "}"
-
 
 empty :: Env
 empty = TypeEnv Map.empty
@@ -61,9 +59,3 @@ fromList xs = TypeEnv (Map.fromList xs)
 toList :: Env -> [(Ident, Scheme)]
 toList (TypeEnv env) = Map.toList env
 
-instance Semigroup Env where
-  (<>) = merge
-
-instance Monoid Env where
-  mempty = empty
-  mappend = merge

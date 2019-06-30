@@ -46,7 +46,7 @@ errSolvePayload = do
 
 -- | The empty substitution
 emptySubst :: Subst
-emptySubst = mempty
+emptySubst = Subst $ Map.empty
 
 -- | Compose substitutions
 compose :: Subst -> Subst -> Subst
