@@ -13,7 +13,7 @@ import Arithmetics
 import InterpreterPatterns
 import qualified Data.Map as Map
 
-import AbsSyntax
+import Syntax.Base
 
 isRec :: LetRecKeyword -> Bool
 isRec LetRecYes = True

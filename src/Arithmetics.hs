@@ -8,7 +8,7 @@ import qualified Data.Map as Map
 import Data.List.Split
 import Data.Foldable
 
-import AbsSyntax
+import Syntax.Base
 
 import Runtime.Runtime
 import Runtime.Environment

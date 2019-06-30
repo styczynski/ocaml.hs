@@ -11,7 +11,8 @@ import Runtime.Runtime
 import Runtime.Environment
 
 import Arithmetics
-import AbsSyntax
+
+import Syntax.Base
 
 constToVal :: Constant -> RuntimeValue
 constToVal (CInt val) = RInt val

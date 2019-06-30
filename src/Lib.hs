@@ -5,12 +5,7 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 
-import PrintSyntax
-import LexSyntax
-import ParSyntax
-import SkelSyntax
-import AbsSyntax
-import ErrM
+import Syntax.Base
 
 import Runtime.Runtime
 import Runtime.Environment

@@ -5,7 +5,8 @@ import Runtime.Runtime
 
 import InterpreterDefinitions
 import InterpreterExpressions
-import AbsSyntax
+
+import Syntax.Base
 
 import Control.Monad.Except
 import Control.Monad.State

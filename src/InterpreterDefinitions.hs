@@ -9,7 +9,7 @@ import qualified Data.Map as Map
 import Runtime.Runtime
 import Runtime.Environment
 
-import AbsSyntax
+import Syntax.Base
 
 createVariant :: Ident -> Environment -> TDefVariant -> Exec Environment
 createVariant name env (TDefVarSimpl option) = do

@@ -15,12 +15,7 @@ import qualified Data.Map as Map
 import Runtime.Runtime
 import Runtime.Environment
 
-import PrintSyntax
-import LexSyntax
-import ParSyntax
-import SkelSyntax
-import AbsSyntax
-import ErrM
+import Syntax.Base
 
 import Inference.Env
 import Inference.Inferencer
