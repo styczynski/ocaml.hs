@@ -37,7 +37,7 @@
 /* eslint-disable indent, no-unused-vars, no-multiple-empty-lines, max-nested-callbacks, space-before-function-paren, quotes, comma-spacing */
 'use strict';
 
-var precacheConfig = [["http://styczynski.in/ocaml.hs/index.html","b1910cbb7a89d98f7a1b85aa1793904d"],["http://styczynski.in/ocaml.hs/static/css/main.eec7057b.css","7431ddb0544ad116c280a062388b8956"],["http://styczynski.in/ocaml.hs/static/js/main.f56e112b.js","e28691158534d019b9d9f5866e9c97f1"]];
+var precacheConfig = [["http://styczynski.in/ocaml.hs/index.html","479851ee7882d4cc6c05dd6f63fdfb4a"],["http://styczynski.in/ocaml.hs/static/css/main.eec7057b.css","7431ddb0544ad116c280a062388b8956"],["http://styczynski.in/ocaml.hs/static/js/main.8da0121e.js","51da24e77bf066853603797efe2b0024"]];
 var cacheName = 'sw-precache-v3-sw-precache-webpack-plugin-' + (self.registration ? self.registration.scope : '');
 
 

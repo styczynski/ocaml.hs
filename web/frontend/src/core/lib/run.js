@@ -63,6 +63,16 @@ class RuntimeError extends Error {
     }
 }
 
+function waitForParser(callback) {
+    if (window.runParser) {
+        callback(window.runParser);
+    } else {
+        setTimeout(() => {
+            waitForParser(callback);
+        }, 500);
+    }
+}
+
 export default async function run(command) {
     return new Promise(async resolve => {
         const res = {
@@ -71,44 +81,47 @@ export default async function run(command) {
             value: null,
         };
 
-        const output = window.runParser(command);
-        console.log(output);
 
-        res.value = output.result;
-        window.parserEnv = output.env;
-        if (output.error) {
-            res.error = true;
-            if (output.error == "ParseError") {
-                res.value = new ParseError(output.result);
-            } else {
-                res.value = new RuntimeError(output.result);
-            }
-        } else if (output.funSig) {
-            const fnBody = res.value;
-            let argsSig = "";
+        waitForParser((runParser) => {
+            const output = runParser(command);
+            console.log(output);
 
-            let argsNames = [];
-            let funName = "fn";
-            if (output.funSig.args_names && output.funSig.args_names.length == output.funSig.args_count + 1) {
-                funName = output.funSig.args_names[0];
-                argsNames = output.funSig.args_names.slice(1);
-            } else {
-                for (let i=0;i<output.funSig.args_count;++i) {
-                    argsNames.push(`x${i}`);
+            res.value = output.result;
+            window.parserEnv = output.env;
+            if (output.error) {
+                res.error = true;
+                if (output.error == "ParseError") {
+                    res.value = new ParseError(output.result);
+                } else {
+                    res.value = new RuntimeError(output.result);
                 }
+            } else if (output.funSig) {
+                const fnBody = res.value;
+                let argsSig = "";
+
+                let argsNames = [];
+                let funName = "fn";
+                if (output.funSig.args_names && output.funSig.args_names.length == output.funSig.args_count + 1) {
+                    funName = output.funSig.args_names[0];
+                    argsNames = output.funSig.args_names.slice(1);
+                } else {
+                    for (let i = 0; i < output.funSig.args_count; ++i) {
+                        argsNames.push(`x${i}`);
+                    }
+                }
+
+                for (let i = 0; i < output.funSig.args_count; ++i) {
+                    if (argsSig != "") argsSig += ", ";
+                    argsSig += argsNames[i];
+                }
+
+                const code = `return function ${funName}(${argsSig}) { return ([${argsSig}]); };`;
+                res.value = (new (Function.prototype.bind.apply(Function, [funName].concat(argsSig).concat([code]))))();
+
             }
 
-            for (let i=0;i<output.funSig.args_count;++i) {
-                if (argsSig != "") argsSig += ", ";
-                argsSig += argsNames[i];
-            }
-
-            const code = `return function ${funName}(${argsSig}) { return ([${argsSig}]); };`;
-            res.value = (new (Function.prototype.bind.apply(Function, [funName].concat(argsSig).concat([code]))))();
-
-        }
-
-        resolve(res);
+            resolve(res);
+        });
     });
 }
 
