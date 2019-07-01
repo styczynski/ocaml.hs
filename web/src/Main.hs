@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+import Init
+
 import Lib
 import Runtime.Runtime
 import Runtime.Environment
@@ -45,36 +47,16 @@ createRuntimeValueWrapper typeName val = do
   return $ jsval o
 
 runtimeValueToJS :: String -> RuntimeValue -> Environment -> IO JSVal
-runtimeValueToJS t REmpty _ = createRuntimeValueWrapper t jsNull
-runtimeValueToJS t REmpty _ = createRuntimeValueWrapper t jsNull
-runtimeValueToJS t (RInt val) _ = createRuntimeValueWrapper t $ toJSInt $ fromIntegral val
-runtimeValueToJS t (RString val) _ = createRuntimeValueWrapper t $ jsval $ pack val
-runtimeValueToJS t (RBool True) _ = createRuntimeValueWrapper t $ toJSBool True
-runtimeValueToJS t (RBool False) _ = createRuntimeValueWrapper t $ toJSBool False
-runtimeValueToJS t (RTuple []) _ = createRuntimeValueWrapper t $ jsNull
-runtimeValueToJS t (RTuple values) env = createRuntimeValueWrapper t $
-  unsafePerformIO $ toJSArray $ map (\e -> unsafePerformIO $ runtimeValueToJS t e env) values
-runtimeValueToJS t (RList values) env = createRuntimeValueWrapper t $
-  unsafePerformIO $ toJSArray $ map (\e -> unsafePerformIO $ runtimeValueToJS t e env) values
-runtimeValueToJS t (RRecord (Ident recordTypeName) fields) env = do
-  (o :: Object) <- create
-  setProp (pack "type" :: JSString) (jsval . pack $ t) o
-  val <- return $ toJSArray $ map (\((Ident key), value) -> unsafePerformIO $ toJSArray [jsval $ pack key, unsafePerformIO $ runtimeValueToJS t value env]) $ Map.toList fields
-  setProp (pack "value" :: JSString) (unsafePerformIO val) o
-  setProp (pack "name" :: JSString) (jsval . pack $ recordTypeName) o
-  return $ jsval o
-runtimeValueToJS t val@(RRef rid) env = do
-  refVal <- return $ getRefStorage val env
-  case refVal of
-    RfInvalid _ -> createRuntimeValueWrapper t $ jsNull
-    (RfFun (RFunSig sig) _) -> createRuntimeValueWrapper t $ jsNull
+runtimeValueToJS t v env = createRuntimeValueWrapper t $ jsval $ pack (valueToStr env v)
 
 resultToJS :: ExecutionResult -> Environment -> IO JSVal
+resultToJS (FailedTypechecking err) _ = return $ jsval $ pack $ show err
 resultToJS (FailedParse err) _ = return $ jsval $ pack $ err
 resultToJS (FailedExecution err) _ = return $ jsval $ pack $ err
 resultToJS (Executed val t _) env = runtimeValueToJS (Types.typeToStr [] t) val env
 
 resultToErrorJS :: ExecutionResult -> JSVal
+resultToErrorJS (FailedTypechecking _) = jsval $ pack "TypeError"
 resultToErrorJS (FailedParse _) = jsval $ pack "ParseError"
 resultToErrorJS (FailedExecution _) = jsval $ pack "RuntimeError"
 resultToErrorJS (Executed _ _ _) = jsNull
@@ -106,8 +88,10 @@ executeCode input env = do
 
 main :: IO ()
 main = do
+    initEnv0 <- runInitEmpty
+    (Executed _ _ initEnv) <- runWith 0 initCode initEnv0
     callback <- syncCallback1' $ \jv -> do
       (input :: String) <- unpack . fromJust <$> fromJSVal jv
-      ret <- executeCode input emptyEnv
+      ret <- executeCode input initEnv
       return $ ret
     set_callback callback
