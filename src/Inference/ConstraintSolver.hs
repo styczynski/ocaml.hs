@@ -1,3 +1,15 @@
+{-|
+Module      : Inference.ContraintSolver
+Description : Solver for  inference constraints
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This is code for contraint solver that tries
+  to unify the types matching all provided contraints.
+-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}

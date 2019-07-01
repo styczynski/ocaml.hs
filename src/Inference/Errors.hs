@@ -1,3 +1,14 @@
+{-|
+Module      : Inference.Errors
+Description : Typechecking errors utilities
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This file contains utilites for handling typechecking errors.
+-}
 module Inference.Errors where
 
 import           Syntax.Base             hiding ( TV )

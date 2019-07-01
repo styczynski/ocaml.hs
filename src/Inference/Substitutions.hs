@@ -1,3 +1,15 @@
+{-|
+Module      : Inference.Substitution
+Description : Substitution utilities
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module provides basic classes and their instances to manage
+  free variable subsitution, binding types togehter and managing type evnironment variables.
+-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}

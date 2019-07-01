@@ -1,3 +1,15 @@
+{-|
+Module      : Inference.TypingEnvironment
+Description : All base definitions for inference
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module provides all base data types used by inference modules i.e.
+  substitution mappings, typing environment, base typechecking errors etc.
+-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Inference.TypingEnvironment where

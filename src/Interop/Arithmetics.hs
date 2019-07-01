@@ -1,3 +1,14 @@
+{-|
+Module      : Interop.Arithmetics
+Description : Base arithmetics module
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This code provides basic arithmetics for runtime values.
+-}
 module Interop.Arithmetics where
 
 import           Control.Monad.Except

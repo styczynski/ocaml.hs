@@ -1,3 +1,15 @@
+{-|
+Module      : Interop.Startup
+Description : Interpreter initialization code
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module is used to initialize empty interpreter environment before init.ml file is loaded.
+  It adds builtin functions using ExportUtils.
+-}
 module Interop.Startup where
 
 import           Control.Monad.Except

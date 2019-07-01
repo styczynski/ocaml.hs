@@ -1,3 +1,15 @@
+{-|
+Module      : Runtime.Runtime
+Description : base runtime definitions
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module exports base definitions for runtime operations like
+  variable containers, environment and state definitions etc.
+-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Runtime.Runtime where

@@ -1,3 +1,15 @@
+{-|
+Module      : Inference.inferencerUtils
+Description : Helpful utilities to handle inference
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module provides basic utilities like fresh name generator, type normalization,
+  and tracing helpers.
+-}
 module Inference.InferencerUtils where
 
 import           Syntax.Base             hiding ( TV

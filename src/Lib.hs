@@ -1,3 +1,14 @@
+{-|
+Module      : Lib
+Description : Base interpreter entrypoint
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module is the top one, it provides handful ways to run the parser, interpreter and typechecker.
+-}
 module Lib where
 
 import Control.Monad.Except

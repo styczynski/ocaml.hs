@@ -1,3 +1,19 @@
+{-|
+Module      : Inference.Syntax
+Description : Simplified AST structures
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This code introduces simplified AST structure.
+
+  The simplified AST is produced from normal program AST by Inference.Simplifier.
+  It allows only very basic constructions in addition to
+  type assertions, dummy values (that do not exist, but have their exact type) and more
+  constructions that make type inference easier to implement.
+-}
 module Inference.Syntax where
 
 import           Syntax.Base

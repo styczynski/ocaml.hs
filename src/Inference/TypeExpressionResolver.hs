@@ -1,3 +1,14 @@
+{-|
+Module      : Inference.TypeExpressionResolver
+Description : Resolver for type expressions
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module implements utilities to map AST type expressions into Inference.Types values.
+-}
 module Inference.TypeExpressionResolver where
 
 

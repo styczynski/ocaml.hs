@@ -1,3 +1,14 @@
+{-|
+Module      : Interpreter.Definitions
+Description : Code to handle runtime definitions
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module handles definitions of types in runtime.
+-}
 module Interpreter.Definitions where
 
 import           Control.Monad.Except

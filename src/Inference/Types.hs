@@ -1,3 +1,14 @@
+{-|
+Module      : Inference.Types
+Description : Types for inferencer
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module provides all base and complex types used by inferencer.
+-}
 module Inference.Types where
 
 import           Control.Monad.Except

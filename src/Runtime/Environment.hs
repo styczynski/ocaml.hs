@@ -1,3 +1,15 @@
+{-|
+Module      : Runtime.Environment
+Description : Environment operation utilities
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This file provides utilities to manage the runtime environment i.e
+  set new veriables, call functions, create references to objects etc.
+-}
 module Runtime.Environment where
 
 import           Control.Monad.Except
