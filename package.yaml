@@ -1,23 +1,19 @@
 name:                ocamlhs
 version:             0.1.0.0
-github:              "githubuser/ocamlhs"
-license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2019 Author name here"
+github:              "styczynski/ocaml.hs"
+license:             MIT
+author:              "Piotr Styczyński"
+maintainer:          "piotr@styczynski.in"
+copyright:           "2019 Piotr Styczyński"
 
 extra-source-files:
 - README.md
 - ChangeLog.md
 
-# Metadata used when publishing your package
 synopsis:            Interpreter for Ocaml language subset
 category:            Interpreter
 
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/ocamlhs#readme>
+description:         Please see the README on GitHub at <https://github.com/styczynski/ocaml.hs#readme>
 
 build-type: Custom
 
