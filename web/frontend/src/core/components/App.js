@@ -16,6 +16,17 @@ class App extends Component {
     super(props);
     this.onRun = this.onRun.bind(this);
     this.triggerFocus = this.triggerFocus.bind(this);
+
+    window.logConsole = (res) => {
+        this.console.push({
+            command: '',
+            type: 'response',
+            value: {
+                type: 'Output',
+                value: res,
+            },
+        });
+    };
   }
 
   async onRun(command) {

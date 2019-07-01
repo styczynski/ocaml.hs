@@ -129,6 +129,21 @@ class ObjectType extends Component {
       );
     }
 
+    if (type === 'error') {
+          const tokens = value.message.toString().split(":");
+          const token0 = tokens[0];
+          tokens.pop();
+
+          return (
+              <div className={`type ${type}`}>
+      <em onClick={this.toggle}>{token0}</em>
+              <span>
+              <StringType shallow={false} value={value.message} />
+          </span>
+          </div>
+      );
+    }
+
     /*if (!open) {
       if (type === 'error') {
         return (
