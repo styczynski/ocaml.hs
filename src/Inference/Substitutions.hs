@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : POSIX
 
   This module provides basic classes and their instances to manage
-  free variable subsitution, binding types togehter and managing type evnironment variables.
+  freeDimensions variable subsitution, binding types togehter and managing type evnironment variables.
 -}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
@@ -35,9 +35,11 @@ class Bindable a b where
   (<->)     :: a -> b -> Either TypeError (Substitution a b)
 
 class (Ord b) => WithFreedom a b where
-  free   :: a -> Set.Set b
+  freeDimensions   :: a -> Set.Set b
+  freeDimensionsList :: a -> [b]
+  freeDimensionsList a = Set.toList (freeDimensions a)
   isRecursive ::  b -> a -> Bool
-  isRecursive a t = Set.member a $ free t
+  isRecursive a t = Set.member a $ freeDimensions t
 
 -- | Represents type that have entities that can be replaced
 class (WithFreedom a b) => Substitutable a b c where
@@ -50,14 +52,15 @@ instance Bindable TypeVar Type where
             | otherwise        = Right (Subst $ Map.singleton a t)
 
 instance WithFreedom Type TypeVar where
-  free (TypeStatic a) = Set.empty
-  free (TypeVar    a) = Set.singleton a
-  free (TypeList   a) = free a
-  free (TypeComplex name deps) = foldl (\acc el -> Set.union acc $ free el) (Set.empty) deps
-  free (TypeArrow t1 t2) = Set.union (free t1) (free t2)
-  free (TypeTuple t1 t2) = Set.union (free t1) (free t2)
-  free TypeUnit          = Set.empty
-  free (TypeAnnotated _) = Set.empty
+  freeDimensions (TypeStatic a) = Set.empty
+  freeDimensions (TypeVar    a) = Set.singleton a
+  freeDimensions (TypeList   a) = freeDimensions a
+  freeDimensions (TypeComplex name deps) = foldl (\acc el -> Set.union acc $ freeDimensions el) (Set.empty) deps
+  freeDimensions (TypeArrow t1 t2) = Set.union (freeDimensions t1) (freeDimensions t2)
+  freeDimensions (TypeTuple t1 t2) = Set.union (freeDimensions t1) (freeDimensions t2)
+  freeDimensions TypeUnit          = Set.empty
+  freeDimensions (TypeAnnotated _) = Set.empty
+  freeDimensions _ = Set.empty
 
 -- | This is used to replace type variables within types
 instance Substitutable Type TypeVar Type where
@@ -71,7 +74,7 @@ instance Substitutable Type TypeVar Type where
   (.>) s         (TypeAnnotated v)         = (TypeAnnotated v)
 
 instance WithFreedom Scheme TypeVar where
-  free (Scheme vars t) = free t `Set.difference` Set.fromList vars
+  freeDimensions (Scheme vars t) = freeDimensions t `Set.difference` Set.fromList vars
 
 -- | This is used to replace type variables within types
 instance Substitutable Scheme TypeVar Type where
@@ -79,7 +82,7 @@ instance Substitutable Scheme TypeVar Type where
     Scheme vars $ (Subst $ foldr Map.delete s vars) .> t
 
 instance WithFreedom TypeConstraint TypeVar where
-  free (TypeConstraint _ (t1, t2)) = free t1 `Set.union` free t2
+  freeDimensions (TypeConstraint _ (t1, t2)) = freeDimensions t1 `Set.union` freeDimensions t2
 
 -- | This is used to replace type variables within types
 instance Substitutable TypeConstraint TypeVar Type where
@@ -87,14 +90,14 @@ instance Substitutable TypeConstraint TypeVar Type where
     TypeConstraint EmptyPayload (s .> t1, s .> t2)
 
 instance (WithFreedom a b) => WithFreedom [a] b where
-  free s = foldr (\el acc -> (free el) `Set.union` acc) Set.empty s
+  freeDimensions s = foldr (\el acc -> (freeDimensions el) `Set.union` acc) Set.empty s
 
 -- | This is used to replace type variables within types
 instance (Substitutable a b c) => Substitutable [a] b c where
   (.>) s = map (s .>)
 
 instance WithFreedom TypeEnvironment TypeVar where
-  free (TypeEnvironment env) = free $ Map.elems env
+  freeDimensions (TypeEnvironment env) = freeDimensions $ Map.elems env
 
 -- | This is used to replace entities withing typign environment
 instance Substitutable TypeEnvironment TypeVar Type where
