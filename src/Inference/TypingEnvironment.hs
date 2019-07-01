@@ -27,11 +27,12 @@ import           Control.Monad.Identity
 import           Data.Foldable           hiding ( toList )
 import qualified Data.Map                      as Map
 
--- | Subsitution mapping
-newtype Subst = Subst (Map.Map TypeVar Type) deriving (Eq, Show)
+-- | Substitution mapping
+newtype Substitution a b = Subst (Map.Map a b) deriving (Eq, Show)
+type TypeSubstitution = Substitution TypeVar Type
 
 -- | Empty subsitution map that subsitutes nothing
-emptySubst :: Subst
+emptySubst :: TypeSubstitution
 emptySubst = Subst $ Map.empty
 
 -- | Payload for typechecking errors
@@ -39,7 +40,7 @@ data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
 -- | Type constraints with error payload annotation and unifier for types
 data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Show)
-type Unifier = (Subst, [TypeConstraint])
+type Unifier = (TypeSubstitution, [TypeConstraint])
 
 -- | Base inference monad and state
 type Infer = StateT (InferState) (ReaderT (TypeEnvironment) (ExceptT TypeError IO))
