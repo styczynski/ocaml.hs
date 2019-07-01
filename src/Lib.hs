@@ -58,7 +58,7 @@ runWith v s env = do
   i <- runTIWith v s env
   (case i of
     (Left e) -> return $ FailedTypechecking e
-    (Right ((Types.Forall _ inferType), initEnv)) -> do
+    (Right ((Types.Scheme _ inferType), initEnv)) -> do
       r <- runIWith v s initEnv
       return $ case r of
         (Executed v _ env) -> Executed v inferType env

@@ -26,10 +26,10 @@ newtype TypeVar = TV String
   deriving (Show, Eq, Ord)
 
 -- | Typing environment
-data Env = TypeEnv { types :: Map.Map Ident Scheme }
+data TypeEnvironment = TypeEnvironment { types :: Map.Map Ident Scheme }
   deriving (Eq, Show)
 
-data TypeAnnotation = AnnotationEnv Env deriving (Show, Eq)
+data TypeAnnotation = AnnotationEnv TypeEnvironment deriving (Show, Eq)
 
 -- | Data types for inference
 data Type
@@ -44,7 +44,7 @@ data Type
   deriving (Show, Eq)
 
 -- | Type scheme
-data Scheme = Forall [TypeVar] Type
+data Scheme = Scheme [TypeVar] Type
   deriving (Show, Eq)
 
 -- | Extracts free variables from the type
@@ -125,5 +125,5 @@ typeToStr l t = typeToStrRec l $ remapTypes t
 
 -- | Print readable text representation for type schema
 schemeToStr :: Scheme -> String
-schemeToStr (Forall vars t) = typeToStr vars t
+schemeToStr (Scheme vars t) = typeToStr vars t
 

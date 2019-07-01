@@ -155,7 +155,7 @@ simplifyComplexExpression fn (ECTyped typeExpr) = do
 simplifyComplexExpression fn ast@(ECFor varName initExpr dir endExpr bodyExpr)
   = do
     markTrace ast
-    forCheckType   <- return $ Forall [] $ (TypeStatic "Int")
+    forCheckType   <- return $ Scheme [] $ (TypeStatic "Int")
     initSimpl      <- simplifyComplexExpression fn initExpr
     endSimpl       <- simplifyComplexExpression fn endExpr
     initSimplCheck <- return $ SimplifiedCheck initSimpl forCheckType
@@ -168,7 +168,7 @@ simplifyComplexExpression fn ast@(ECFor varName initExpr dir endExpr bodyExpr)
       bodySimpl
 simplifyComplexExpression fn ast@(ECWhile condExpr bodyExpr) = do
   markTrace ast
-  whileCheckType <- return $ Forall [] $ (TypeStatic "Bool")
+  whileCheckType <- return $ Scheme [] $ (TypeStatic "Bool")
   condSimpl      <- simplifyComplexExpression fn condExpr
   bodySimpl      <- simplifyComplexExpression fn bodyExpr
   condSimplCheck <- return $ SimplifiedCheck condSimpl whileCheckType

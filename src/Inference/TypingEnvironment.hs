@@ -42,7 +42,7 @@ data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Sho
 type Unifier = (Subst, [TypeConstraint])
 
 -- | Base inference monad and state
-type Infer = StateT (InferState) (ReaderT (Env) (ExceptT TypeError IO))
+type Infer = StateT (InferState) (ReaderT (TypeEnvironment) (ExceptT TypeError IO))
 data InferState = InferState { count :: Int, inferTrace :: [String], lastInferExpr :: String }
 
 -- | Base typechecking errors
@@ -80,22 +80,22 @@ constraintsListToStr l =
     ++ "}"
 
 -- | Empty typing environment
-empty :: Env
-empty = TypeEnv Map.empty
+empty :: TypeEnvironment
+empty = TypeEnvironment Map.empty
 
 -- | Create identificator inside the environment
-(++>) :: Env -> (Ident, Scheme) -> Env
+(++>) :: TypeEnvironment -> (Ident, Scheme) -> TypeEnvironment
 (++>) env (name, scheme) =
   let newEnv = env { types = Map.insert name scheme (types env) } in newEnv
 
 -- | Remvoe identificator from the environment
-(-->) :: Env -> Ident -> Env
-(-->) (TypeEnv env) name = TypeEnv (Map.delete name env)
+(-->) :: TypeEnvironment -> Ident -> TypeEnvironment
+(-->) (TypeEnvironment env) name = TypeEnvironment (Map.delete name env)
 
 -- | Execute monad in shadowed environment
 (==>) :: (Ident, Scheme) -> Infer a -> Infer a
 (==>) (x, sc) m = local (\env -> (env --> x) ++> (x, sc)) m
 
 -- | Lookup typing environment for the identificator
-(??) :: Env -> Ident -> Maybe Scheme
-(??) (TypeEnv env) name = Map.lookup name env
+(??) :: TypeEnvironment -> Ident -> Maybe Scheme
+(??) (TypeEnvironment env) name = Map.lookup name env

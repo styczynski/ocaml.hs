@@ -97,8 +97,8 @@ freshIdent = do
   return $ Ident $ "__@$internal_variable__" ++ (letters !! count s) ++ "_"
 
 -- | Generate unique identificator for type variable
-fresh :: Infer Type
-fresh = do
+freshTypeVar :: Infer Type
+freshTypeVar = do
   s <- get
   put s { count = count s + 1 }
   return $ TypeVar $ TV (letters !! count s)
@@ -134,50 +134,48 @@ constraintAnnoTypeList cs = do
 
 -- | Get type scheme for constants
 geTypeStaticstScheme :: Constant -> Scheme
-geTypeStaticstScheme (CInt    _) = Forall [] (TypeStatic "Int")
-geTypeStaticstScheme (CBool   _) = Forall [] (TypeStatic "Bool")
-geTypeStaticstScheme (CString _) = Forall [] (TypeStatic "String")
-
--- | Close type over given scheme
-closeOver :: Type -> Scheme
-closeOver = normalize . generalize Inference.TypingEnvironment.empty
+geTypeStaticstScheme (CInt    _) = Scheme [] (TypeStatic "Int")
+geTypeStaticstScheme (CBool   _) = Scheme [] (TypeStatic "Bool")
+geTypeStaticstScheme (CString _) = Scheme [] (TypeStatic "String")
 
 -- | Instantiation operation for types
 instantiate :: Scheme -> Infer Type
-instantiate (Forall as t) = do
-  as' <- mapM (const fresh) as
+instantiate (Scheme as t) = do
+  as' <- mapM (const freshTypeVar) as
   let s = Subst $ Map.fromList $ zip as as'
   return $ s .> t
 
 -- | Generalization operation for types
-generalize :: Env -> Type -> Scheme
-generalize env t = Forall as t
+generalize :: TypeEnvironment -> Type -> Scheme
+generalize env t = Scheme as t
   where as = Set.toList $ free t `Set.difference` free env
+
+-- | Helper to normalize type free variables
+normalizeType _ TypeUnit                = TypeUnit
+normalizeType _ (TypeAnnotated v      ) = (TypeAnnotated v)
+normalizeType ord (TypeArrow a b        ) = TypeArrow (normalizeType ord a) (normalizeType ord b)
+normalizeType ord (TypeTuple a b        ) = TypeTuple (normalizeType ord a) (normalizeType ord b)
+normalizeType ord (TypeList   a         ) = TypeList (normalizeType ord a)
+normalizeType _ (TypeStatic a         ) = TypeStatic a
+normalizeType ord (TypeComplex name deps) = TypeComplex name $ map (normalizeType ord) deps
+normalizeType ord (TypeVar a            ) = case Prelude.lookup a ord of
+  Just x  -> TypeVar x
+  Nothing -> error "type variable not in signature"
+normalizeType _ v = v
+
+-- | Extract free variables from type
+getTypeFreeVariables (TypeVar a    )      = [a]
+getTypeFreeVariables (TypeArrow a b)      = getTypeFreeVariables a ++ getTypeFreeVariables b
+getTypeFreeVariables (TypeList a   )      = getTypeFreeVariables a
+getTypeFreeVariables (TypeTuple a b)      = getTypeFreeVariables a ++ getTypeFreeVariables b
+getTypeFreeVariables TypeUnit             = []
+getTypeFreeVariables (TypeAnnotated _   ) = []
+getTypeFreeVariables (TypeStatic    _   ) = []
+getTypeFreeVariables (TypeComplex _ deps) = foldl (\acc el -> acc ++ (getTypeFreeVariables el)) [] deps
+getTypeFreeVariables _ = []
 
 -- | Normalize type free variables
 normalize :: Scheme -> Scheme
-normalize (Forall _ body) = Forall (map snd ord) (normtype body)
+normalize (Scheme _ body) = Scheme (map snd ord) (normalizeType ord body)
  where
-  ord = zip (nub $ fv body) (map TV letters)
-
-  fv (TypeVar a    )      = [a]
-  fv (TypeArrow a b)      = fv a ++ fv b
-  fv (TypeList a   )      = fv a
-  fv (TypeTuple a b)      = fv a ++ fv b
-  fv TypeUnit             = []
-  fv (TypeAnnotated _   ) = []
-  fv (TypeStatic    _   ) = []
-  fv (TypeComplex _ deps) = foldl (\acc el -> acc ++ (fv el)) [] deps
-  fv _ = []
-
-  normtype TypeUnit                = TypeUnit
-  normtype (TypeAnnotated v      ) = (TypeAnnotated v)
-  normtype (TypeArrow a b        ) = TypeArrow (normtype a) (normtype b)
-  normtype (TypeTuple a b        ) = TypeTuple (normtype a) (normtype b)
-  normtype (TypeList   a         ) = TypeList (normtype a)
-  normtype (TypeStatic a         ) = TypeStatic a
-  normtype (TypeComplex name deps) = TypeComplex name $ map normtype deps
-  normtype (TypeVar a            ) = case Prelude.lookup a ord of
-    Just x  -> TypeVar x
-    Nothing -> error "type variable not in signature"
-  normtype v = v
+  ord = zip (nub $ getTypeFreeVariables body) (map TV letters)

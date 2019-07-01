@@ -67,10 +67,10 @@ setTypesState e env = env { stypes = e }
 getTypesState :: Environment -> InferState
 getTypesState env = let Environment { stypes = stypes } = env in stypes
 
-setTypesEnv :: Types.Env -> Environment -> Environment
+setTypesEnv :: Types.TypeEnvironment -> Environment -> Environment
 setTypesEnv e env = env { itypes = e }
 
-getTypesEnv :: Environment -> Types.Env
+getTypesEnv :: Environment -> Types.TypeEnvironment
 getTypesEnv env = let Environment { itypes = itypes } = env in itypes
 
 shadowEnv :: Environment -> Environment -> Environment

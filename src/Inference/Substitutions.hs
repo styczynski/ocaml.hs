@@ -69,9 +69,9 @@ instance Substitutable Type where
 
 -- | This is used to replace type variables within types
 instance Substitutable Scheme where
-  (.>) (Subst s) (Forall vars t) =
-    Forall vars $ (Subst $ foldr Map.delete s vars) .> t
-  free (Forall vars t) = free t `Set.difference` Set.fromList vars
+  (.>) (Subst s) (Scheme vars t) =
+    Scheme vars $ (Subst $ foldr Map.delete s vars) .> t
+  free (Scheme vars t) = free t `Set.difference` Set.fromList vars
 
 -- | This is used to replace type variables within types
 instance Substitutable TypeConstraint where
@@ -85,9 +85,9 @@ instance (Substitutable a) => Substitutable [a] where
   free s = foldr (\el acc -> (free el) `Set.union` acc) Set.empty s
 
 -- | This is used to replace entities withing typign environment
-instance Substitutable Env where
-  (.>) s (TypeEnv env) = TypeEnv $ Map.map (s .>) env
-  free (TypeEnv env) = free $ Map.elems env
+instance Substitutable TypeEnvironment where
+  (.>) s (TypeEnvironment env) = TypeEnvironment $ Map.map (s .>) env
+  free (TypeEnvironment env) = free $ Map.elems env
 
 (+>) :: Subst -> Subst -> Subst
 (+>) (Subst s1) (Subst s2) = Subst $ Map.map ((Subst s1) .>) s2 `Map.union` s1

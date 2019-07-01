@@ -42,6 +42,39 @@ data SolverState = SolverState {
 emptySolverState :: SolverState
 emptySolverState = SolverState { lastAnnot = EmptyPayload }
 
+-- | Gets type cntraint and records its annotation inside solver state
+--   This is for purely debug purposes
+checkpointAnnotSolve :: TypeConstraint -> Solve ()
+checkpointAnnotSolve (TypeConstraint l _) = do
+  s <- get
+  put s { lastAnnot = l }
+  return ()
+
+-- | Generate error payload from current solver state (for debug purposes)
+errSolvePayload :: Solve TypeErrorPayload
+errSolvePayload = do
+  s         <- get
+  lastAnnot <-
+    return $ let SolverState { lastAnnot = lastAnnot } = s in lastAnnot
+  return lastAnnot
+
+-- | Runs solve monad for given contraints
+runSolve :: [TypeConstraint] -> IO (Either TypeError Subst)
+runSolve cs = do
+  r <- runExceptT (runStateT (solver (emptySubst, cs)) emptySolverState)
+  case r of
+    Left  e      -> return $ Left e
+    Right (s, _) -> return $ Right s
+
+-- | Runs solver to unify all types
+solver :: Unifier -> Solve Subst
+solver (su, cs) = case cs of
+  [] -> return su
+  ((TypeConstraint l (t1, t2)):cs0) -> do
+    checkpointAnnotSolve (TypeConstraint l (t1, t2))
+    su1 <- t1 <-$-> t2
+    solver (su1 +> su, su1 .> cs0)
+
 -- | Represents a data type that can bind values of one type to the other one
 class BindableSolve a b where
   (<-$->) :: a -> b -> Solve Subst
@@ -83,38 +116,4 @@ instance BindableSolve [Type] [Type] where
   (<-$->) t1 t2 = do
     payl <- errSolvePayload
     throwError $ UnificationMismatch payl t1 t2
-
--- | Gets type cntraint and records its annotation inside solver state
---   This is for purely debug purposes
-checkpointAnnotSolve :: TypeConstraint -> Solve ()
-checkpointAnnotSolve (TypeConstraint l _) = do
-  s <- get
-  put s { lastAnnot = l }
-  return ()
-
--- | Generate error payload from current solver state (for debug purposes)
-errSolvePayload :: Solve TypeErrorPayload
-errSolvePayload = do
-  s         <- get
-  lastAnnot <-
-    return $ let SolverState { lastAnnot = lastAnnot } = s in lastAnnot
-  return lastAnnot
-
--- | Runs solve monad for given contraints
-runSolve :: [TypeConstraint] -> IO (Either TypeError Subst)
-runSolve cs = do
-  r <- runExceptT (runStateT (solver (emptySubst, cs)) emptySolverState)
-  case r of
-    Left  e      -> return $ Left e
-    Right (s, _) -> return $ Right s
-
--- | Runs solver to unify all types
-solver :: Unifier -> Solve Subst
-solver (su, cs) = case cs of
-  [] -> return su
-  ((TypeConstraint l (t1, t2)) : cs0) -> do
-    checkpointAnnotSolve (TypeConstraint l (t1, t2))
-    su1 <- t1 <-$-> t2
-    solver (su1 +> su, su1 .> cs0)
-
 

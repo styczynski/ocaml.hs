@@ -44,7 +44,7 @@ getTypeSimpleExpressionFV (TypeSExprList listType) =
 getTypeSimpleExpressionFV (TypeSExprIdent _) = return Map.empty
 getTypeSimpleExpressionFV TypeSExprEmpty = return Map.empty
 getTypeSimpleExpressionFV (TypeSExprAbstract (TypeIdentAbstract name)) = do
-  tvv <- fresh
+  tvv <- freshTypeVar
   return $ let (TypeVar tv) = tvv in Map.singleton name tv
 
 getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TypeVar)
@@ -170,4 +170,4 @@ resolveTypeExpression exp = do
   fvs  <- getTypeExpressionFV exp
   t    <- resolveTypeExpressionRec fvs exp
   fvsT <- return $ Map.elems fvs
-  return $ Forall fvsT t
+  return $ Scheme fvsT t

@@ -56,16 +56,16 @@ setNativeVariable name typeExpr val = do
 exportGlobalVariableType :: String -> String -> Exec (RuntimeValue, Environment)
 exportGlobalVariableType name typeExpr = do
   env          <- ask
-  (envT, envS) <- lift $ lift $ lift $ annotateGlobalVariableTypeEnv
+  (envT, envS) <- lift $ lift $ lift $ annotateGlobalVariableTypeEnvironment
     (getTypesEnv env)
     (getTypesState env)
     name
     typeExpr
   return (REmpty, (setTypesState envS (setTypesEnv envT env)))
 
-annotateGlobalVariableTypeEnv
-  :: Types.Env -> InferState -> String -> String -> IO (Types.Env, InferState)
-annotateGlobalVariableTypeEnv env state name typeExpr =
+annotateGlobalVariableTypeEnvironment
+  :: Types.TypeEnvironment -> InferState -> String -> String -> IO (Types.TypeEnvironment, InferState)
+annotateGlobalVariableTypeEnvironment env state name typeExpr =
   let ts = myLexer typeExpr
   in
     case pTypeExpression ts of
