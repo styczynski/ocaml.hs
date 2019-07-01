@@ -34,8 +34,10 @@ import           Inference.InferencerUtils
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
 
+-- | Function that infers type for given expression
 type InferenceFn = TypeExpression -> Infer Scheme
 
+-- | Translate AST operation node to readable operation name
 getOperatorName :: OperatorAny -> String
 getOperatorName (OperatorAnyA  (OperatorA name)) = name
 getOperatorName (OperatorAnyB  (OperatorB name)) = name
@@ -44,6 +46,11 @@ getOperatorName (OperatorAnyD  (OperatorD name)) = name
 getOperatorName (OperatorAnyDS (OperatorDS    )) = "*"
 getOperatorName (OperatorAnyE  (OperatorE name)) = name
 getOperatorName (OperatorAnyF  (OperatorF name)) = name
+
+------------------------------------------------------------------
+--        Simplification for various types of AST nodes         --
+------------------------------------------------------------------
+
 
 simplifyPattern
   :: InferenceFn

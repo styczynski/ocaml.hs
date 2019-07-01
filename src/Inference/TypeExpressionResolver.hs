@@ -34,6 +34,9 @@ import           System.IO.Unsafe
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
 
+
+-- | Extracts free variables from type expression and assigns them to fresh
+--   type variables.
 getTypeSimpleExpressionFV
   :: TypeSimpleExpression -> Infer (Map.Map String TypeVar)
 getTypeSimpleExpressionFV (TypeSExprList listType) =
@@ -69,6 +72,7 @@ getTypeExpressionFV (TypeExprTuple fstEl restEls) = foldlM
   ([fstEl] ++ restEls)
 getTypeExpressionFV _ = return Map.empty
 
+-- | Extracts free variables from type expression
 resolveTypeSimpleExpressionFVNames
   :: TypeSimpleExpression -> Infer (Set.Set String)
 resolveTypeSimpleExpressionFVNames TypeSExprEmpty = return $ Set.empty
@@ -160,6 +164,7 @@ resolveTypeExpressionRec fvs (TypeExprTuple fstEl restEls) = do
     ([fstEl] ++ restEls)
   return tupleT
 
+-- | Entrypoint to resolve type expression
 resolveTypeExpression :: TypeExpression -> Infer Scheme
 resolveTypeExpression exp = do
   fvs  <- getTypeExpressionFV exp

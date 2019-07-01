@@ -17,6 +17,7 @@ import           Inference.Syntax
 import           Inference.TypingEnvironment
 import           Inference.Types
 
+-- | Translates types list into readable human representation
 typesListToStr :: [Type] -> String
 typesListToStr l =
   "{"
@@ -29,12 +30,14 @@ typesListToStr l =
        )
     ++ "}"
 
+-- | Creates readeable human message from the error payload
 generateTypePayloadMessage :: TypeErrorPayload -> String
 generateTypePayloadMessage EmptyPayload =
   "Typechecking error:\nLocation: <unknown>\n\n"
 generateTypePayloadMessage (TypeErrorPayload ast) =
   "Typechecking error:\nLocation: " ++ ast ++ "\n\n"
 
+-- | Translates typing error into readable string
 typeErrorToStr :: TypeError -> String
 typeErrorToStr (UnificationFail payl a b) =
   (generateTypePayloadMessage payl)

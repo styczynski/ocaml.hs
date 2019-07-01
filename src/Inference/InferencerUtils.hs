@@ -34,6 +34,7 @@ import           Data.List                      ( nub )
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
 
+-- | Injects current AST annotation into the simplified AST node
 addExprAnnot :: Infer SimplifiedExpr -> Infer SimplifiedExpr
 addExprAnnot inExpr = do
   s             <- get
@@ -44,6 +45,7 @@ addExprAnnot inExpr = do
   e <- inExpr
   return $ SimplifiedAnnotated inferTraceTop e
 
+-- | Adds new inference trace node (for debugging purposes)
 markTrace :: (Show a, Print a) => a -> Infer ()
 markTrace a = do
   s          <- get
@@ -52,6 +54,7 @@ markTrace a = do
   put s { inferTrace = ([(printTree a)] ++ inferTrace) }
   return ()
 
+-- | Removes inference trace node (for debugging purposes)
 unmarkTrace :: (Show a, Print a) => a -> Infer ()
 unmarkTrace a = do
   s        <- get
@@ -61,6 +64,7 @@ unmarkTrace a = do
   put s { inferTrace = newTrace }
   return ()
 
+-- | Generates error payload for current inference trace (for debugging purposes)
 errPayload :: Infer TypeErrorPayload
 errPayload = do
   s            <- get
@@ -69,6 +73,7 @@ errPayload = do
       $ let InferState { lastInferExpr = lastInferExpr } = s in lastInferExpr
   return $ TypeErrorPayload lastTraceStr
 
+-- | Performs env ?? name operation but throws error if it fails
 lookupEnv :: Ident -> Infer Type
 lookupEnv name = do
   env <- ask
@@ -80,36 +85,43 @@ lookupEnv name = do
       t <- instantiate scheme
       return t
 
+-- | Generate names for polymoprhic variable names
 letters :: [String]
 letters = [1 ..] >>= flip replicateM ['a' .. 'z']
 
+-- | Generate unique indentificator for variable
 freshIdent :: Infer Ident
 freshIdent = do
   s <- get
   put s { count = count s + 1 }
   return $ Ident $ "__@$internal_variable__" ++ (letters !! count s) ++ "_"
 
+-- | Generate unique identificator for type variable
 fresh :: Infer Type
 fresh = do
   s <- get
   put s { count = count s + 1 }
   return $ TypeVar $ TV (letters !! count s)
 
+-- | Translates AST node representing "rec" keyword into boolean
 isRec :: LetRecKeyword -> Bool
 isRec LetRecYes = True
 isRec LetRecNo  = False
 
+-- | Injects type check statement into AST
 withTypeAnnot
   :: Syntax.TypeConstraint -> ComplexExpression -> Infer ComplexExpression
 withTypeAnnot TypeConstrEmpty       e = return e
 withTypeAnnot (TypeConstrDef texpr) e = do
   return $ ECChecked e texpr
 
+-- | Injects type containt statement into AST
 constraintAnnot :: TypeConstraint -> Infer TypeConstraint
 constraintAnnot (TypeConstraint _ constrnt) = do
   payl <- errPayload
   return $ TypeConstraint payl constrnt
 
+-- | Injects type constraint statement into AST for each node in the list
 constraintAnnoTypeList :: [TypeConstraint] -> Infer [TypeConstraint]
 constraintAnnoTypeList cs = do
   foldrM
@@ -120,24 +132,29 @@ constraintAnnoTypeList cs = do
     []
     cs
 
+-- | Get type scheme for constants
 geTypeStaticstScheme :: Constant -> Scheme
 geTypeStaticstScheme (CInt    _) = Forall [] (TypeStatic "Int")
 geTypeStaticstScheme (CBool   _) = Forall [] (TypeStatic "Bool")
 geTypeStaticstScheme (CString _) = Forall [] (TypeStatic "String")
 
+-- | Close type over given scheme
 closeOver :: Type -> Scheme
 closeOver = normalize . generalize Inference.TypingEnvironment.empty
 
+-- | Instantiation operation for types
 instantiate :: Scheme -> Infer Type
 instantiate (Forall as t) = do
   as' <- mapM (const fresh) as
   let s = Subst $ Map.fromList $ zip as as'
   return $ s .> t
 
+-- | Generalization operation for types
 generalize :: Env -> Type -> Scheme
 generalize env t = Forall as t
   where as = Set.toList $ free t `Set.difference` free env
 
+-- | Normalize type free variables
 normalize :: Scheme -> Scheme
 normalize (Forall _ body) = Forall (map snd ord) (normtype body)
  where
@@ -151,6 +168,7 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
   fv (TypeAnnotated _   ) = []
   fv (TypeStatic    _   ) = []
   fv (TypeComplex _ deps) = foldl (\acc el -> acc ++ (fv el)) [] deps
+  fv _ = []
 
   normtype TypeUnit                = TypeUnit
   normtype (TypeAnnotated v      ) = (TypeAnnotated v)
@@ -162,3 +180,4 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
   normtype (TypeVar a            ) = case Prelude.lookup a ord of
     Just x  -> TypeVar x
     Nothing -> error "type variable not in signature"
+  normtype v = v

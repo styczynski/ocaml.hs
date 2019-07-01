@@ -21,6 +21,7 @@ import           Syntax.Base
 import           Inference.Types
 import           Inference.TypingEnvironment
 
+-- | Simplified AST representation
 data SimplifiedExpr
   = SimplifiedVariable Ident
   | SimplifiedCall SimplifiedExpr SimplifiedExpr
@@ -40,12 +41,14 @@ data SimplifiedExpr
   | SimplifiedConstString String
   deriving (Show, Eq)
 
+-- | Binary operation
 data BinaryOp = OpSemicolon | OpSame | OpCustom String | OpCons | OpTupleCons
   deriving (Eq, Ord, Show)
 
+-- | Unary operation
 data UnaryOp = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int | OpListNth
   deriving (Eq, Ord, Show)
 
+-- | Top level definitions
 data Program = Program [Decl] SimplifiedExpr deriving Eq
-
 type Decl = (String, SimplifiedExpr)

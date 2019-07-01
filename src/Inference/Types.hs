@@ -21,14 +21,17 @@ import           Syntax.Base             hiding ( TV )
 
 import qualified Data.Map                      as Map
 
+-- | Free type variable
 newtype TypeVar = TV String
   deriving (Show, Eq, Ord)
 
+-- | Typing environment
 data Env = TypeEnv { types :: Map.Map Ident Scheme }
   deriving (Eq, Show)
 
 data TypeAnnotation = AnnotationEnv Env deriving (Show, Eq)
 
+-- | Data types for inference
 data Type
   = TypeVar TypeVar
   | TypeStatic String
@@ -40,9 +43,11 @@ data Type
   | TypeAnnotated TypeAnnotation
   deriving (Show, Eq)
 
+-- | Type scheme
 data Scheme = Forall [TypeVar] Type
   deriving (Show, Eq)
 
+-- | Extracts free variables from the type
 getTypeFVNames :: Type -> [String]
 getTypeFVNames (TypeVar  (TV name)) = [name]
 getTypeFVNames (TypeList t        ) = getTypeFVNames t
@@ -52,6 +57,7 @@ getTypeFVNames (TypeComplex name deps) =
 getTypeFVNames (TypeTuple a b) = (getTypeFVNames a) ++ (getTypeFVNames b)
 getTypeFVNames _               = []
 
+-- | Helper to reassign types for readability
 remapTypesRec :: Map.Map String String -> Type -> Type
 remapTypesRec fvMap t@(TypeVar (TV name)) = case Map.lookup name fvMap of
   (Just newName) -> (TypeVar (TV newName))
@@ -66,13 +72,16 @@ remapTypesRec fvMap (TypeTuple a b) =
   TypeTuple (remapTypesRec fvMap a) (remapTypesRec fvMap b)
 remapTypesRec _ v = v
 
+-- | Gets unique free variables names
 fvUnique :: (Eq a) => [a] -> [a]
 fvUnique []       = []
 fvUnique (x : xs) = x : fvUnique (filter (/= x) xs)
 
+-- | Generator for readable types (remapTypes)
 typesLetters :: [String]
 typesLetters = [1 ..] >>= flip replicateM ['a' .. 'z']
 
+-- | Map types to fresh ones (for readability)
 remapTypes :: Type -> Type
 remapTypes t =
   let fvNames = fvUnique $ getTypeFVNames t
@@ -81,6 +90,7 @@ remapTypes t =
                 $ zip typesLetters fvNames
       in  remapTypesRec fvMap t
 
+-- | Helper to print types in readable format
 typeToStrRec :: [TypeVar] -> Type -> String
 typeToStrRec vars TypeUnit = "()"
 typeToStrRec vars (TypeAnnotated (AnnotationEnv v)) =
@@ -109,9 +119,11 @@ typeToStrRec vars (TypeTuple a (TypeTuple TypeUnit TypeUnit)) =
 typeToStrRec vars (TypeTuple a b) =
   (typeToStrRec vars a) ++ " * " ++ (typeToStrRec vars b)
 
+-- | Print readable text representation for type
 typeToStr :: [TypeVar] -> Type -> String
 typeToStr l t = typeToStrRec l $ remapTypes t
 
+-- | Print readable text representation for type schema
 schemeToStr :: Scheme -> String
 schemeToStr (Forall vars t) = typeToStr vars t
 

@@ -37,6 +37,7 @@ import           System.IO.Unsafe
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
 
+-- | Runs inference monad
 runInfer
   :: Env
   -> InferState
@@ -48,6 +49,7 @@ runInfer env state fn = do
     (Left  e                   ) -> return $ Left e
     (Right ((env, t, c), state)) -> return $ Right ((env, t, c), state)
 
+-- | Runs solver monad
 solve
   :: Either TypeError (Type, [TypeConstraint]) -> IO (Either TypeError Scheme)
 solve r = case r of
@@ -58,22 +60,26 @@ solve r = case r of
       Left  err   -> return $ Left err
       Right subst -> return $ Right $ closeOver $ subst .> ty
 
+-- | Helper to remove state and env from inference monad output
 unpackEnvTypeContraints
   :: Either TypeError ((Env, Type, [TypeConstraint]), InferState)
   -> Either TypeError (Type, [TypeConstraint])
 unpackEnvTypeContraints (Left  r             ) = Left r
 unpackEnvTypeContraints (Right ((_, t, c), _)) = Right (t, c)
 
+-- | Helper to extract environment from inference monad output
 retrieveEnv
   :: Either TypeError ((Env, Type, [TypeConstraint]), InferState) -> Env
 retrieveEnv (Left  r             ) = empty
 retrieveEnv (Right ((e, _, _), _)) = e
 
+-- | Helper to extract inferencer state from inference monad output
 retrieveState
   :: Either TypeError ((Env, Type, [TypeConstraint]), InferState) -> InferState
 retrieveState (Left  r         ) = initInfer
 retrieveState (Right (_, state)) = state
 
+-- | Takes AST and run inferencer and solver returning inferenced type
 inferAST
   :: Env
   -> InferState
@@ -88,22 +94,25 @@ inferAST env state ex = do
     Left  e -> return $ Left e
     Right s -> return $ Right (s, env, state)
 
-constraintsExpr
-  :: Env
-  -> InferState
-  -> SimplifiedExpr
-  -> IO (Either TypeError ([TypeConstraint], Subst, Type, Scheme))
-constraintsExpr env state ex = do
-  r <- runInfer env state (inferE ex)
-  case r of
-    Left  err                  -> return $ Left err
-    Right ((_, ty, cs), state) -> do
-      s <- runSolve cs
-      case s of
-        Left  err   -> return $ Left err
-        Right subst -> return $ Right (cs, subst, ty, sc)
-          where sc = closeOver $ subst .> ty
+-- FIXME: REMOVE
+-- TODO: REMOVE
+--constraintsExpr
+--  :: Env
+--  -> InferState
+--  -> SimplifiedExpr
+--  -> IO (Either TypeError ([TypeConstraint], Subst, Type, Scheme))
+--constraintsExpr env state ex = do
+--  r <- runInfer env state (inferE ex)
+--  case r of
+--    Left  err                  -> return $ Left err
+--    Right ((_, ty, cs), state) -> do
+--      s <- runSolve cs
+--      case s of
+--        Left  err   -> return $ Left err
+--        Right subst -> return $ Right (cs, subst, ty, sc)
+--          where sc = closeOver $ subst .> ty
 
+-- | Get type contraints for given implementation node in AST
 inferImplementation :: Implementation -> Infer (Env, Type, [TypeConstraint])
 inferImplementation ast@(IRoot cores) = do
   markTrace ast
@@ -118,6 +127,7 @@ inferImplementation ast@(IRoot cores) = do
   unmarkTrace ast
   return r
 
+-- | Get type contraints for given implementation core node in AST
 inferImplementationCore
   :: ImplementationCore -> Infer (Env, Type, [TypeConstraint])
 inferImplementationCore ast@(IRootExpr expr) = do
@@ -139,6 +149,7 @@ inferImplementationCore ast@(IRootDef phrases) = do
   unmarkTrace ast
   return r
 
+-- | Creates abstract type constructor for given name and parameters
 createTypeExpressionAbstractArgConstructor
   :: Ident -> [String] -> TypeExpression
 createTypeExpressionAbstractArgConstructor typeName [] =
@@ -152,6 +163,7 @@ createTypeExpressionAbstractArgConstructor typeName names@(hNames : tNames) =
       names
   in  TypeExprIdent (TypeArgJust identHead identTail) typeName
 
+-- | Infers type for variant option
 inferVariantOption
   :: [String] -> Ident -> TDefVariant -> Infer (Env, Type, [TypeConstraint])
 inferVariantOption typeVars typeName (TDefVarSimpl name@(Ident nameStr)) = do
@@ -200,11 +212,16 @@ inferVariantOption typeVars typeName (TDefVarCompl name@(Ident nameStr) typeExpr
       $ ECTyped selType
     return r
 
+-- | Transforms AST type param to list of parameters' names
 typeParamsToList :: TypeParam -> [String]
 typeParamsToList TypeParamNone = []
 typeParamsToList (TypeParamJust names) =
   map (\(TypeIdentAbstract name) -> name) names
 typeParamsToList (TypeParamJustOne (TypeIdentAbstract name)) = [name]
+
+------------------------------------------------------------------
+--        Inference for various types of AST nodes              --
+------------------------------------------------------------------
 
 inferTypeDef :: TypeDef -> Infer (Env, Type, [TypeConstraint])
 inferTypeDef ast@(TypeDefVar typeParams name options) = do

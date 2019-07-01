@@ -29,20 +29,24 @@ import           Data.Foldable
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
 
+-- | Represents a type that can bind one type to the other one
 class Bindable a b where
   (<->)     :: a -> b -> Either TypeError Subst
 
+-- | Represents type that have entities that can be replaced
 class Substitutable a where
   (.>)     :: Subst -> a -> a
   free   :: a -> Set.Set TypeVar
   isRecursive ::  TypeVar -> a -> Bool
   isRecursive a t = Set.member a $ free t
 
+-- | This is used to set type variables during construction of type contraints
 instance Bindable TypeVar Type where
   (<->) a t | t == (TypeVar a) = Right emptySubst
             | isRecursive a t  = Left $ InfiniteType EmptyPayload a t
             | otherwise        = Right (Subst $ Map.singleton a t)
 
+-- | This is used to replace type variables within types
 instance Substitutable Type where
   (.>) _         (  TypeStatic a         ) = TypeStatic a
   (.>) s (TypeComplex name deps) = TypeComplex name $ map (\a -> s .> a) deps
@@ -63,20 +67,24 @@ instance Substitutable Type where
   free TypeUnit          = Set.empty
   free (TypeAnnotated _) = Set.empty
 
+-- | This is used to replace type variables within types
 instance Substitutable Scheme where
   (.>) (Subst s) (Forall vars t) =
     Forall vars $ (Subst $ foldr Map.delete s vars) .> t
   free (Forall vars t) = free t `Set.difference` Set.fromList vars
 
+-- | This is used to replace type variables within types
 instance Substitutable TypeConstraint where
   (.>) s (TypeConstraint _ (t1, t2)) =
     TypeConstraint EmptyPayload (s .> t1, s .> t2)
   free (TypeConstraint _ (t1, t2)) = free t1 `Set.union` free t2
 
+-- | This is used to replace type variables within types
 instance (Substitutable a) => Substitutable [a] where
   (.>) s = map (s .>)
   free s = foldr (\el acc -> (free el) `Set.union` acc) Set.empty s
 
+-- | This is used to replace entities withing typign environment
 instance Substitutable Env where
   (.>) s (TypeEnv env) = TypeEnv $ Map.map (s .>) env
   free (TypeEnv env) = free $ Map.elems env
