@@ -93,16 +93,6 @@ instance (UnpackableValue a, PackableValue b) => PackableValue (VarargFun a b) w
       shadow bodyEnv $ local (\_ -> unpackedEnv) $ packVal r
     shadow env $ return $ newFunction (RFunVararg) body env
 
---instance (PackableValue a) => PackableValue [a] where
---  packVal vals = do
---    env <- ask
---    return ((RList $ mapM packVal vals), env)
---
---instance (UnpackableValue a) => UnpackableValue [a] where
---  unpackVal (RList vals) = do
---    env <- ask
---    (mapM unpackVal vals) >>= (\x -> return $ foldl (\(vals,oldEnv) (val,newEnv) -> (([val] ++ vals),(newEnv))) ([], env) x)
-
 instance {-# OVERLAPS #-} (UnpackableValue a, UnpackableValue b, UnpackableValue c, UnpackableValue d, PackableValue e) => PackableValue (a -> b -> c -> d -> e) where
   packVal innerFn = do
     env  <- ask
