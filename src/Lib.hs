@@ -5,34 +5,31 @@ import Control.Monad.State
 import Control.Monad.Identity
 import Control.Monad.Reader
 
-import PrintSyntax
-import LexSyntax
-import ParSyntax
-import SkelSyntax
-import AbsSyntax
-import ErrM
+import Syntax.Base
 
-import Startup
-import Runtime
-import Environment
-import InterpreterDefinitions
-import Interpreter
+import Runtime.Runtime
+import Runtime.Environment
 
-import Infer
-import Syntax
-import Type
-import Env
-import Environment
+import Interop.Startup
+import Interpreter.Definitions
+import Interpreter.Interpreter
+
+import Inference.Inferencer
+import Inference.TypingEnvironment
+import Inference.Errors
+import qualified Inference.Types as Types
+import Inference.Syntax
 
 type Verbosity = Int
 
-runTIWith :: Verbosity -> String -> Environment -> Either TypeError (Scheme, Environment)
+runTIWith :: Verbosity -> String -> Environment -> IO (Either TypeError (Types.Scheme, Environment))
 runTIWith v s e = let state = getTypesState e in let env = getTypesEnv e in let ts = myLexer s in case pImplementation ts of
-          Bad s    -> Left $ Debug EmptyPayload $ s
-          Ok  tree ->
-            case inferAST env state tree of
-              (Left e) -> Left e
-              (Right (r, env, state)) -> Right (r, (setTypesState state (setTypesEnv env e)))
+          Bad s    -> return $ Left $ Debug EmptyPayload $ s
+          Ok  tree -> do
+            r <- inferAST env state tree
+            case r of
+              (Left e) -> return $ Left e
+              (Right (r, env, state)) -> return $ Right (r, (setTypesState state (setTypesEnv env e)))
               --(Left mes) -> putStrLn $ show mes
 
 runInit :: Environment -> IO Environment
@@ -47,10 +44,10 @@ runInitEmpty = runInit emptyEnv
 
 runWith :: Verbosity -> String -> Environment -> IO ExecutionResult
 runWith v s env = do
-  i <- return $ runTIWith v s env
+  i <- runTIWith v s env
   (case i of
     (Left e) -> return $ FailedTypechecking e
-    (Right ((Forall _ inferType), initEnv)) -> do
+    (Right ((Types.Forall _ inferType), initEnv)) -> do
       r <- runIWith v s initEnv
       return $ case r of
         (Executed v _ env) -> Executed v inferType env

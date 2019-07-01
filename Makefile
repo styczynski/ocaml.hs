@@ -1,11 +1,22 @@
 all: interpreter
 	echo "Done."
 
-web: interpreter-web
+format-code: install-deps
+	stack exec brittany -- --write-mode=inplace ./src/**/*.hs
+
+tintin:
+	stack upgrade --binary-version 2.1.1
+	stack install --only-dependencies
+	stack install tintin
+	stack exec tintin run
+
+web: tintin interpreter-web
 	echo "Done."
 
 install-deps:
+	stack upgrade --binary-version 2.1.1
 	stack install --only-dependencies
+	stack install happy
 
 parser-src: install-deps
 	stack exec bnfc -- -m -o parser ./grammar/syntax.cf

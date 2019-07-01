@@ -47,7 +47,7 @@ class StringType extends Component {
       {
         toggle: expanded,
         bareString: bare,
-        quote: !bare,
+        quote: false && !bare,
       },
     ]);
 

@@ -1,14 +1,15 @@
-module InterpreterDefinitions where
+module Interpreter.Definitions where
 
-import Control.Monad.Except
-import Control.Monad.State
-import Control.Monad.Identity
-import Control.Monad.Reader
-import qualified Data.Map as Map
+import           Control.Monad.Except
+import           Control.Monad.State
+import           Control.Monad.Identity
+import           Control.Monad.Reader
+import qualified Data.Map                      as Map
 
-import Runtime
-import Environment
-import AbsSyntax
+import           Runtime.Runtime
+import           Runtime.Environment
+
+import           Syntax.Base
 
 createVariant :: Ident -> Environment -> TDefVariant -> Exec Environment
 createVariant name env (TDefVarSimpl option) = do
@@ -23,7 +24,8 @@ createVariant name env (TDefVarCompl option _) = do
   env2 <- return $ setDef option (DVariant name option) env1
   return env2
 
-constructVariantType :: Ident -> [TDefVariant] -> Exec (RuntimeValue, Environment)
+constructVariantType
+  :: Ident -> [TDefVariant] -> Exec (RuntimeValue, Environment)
 constructVariantType name variants = do
   defEnv <- ask
   newEnv <- foldM (createVariant name) (defEnv) variants
@@ -41,6 +43,6 @@ constructRecordType name fields = do
   return (REmpty, newEnv)
 
 execTypeDef :: TypeDef -> Exec (RuntimeValue, Environment)
-execTypeDef (TypeDefVar _ name variants) = constructVariantType name variants
-execTypeDef (TypeDefVarP _ name variants) = constructVariantType name variants
-execTypeDef (TypeDefRecord _ name fields) = constructRecordType name fields
+execTypeDef (TypeDefVar    _ name variants) = constructVariantType name variants
+execTypeDef (TypeDefVarP   _ name variants) = constructVariantType name variants
+execTypeDef (TypeDefRecord _ name fields  ) = constructRecordType name fields

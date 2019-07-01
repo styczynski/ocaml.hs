@@ -1,5 +1,7 @@
 module Main where
 
+import Runtime.Runtime
+
 import Options.Applicative
 import Data.Semigroup ((<>))
 
@@ -8,10 +10,11 @@ import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 
 import Lib
-import Runtime
-import InterpreterDefinitions
-import Type
-import Infer
+import Interpreter.Definitions
+
+import qualified Inference.Types as Types
+import Inference.Errors
+import Inference.Inferencer
 
 runFile :: Verbosity -> FilePath -> IO ()
 runFile v f = putStrLn f >> readFile f >>= runBlock v
@@ -33,7 +36,7 @@ runBlockI v s = do
                     hPutStrLn stderr s
                     exitFailure
      Executed v t env -> do
-                    putStrLn $ "- : " ++ (Type.typeToStr [] t) ++ " = " ++ (valueToStr env v)
+                    putStrLn $ "- : " ++ (Types.typeToStr [] t) ++ " = " ++ (valueToStr env v)
                     exitSuccess
 
 runBlock = runBlockI

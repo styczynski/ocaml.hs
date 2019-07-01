@@ -129,7 +129,7 @@ class ObjectType extends Component {
       );
     }
 
-    if (!open) {
+    /*if (!open) {
       if (type === 'error') {
         return (
           <div className={`type ${type}`}>
@@ -189,7 +189,23 @@ class ObjectType extends Component {
           <span> {'}'}</span>
         </div>
       );
-    }
+    }*/
+
+    return (
+        <div className={`type ${type} ${open ? '' : 'closed'}`}>
+          <div className="header">
+          <em onClick={this.toggle}>{value.type}</em>
+          {types.map((obj, i) => {
+              if(obj.key != "type")
+                  return (
+                      <div className="object-item key-value" key={`subtype-${i}`}>
+          <span className="value">{obj.value}</span>
+                  </div>
+          );
+          })}
+          </div>
+      </div>
+    );
 
     return (
       <div className={`type ${type} ${open ? '' : 'closed'}`}>
