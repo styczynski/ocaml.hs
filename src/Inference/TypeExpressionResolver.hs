@@ -9,6 +9,9 @@ Portability : POSIX
 
   This module implements utilities to map AST type expressions into Inference.Types values.
 -}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Inference.TypeExpressionResolver where
 
 
@@ -73,42 +76,41 @@ getTypeExpressionFV (TypeExprTuple fstEl restEls) = foldlM
 getTypeExpressionFV _ = return Map.empty
 
 -- | Extracts free variables from type expression
-resolveTypeSimpleExpressionFVNames
-  :: TypeSimpleExpression -> Infer (Set.Set String)
-resolveTypeSimpleExpressionFVNames TypeSExprEmpty = return $ Set.empty
-resolveTypeSimpleExpressionFVNames (TypeSExprList expr) =
-  resolveTypeExpressionFVNames expr
-resolveTypeSimpleExpressionFVNames (TypeSExprAbstract (TypeIdentAbstract name))
-  = return $ Set.singleton name
-resolveTypeSimpleExpressionFVNames (TypeSExprIdent _) = return $ Set.empty
+instance WithFreedomM TypeSimpleExpression String Infer where
+  freeDimensionsM TypeSExprEmpty = return $ Set.empty
+  freeDimensionsM (TypeSExprList expr) =
+    freeDimensionsM expr
+  freeDimensionsM (TypeSExprAbstract (TypeIdentAbstract name))
+    = return $ Set.singleton name
+  freeDimensionsM (TypeSExprIdent _) = return $ Set.empty
 
-resolveTypeExpressionFVNames :: TypeExpression -> Infer (Set.Set String)
-resolveTypeExpressionFVNames (TypeExprSimple simpl) =
-  resolveTypeSimpleExpressionFVNames simpl
-resolveTypeExpressionFVNames (TypeExprIdent (TypeArgJustOne simpl) _) =
-  resolveTypeSimpleExpressionFVNames simpl
-resolveTypeExpressionFVNames (TypeExprIdent (TypeArgJust firstParam restParams) _)
-  = do
-    foldlM
-      (\acc (TypeArgEl el) -> do
-        r <- resolveTypeExpressionFVNames el
-        return $ acc `Set.union` r
+instance WithFreedomM TypeExpression String Infer where
+  freeDimensionsM (TypeExprSimple simpl) =
+    freeDimensionsM simpl
+  freeDimensionsM (TypeExprIdent (TypeArgJustOne simpl) _) =
+    freeDimensionsM simpl
+  freeDimensionsM (TypeExprIdent (TypeArgJust firstParam restParams) _)
+    = do
+      foldlM
+        (\acc (TypeArgEl el) -> do
+          r <- freeDimensionsM el
+          return $ acc `Set.union` r
+        )
+        Set.empty
+        ([firstParam] ++ restParams)
+  freeDimensionsM (TypeFun a b) = do
+    x <- freeDimensionsM a
+    y <- freeDimensionsM b
+    return $ x `Set.union` y
+  freeDimensionsM (TypeExprTuple firstElem restElems) = do
+    x <- freeDimensionsM firstElem
+    foldrM
+      (\el acc -> do
+        y <- freeDimensionsM el
+        return $ acc `Set.union` y
       )
-      Set.empty
-      ([firstParam] ++ restParams)
-resolveTypeExpressionFVNames (TypeFun a b) = do
-  x <- resolveTypeExpressionFVNames a
-  y <- resolveTypeExpressionFVNames b
-  return $ x `Set.union` y
-resolveTypeExpressionFVNames (TypeExprTuple firstElem restElems) = do
-  x <- resolveTypeExpressionFVNames firstElem
-  foldrM
-    (\el acc -> do
-      y <- resolveTypeExpressionFVNames el
-      return $ acc `Set.union` y
-    )
-    x
-    restElems
+      x
+      restElems
 
 resolveTypeSimpleExpressionRec
   :: (Map.Map String TypeVar) -> TypeSimpleExpression -> Infer Type
