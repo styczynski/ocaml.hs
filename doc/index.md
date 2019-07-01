@@ -41,3 +41,7 @@ There are plenty of examples available including:
 * Manipulations on mutable data sources
 * Fuzzy search with Levenstein distance + interactions with user
 
+Some of the [demos are available here](http://styczynski.in/ocaml.hs/2-Examples.html).
+
+**Note:**
+*Note that in browser some features like stdin/out may be missing.*

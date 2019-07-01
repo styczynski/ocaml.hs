@@ -1,0 +1,485 @@
+<!DOCTYPE HTML><html><head><title>ocamlhs - Examples</title><meta charset="utf-8"><meta content="summary" name="twitter:card"><meta content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-blue.png" name="twitter:site"><meta content="ocamlhs - Examples" name="twitter:title"><meta content="Interpreter for Ocaml language subset" name="twitter:description"><meta content="&quot;Piotr Styczyński&quot;" name="twitter:creator"><meta content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-blue.png" name="twitter:image"><meta itemprop="og:type" content="website"><meta itemprop="og:site_name" content="theam"><meta itemprop="og:title" content="ocamlhs - Examples"><meta itemprop="og:url" content="styczynski/ocaml.hs"><meta itemprop="og:image" content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-blue.png"><meta itemprop="og:description" content="Interpreter for Ocaml language subset"><link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans|Montserrat:500" rel="stylesheet"><link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow-night.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css" rel="stylesheet"><link href="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/favicon-blue.ico" rel="shortcut icon"><link href="https://cdn.jsdelivr.net/npm/katex@0.10.0-alpha/dist/katex.min.css" rel="stylesheet"><style>
+html
+{
+  height     : 100%;
+  min-height : 100%;
+}
+
+body
+{
+  height      : 100%;
+  min-height  : 100%;
+  font-family : "IBM+Plex+Sans", sans-serif;
+  font-size   : 1em;
+  overflow-x  : hidden;
+}
+
+h1
+{
+  font-family : "Montserrat", sans-serif;
+  font-weight : 500;
+  font-size   : 1em;
+}
+
+h2
+{
+  font-family : "Montserrat", sans-serif;
+  font-weight : 500;
+  font-size   : 2.44099em;
+}
+
+h3
+{
+  font-family : "Montserrat", sans-serif;
+  font-weight : 500;
+  font-size   : 5.95848em;
+}
+
+h1
+{
+  font-size : 2.44099em;
+}
+
+h2
+{
+  font-size : 1.953em;
+}
+
+h3
+{
+  font-size : 1.56299em;
+}
+
+blockquote
+{
+  border-left  : solid 4px #dddddd;
+  padding-left : 1rem;
+  color        : #777777;
+}
+
+.next-prev
+{
+  margin-top    : 5%;
+  margin-bottom : 5%;
+}
+
+#header-container
+{
+  margin-top    : 5rem;
+  margin-bottom : 5rem;
+}
+
+.cover-heading
+{
+  font-size     : 800%;
+  max-height    : 6rem;
+  margin-bottom : 1.56299rem;
+}
+
+.cover-container
+{
+  background-color : rgba(255,255,255,0.0);
+}
+
+.watermark
+{
+  position    : absolute;
+  top         : 0px;
+  left        : 0px;
+  max-height  : 1.25039rem;
+  margin-top  : 1.25039rem;
+  margin-left : 1.25039rem;
+}
+
+.cover-heading-subtitle
+{
+  margin-top : 3rem;
+  font-size  : 1.953rem;
+}
+
+.vertical-auto
+{
+  margin-top    : auto;
+  margin-bottom : auto;
+}
+
+.content
+{
+  margin-top    : 5%;
+  margin-bottom : 5%;
+}
+
+#wrapper
+{
+  padding-left       : 0px;
+  -webkit-transition : all 0.5s ease 0.0s;
+  -moz-transition    : all 0.5s ease 0.0s;
+  -ms-transition     : all 0.5s ease 0.0s;
+  -o-transition      : all 0.5s ease 0.0s;
+  transition         : all 0.5s ease 0.0s;
+}
+
+#wrapper.toggled
+{
+  padding-left : 250px;
+}
+
+#wrapper.toggled #sidebar-wrapper
+{
+  width : 250px;
+}
+
+#page-content-wrapper#wrapper.toggled
+{
+  position     : absolute;
+  margin-right : -250px;
+}
+
+#page-content-wrapper
+{
+  width      : 100%;
+  position   : absolute;
+  margin-top : 3rem;
+  padding    : 15px 15px 15px 15px;
+}
+
+#page-content-wrapper img
+{
+  max-width : 100%;
+}
+
+#sidebar-wrapper
+{
+  z-index            : 1000;
+  position           : fixed;
+  left               : 250px;
+  width              : 0px;
+  margin-left        : -250px;
+  overflow-y         : hidden;
+  overflow-x         : hidden;
+  -webkit-transition : all 0.5s ease 0.0s;
+  -moz-transition    : all 0.5s ease 0.0s;
+  -ms-transition     : all 0.5s ease 0.0s;
+  -o-transition      : all 0.5s ease 0.0s;
+  transition         : all 0.5s ease 0.0s;
+}
+
+.sidebar-nav
+{
+  position        : absolute;
+  top             : 0px;
+  width           : 250px;
+  margin          : 0px 0px 0px 0px;
+  padding         : 0px 0px 0px 0px;
+  list-style-type : none;
+}
+
+.sidebar-nav li
+{
+  text-indent : 20px;
+  line-height : 40px;
+}
+
+.sidebar-nav li a
+{
+  display         : block;
+  text-decoration : none;
+  font-weight     : bold;
+}
+
+
+.sidebar-nav li .tintin-fg-disabled:hover
+{
+  mix-blend-mode  : normal;
+  -webkit-filter  : invert(0%);
+  -moz-filter     : invert(0%);
+  -ms-filter      : invert(0%);
+  -o-filter       : invert(0%);
+  filter          : invert(0%);
+  text-decoration : none;
+  color           : #000000;
+}
+
+
+.sidebar-nav li .tintin-fg-active:hover
+{
+  mix-blend-mode  : normal;
+  -webkit-filter  : invert(0%);
+  -moz-filter     : invert(0%);
+  -ms-filter      : invert(0%);
+  -o-filter       : invert(0%);
+  filter          : invert(0%);
+  text-decoration : none;
+  color           : #ffffff;
+}
+
+#menu-toggle
+{
+  position : absolute;
+}
+
+#menu-toggle img
+{
+  position : absolute;
+  left     : 0px;
+}
+
+#menu-toggle .rotateIn
+{
+  z-index : 999;
+}
+
+.tintin-doc-topbar
+{
+  height : 3rem;
+}
+
+.tintin-doc-topbar a
+{
+  margin-left : 1rem;
+  margin-top  : 0rem;
+  width       : 1.5rem;
+}
+
+.tintin-doc-topbar a img
+{
+  -webkit-filter : invert(70%);
+  -moz-filter    : invert(70%);
+  -ms-filter     : invert(70%);
+  -o-filter      : invert(70%);
+  filter         : invert(70%);
+}
+
+.filter-gray
+{
+  position       : relative;
+  bottom         : 3px;
+  margin-left    : 0.25rem;
+  margin-right   : 1rem;
+  height         : 1rem;
+  -webkit-filter : brightness(0.75);
+  -moz-filter    : brightness(0.75);
+  -ms-filter     : brightness(0.75);
+  -o-filter      : brightness(0.75);
+  filter         : brightness(0.75);
+}
+
+.footer-theam
+{
+  position       : relative;
+  bottom         : 1px;
+  margin-left    : -0.25rem;
+  height         : 1.75rem;
+  -webkit-filter : invert(75%);
+  -moz-filter    : invert(75%);
+  -ms-filter     : invert(75%);
+  -o-filter      : invert(75%);
+  filter         : invert(75%);
+}
+
+.tintin-doc-footer
+{
+  bottom : 0px;
+  height : -15rem;
+  width  : 100%;
+  color  : rgba(0,0,0,0.3);
+}
+
+.main-container
+{
+  min-height : 100%;
+  position   : relative;
+}
+
+#content
+{
+  min-height : 95%;
+}
+
+.sidebar-nav > .sidebar-brand
+{
+  height         : 3rem;
+  font-size      : 2rem;
+  font-family    : "Montserrat", sans-serif;
+  font-weight    : 500;
+  padding-top    : 2.5rem;
+  padding-bottom : 2.5rem;
+  margin-bottom  : 1.5rem;
+}
+
+.sidebar-nav > .sidebar-brand img
+{
+  height : 1.5rem;
+}
+
+.tintin-navbar
+{
+  font-weight      : bold;
+  background-color : rgba(255,255,255,0.15);
+}
+
+.tintin-navbar .left-part
+{
+  padding-left : 0px !important;
+}
+
+.tintin-navbar ul
+{
+  margin-top      : 1rem;
+  list-style-type : none;
+}
+
+.tintin-navbar ul li
+{
+  margin-right : 1rem;
+  display      : inline;
+}
+
+.tintin-navbar ul li a
+{
+  color          : #000000;
+  -webkit-filter : invert(35%);
+  -moz-filter    : invert(35%);
+  -ms-filter     : invert(35%);
+  -o-filter      : invert(35%);
+  filter         : invert(35%);
+  mix-blend-mode : difference;
+}
+
+.tintin-navbar ul li a:hover
+{
+  mix-blend-mode  : normal;
+  -webkit-filter  : invert(0%);
+  -moz-filter     : invert(0%);
+  -ms-filter      : invert(0%);
+  -o-filter       : invert(0%);
+  filter          : invert(0%);
+  text-decoration : none;
+  color           : #000000;
+}
+
+
+.tintin-navbar .tintin-navbar-active a
+{
+  mix-blend-mode : normal;
+  -webkit-filter : invert(0%);
+  -moz-filter    : invert(0%);
+  -ms-filter     : invert(0%);
+  -o-filter      : invert(0%);
+  filter         : invert(0%);
+  color          : #ffffff;
+}
+
+.tintin-navbar .tintin-navbar-active a:hover
+{
+  mix-blend-mode  : normal;
+  -webkit-filter  : invert(0%);
+  -moz-filter     : invert(0%);
+  -ms-filter      : invert(0%);
+  -o-filter       : invert(0%);
+  filter          : invert(0%);
+  text-decoration : none;
+  color           : #ffffff;
+}
+
+.tintin-bg-70
+{
+  background-color : rgba(255,255,255,0.15);
+}
+
+.tintin-bg-blue
+{
+  background-color : #94c1e8;
+}
+
+.tintin-fg-blue
+{
+  color : #94c1e8;
+}
+
+.tintin-fg-active
+{
+  color : #ffffff;
+}
+
+.tintin-fg-disabled
+{
+  color          : #000000;
+  -webkit-filter : invert(35%);
+  -moz-filter    : invert(35%);
+  -ms-filter     : invert(35%);
+  -o-filter      : invert(35%);
+  filter         : invert(35%);
+  mix-blend-mode : difference;
+}
+
+footer
+{
+  position       : relative;
+  bottom         : 0px;
+  left           : 0px;
+  width          : 100%;
+  padding-top    : 30px;
+  padding-bottom : 30px;
+}
+
+.container
+{
+  max-width : 50rem;
+}
+
+@media screen and (min-width: 768px)
+{
+
+#wrapper
+{
+  padding-left : 0px;
+}
+
+#wrapper .toggled
+{
+  padding-left : 250px;
+}
+
+#wrapper .toggled #sidebar-wrapper
+{
+  width : 250px;
+}
+
+#wrapper .toggled #page-content-wrapper
+{
+  position     : relative;
+  margin-right : 0px;
+}
+
+#sidebar-wrapper
+{
+  width : 0px;
+}
+
+#page-content-wrapper
+{
+  padding  : 20px 20px 20px 20px;
+  position : relative;
+}
+
+}
+
+/* Generated with Clay, http://fvisser.nl/clay */</style></head><body class="h-100 tintin-fg-black tintin-bg-white"><div id="main-container" class="h-100"><section id="content"><div id="wrapper" class="toggled"><div id="sidebar-wrapper" class="h-100 tintin-bg-blue"><div class="h-100 tintin-bg-70"><p></p></div><ul class="sidebar-nav"><li class="sidebar-brand d-flex tintin-bg-blue"><a href="index.html" class="align-self-center tintin-fg-white">ocamlhs</a></li><li><a href="0-Getting Started.html" class="tintin-fg-disabled">Getting Started</a></li><li><a href="1-Simple Programs.html" class="tintin-fg-disabled">Simple Programs</a></li><li><a href="2-Examples.html" class="tintin-fg-active">Examples</a></li></ul></div><nav class="navbar navbar-expand-lg tintin-doc-topbar tintin-fg-white"><a href="#menu-toggle" id="menu-toggle" class><img src="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/menu.png" class="img-fluid animated rotateOut"><img src="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/close.png" class="img-fluid animated rotateIn"></a></nav><div id="page-content-wrapper"><div class="container"><div class="col"><div class="animated fadeIn"><h1>Examples</h1>
+<p>This page provides you with preconfigured interpreter instances for basic and advanced demos delivered in /examples/ directory.</p>
+<h2>Very basic imperative programming</h2>
+<p><a href="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20contains%20example%20of%20very%20basic%20imperative%20programming.%0A%20*%20For%20more%20please%20see%20Sudoku.ml%0A%20*%0A%20*%29%0Alet%20counter%20%3D%20ref%200%20in%0Alet%20counterMax%20%3D%203%20in%0Awhile%20%28%21counter%29%20%3C%20counterMax%20do%0A%20%20%20%20printf%20%22Counter%20%3D%20%25d%20%3C%20%25d%5Cn%22%20%28%21counter%29%20counterMax%20%7E%0A%20%20%20%20counter%20%3A%3D%20%21counter+1%0Adone">Fullscreen playground here</a></p>
+<p><iframe style="border:none; width:100%" src="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20contains%20example%20of%20very%20basic%20imperative%20programming.%0A%20*%20For%20more%20please%20see%20Sudoku.ml%0A%20*%0A%20*%29%0Alet%20counter%20%3D%20ref%200%20in%0Alet%20counterMax%20%3D%203%20in%0Awhile%20%28%21counter%29%20%3C%20counterMax%20do%0A%20%20%20%20printf%20%22Counter%20%3D%20%25d%20%3C%20%25d%5Cn%22%20%28%21counter%29%20counterMax%20%7E%0A%20%20%20%20counter%20%3A%3D%20%21counter+1%0Adone"></iframe></p>
+<h2>Custom trees operations</h2>
+<p><a href="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20is%20example%20container%20for%20binary%20trees%20with%20labelled%20nodes.%0A%20*%20It%20contains%20few%20very%20simple%20examples.%0A%20*%29%0A%0A%28*%0A%20*%20Binary%20tree%20that%20has%20%27b%20values%20in%20leafs%20and%20%27a%20values%20in%20node%0A%20*%29%0Atype%20%28%27a%2C%20%27b%29%20Tree%20%3D%20Leaf%20of%20%27b%20%7C%20Node%20of%20%28%28%27a%2C%20%27b%29%20Tree%29%20*%20%27a%20*%20%28%28%27a%2C%20%27b%29%20Tree%29%0A%0A%28*%0A%20*%20Fold%20left%20for%20%27a%20%27a%20trees%0A%20*%20First%20goes%20into%20left%20subtree%2C%20then%20to%20node%20value%20and%20then%20to%20right%20subtree%0A%20*%29%0Alet%20rec%20treeFold%20fn%20t%20acc%20%3D%20match%20t%20with%0A%20%20%20%20%20%7C%20%28Node%20%28t1%2C%20n%2C%20t2%29%29%20-%3E%20treeFold%20fn%20t2%20%28fn%20%28treeFold%20fn%20t1%20acc%29%20n%29%0A%20%20%20%20%20%7C%20%28Leaf%20v%29%20-%3E%20fn%20acc%20v%0A%0A%28*%20Retrieves%20a%20list%20of%20all%20values%20stored%20in%20%27a%20%27a%20tree%20*%29%0Alet%20treeVals%20t%20%3D%20let%20fn%20acc%20x%20%3D%20cons%20x%20acc%20in%20treeFold%20fn%20t%20%5B%5D%0A%0A%28*%20Sum%20over%20all%20tree%20leafs%20*%29%0Alet%20treeSum%20t%20%3D%20treeFold%20%28+%29%20t%200%0A%3B%3B%0A%0A%28*%20Example%20tree%20*%29%0Alet%20tree%20%3D%20%28Node%20%28%28Node%20%28%28Leaf%203%29%2C%202%2C%20%28Node%20%28Node%20%28%28Leaf%201%29%2C4%2C%28Leaf%200%29%29%2C%205%2C%20%28Leaf%2011%29%29%29%29%29%2C%201%2C%20%28Node%20%28%28Leaf%200%29%2C%201%2C%20%28Leaf%202%29%29%29%29%29%20in%0AtreeSum%20tree">Fullscreen playground here</a></p>
+<p><iframe style="border:none; width:100%" src="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20is%20example%20container%20for%20binary%20trees%20with%20labelled%20nodes.%0A%20*%20It%20contains%20few%20very%20simple%20examples.%0A%20*%29%0A%0A%28*%0A%20*%20Binary%20tree%20that%20has%20%27b%20values%20in%20leafs%20and%20%27a%20values%20in%20node%0A%20*%29%0Atype%20%28%27a%2C%20%27b%29%20Tree%20%3D%20Leaf%20of%20%27b%20%7C%20Node%20of%20%28%28%27a%2C%20%27b%29%20Tree%29%20*%20%27a%20*%20%28%28%27a%2C%20%27b%29%20Tree%29%0A%0A%28*%0A%20*%20Fold%20left%20for%20%27a%20%27a%20trees%0A%20*%20First%20goes%20into%20left%20subtree%2C%20then%20to%20node%20value%20and%20then%20to%20right%20subtree%0A%20*%29%0Alet%20rec%20treeFold%20fn%20t%20acc%20%3D%20match%20t%20with%0A%20%20%20%20%20%7C%20%28Node%20%28t1%2C%20n%2C%20t2%29%29%20-%3E%20treeFold%20fn%20t2%20%28fn%20%28treeFold%20fn%20t1%20acc%29%20n%29%0A%20%20%20%20%20%7C%20%28Leaf%20v%29%20-%3E%20fn%20acc%20v%0A%0A%28*%20Retrieves%20a%20list%20of%20all%20values%20stored%20in%20%27a%20%27a%20tree%20*%29%0Alet%20treeVals%20t%20%3D%20let%20fn%20acc%20x%20%3D%20cons%20x%20acc%20in%20treeFold%20fn%20t%20%5B%5D%0A%0A%28*%20Sum%20over%20all%20tree%20leafs%20*%29%0Alet%20treeSum%20t%20%3D%20treeFold%20%28+%29%20t%200%0A%3B%3B%0A%0A%28*%20Example%20tree%20*%29%0Alet%20tree%20%3D%20%28Node%20%28%28Node%20%28%28Leaf%203%29%2C%202%2C%20%28Node%20%28Node%20%28%28Leaf%201%29%2C4%2C%28Leaf%200%29%29%2C%205%2C%20%28Leaf%2011%29%29%29%29%29%2C%201%2C%20%28Node%20%28%28Leaf%200%29%2C%201%2C%20%28Leaf%202%29%29%29%29%29%20in%0AtreeSum%20tree"></iframe></p>
+<h2>Basic list operations</h2>
+<p><a href="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20contains%20basic%20list%20operations.%0A%20*%29%0A%0A%28*%20Reversing%20a%20list%20*%29%0Alet%20rev%20list%20%3D%0A%20%20%20%20let%20rec%20aux%20acc%20%3D%20function%0A%20%20%20%20%20%20%20%20%7C%20%5B%5D%20-%3E%20acc%0A%20%20%20%20%20%20%20%20%7C%20h%3A%3At%20-%3E%20aux%20%28cons%20h%20acc%29%20t%20in%0A%20%20%20%20aux%20%5B%5D%20list%0A%3B%3B%0A%0Arev%20%5B%22a%22%3B%20%22b%22%3B%20%22c%22%5D">Fullscreen playground here</a></p>
+<p><iframe style="border:none; width:100%" src="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20contains%20basic%20list%20operations.%0A%20*%29%0A%0A%28*%20Reversing%20a%20list%20*%29%0Alet%20rev%20list%20%3D%0A%20%20%20%20let%20rec%20aux%20acc%20%3D%20function%0A%20%20%20%20%20%20%20%20%7C%20%5B%5D%20-%3E%20acc%0A%20%20%20%20%20%20%20%20%7C%20h%3A%3At%20-%3E%20aux%20%28cons%20h%20acc%29%20t%20in%0A%20%20%20%20aux%20%5B%5D%20list%0A%3B%3B%0A%0Arev%20%5B%22a%22%3B%20%22b%22%3B%20%22c%22%5D"></iframe></p>
+<h2>Higher order functions</h2>
+<p><a href="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20provides%20some%20higher%20order%20functions%20as%20well%0A%20*%20as%20some%20tasty%20applicative-like%20interface%20for%20veriants.%0A%20*%29%0A%0A%28*%20Map%20list%20with%20index%20*%29%0Alet%20rec%20mapi%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20helper%20fn%20l%20index%20%3D%20match%20l%20with%0A%20%20%20%20%20%20%20%20%7C%20%5B%5D%20-%3E%20%5B%5D%0A%20%20%20%20%20%20%20%20%7C%20%28h%3A%3At%29%20-%3E%20cons%20%28fn%20h%20index%29%20%28helper%20fn%20t%20%28index+1%29%29%0A%20%20%20%20in%20helper%20fn%20l%200%0A%0A%28*%20Map%20list%20without%20index%20*%29%0Alet%20rec%20map%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20mapper%20item%20_%20%3D%20fn%20item%20in%20mapi%20mapper%20l%0A%0A%28*%20Filter%20list%20items%20with%20index%20*%29%0Alet%20rec%20filteri%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20helper%20fn%20l%20index%20%3D%20match%20l%20with%0A%20%20%20%20%20%20%20%20%7C%20%5B%5D%20-%3E%20%5B%5D%0A%20%20%20%20%20%20%20%20%7C%20%28h%3A%3At%29%20-%3E%20let%20rest%20%3D%20helper%20fn%20t%20%28index+1%29%20in%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28fn%20h%20index%29%20then%20cons%20h%20rest%20else%20rest%0A%20%20%20%20in%20helper%20fn%20l%200%0A%0A%28*%20Filter%20list%20items%20without%20index%20*%29%0Alet%20rec%20filter%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20filterer%20item%20_%20%3D%20fn%20item%20in%20filteri%20filterer%20l%0A%0A%28*%20Only%20iterate%20over%20list%2C%20ignore%20result%20*%29%0Alet%20rec%20iteri%20fn%20l%20%3D%20ignore%20%28mapi%20fn%20l%29%0Alet%20rec%20iter%20fn%20l%20%3D%20ignore%20%28map%20fn%20l%29%0A%0A%28*%20Define%20computation%20abstraction%20*%29%0Atype%20%28%27a%2C%27b%29%20Computation%20%3D%20Bad%20of%20%27b%20%7C%20Ok%20of%20%27a%0A%0Alet%20rec%20fmap%20f%20%3D%20function%0A%20%20%20%20%20%7C%20%28Bad%20b%29%20-%3E%20Bad%20b%0A%20%20%20%20%20%7C%20%28Ok%20a%29%20-%3E%20Ok%20%28f%20a%29%0Alet%20return%20v%20%3D%20Ok%20v%0Alet%20pure%20v%20%3D%20Ok%20v%0A%0A%28*%20The%20same%20thing%20as%20with%20Haskell%20applicatives%20*%29%0Alet%20%28%3C*%3E%29%20compFn%20compVal%20%3D%20match%20%28compFn%2C%20compVal%29%20with%0A%20%20%20%20%7C%20%28%28Bad%20b%29%2C%20_%29%20-%3E%20Bad%20b%0A%20%20%20%20%7C%20%28%28Ok%20fn%29%2C%20%28Bad%20b%29%29%20-%3E%20Bad%20b%0A%20%20%20%20%7C%20%28%28Ok%20fn%29%2C%20%28Ok%20v%29%29%20-%3E%20Ok%20%28fn%20v%29%0A%0Alet%20%28%3C%24%3E%29%20fn%20arg%20%3D%20fmap%20fn%20arg%0A%0A%28*%20Define%20lift%3A%20%28%27a%20-%3E%20%27b%20-%3E%20%27c%29%20-%3E%20%28%27a%2C%27d%29%20Computation%20-%3E%20%28%27b%2C%27e%29%20Computation%20-%3E%20%28%27c%2C%27f%29%20Computation%20*%29%0Alet%20liftA2%20f%20a%20b%20%3D%20%28f%20%3C%24%3E%20a%29%20%3C*%3E%20b%0A%0A%3B%3B%0A%0A%28%28+%29%20%3C%24%3E%20Ok%203%29%20%3C*%3E%20Ok%205">Fullscreen playground here</a></p>
+<p><iframe style="border:none; width:100%" src="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20provides%20some%20higher%20order%20functions%20as%20well%0A%20*%20as%20some%20tasty%20applicative-like%20interface%20for%20veriants.%0A%20*%29%0A%0A%28*%20Map%20list%20with%20index%20*%29%0Alet%20rec%20mapi%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20helper%20fn%20l%20index%20%3D%20match%20l%20with%0A%20%20%20%20%20%20%20%20%7C%20%5B%5D%20-%3E%20%5B%5D%0A%20%20%20%20%20%20%20%20%7C%20%28h%3A%3At%29%20-%3E%20cons%20%28fn%20h%20index%29%20%28helper%20fn%20t%20%28index+1%29%29%0A%20%20%20%20in%20helper%20fn%20l%200%0A%0A%28*%20Map%20list%20without%20index%20*%29%0Alet%20rec%20map%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20mapper%20item%20_%20%3D%20fn%20item%20in%20mapi%20mapper%20l%0A%0A%28*%20Filter%20list%20items%20with%20index%20*%29%0Alet%20rec%20filteri%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20helper%20fn%20l%20index%20%3D%20match%20l%20with%0A%20%20%20%20%20%20%20%20%7C%20%5B%5D%20-%3E%20%5B%5D%0A%20%20%20%20%20%20%20%20%7C%20%28h%3A%3At%29%20-%3E%20let%20rest%20%3D%20helper%20fn%20t%20%28index+1%29%20in%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28fn%20h%20index%29%20then%20cons%20h%20rest%20else%20rest%0A%20%20%20%20in%20helper%20fn%20l%200%0A%0A%28*%20Filter%20list%20items%20without%20index%20*%29%0Alet%20rec%20filter%20fn%20l%20%3D%0A%20%20%20%20let%20rec%20filterer%20item%20_%20%3D%20fn%20item%20in%20filteri%20filterer%20l%0A%0A%28*%20Only%20iterate%20over%20list%2C%20ignore%20result%20*%29%0Alet%20rec%20iteri%20fn%20l%20%3D%20ignore%20%28mapi%20fn%20l%29%0Alet%20rec%20iter%20fn%20l%20%3D%20ignore%20%28map%20fn%20l%29%0A%0A%28*%20Define%20computation%20abstraction%20*%29%0Atype%20%28%27a%2C%27b%29%20Computation%20%3D%20Bad%20of%20%27b%20%7C%20Ok%20of%20%27a%0A%0Alet%20rec%20fmap%20f%20%3D%20function%0A%20%20%20%20%20%7C%20%28Bad%20b%29%20-%3E%20Bad%20b%0A%20%20%20%20%20%7C%20%28Ok%20a%29%20-%3E%20Ok%20%28f%20a%29%0Alet%20return%20v%20%3D%20Ok%20v%0Alet%20pure%20v%20%3D%20Ok%20v%0A%0A%28*%20The%20same%20thing%20as%20with%20Haskell%20applicatives%20*%29%0Alet%20%28%3C*%3E%29%20compFn%20compVal%20%3D%20match%20%28compFn%2C%20compVal%29%20with%0A%20%20%20%20%7C%20%28%28Bad%20b%29%2C%20_%29%20-%3E%20Bad%20b%0A%20%20%20%20%7C%20%28%28Ok%20fn%29%2C%20%28Bad%20b%29%29%20-%3E%20Bad%20b%0A%20%20%20%20%7C%20%28%28Ok%20fn%29%2C%20%28Ok%20v%29%29%20-%3E%20Ok%20%28fn%20v%29%0A%0Alet%20%28%3C%24%3E%29%20fn%20arg%20%3D%20fmap%20fn%20arg%0A%0A%28*%20Define%20lift%3A%20%28%27a%20-%3E%20%27b%20-%3E%20%27c%29%20-%3E%20%28%27a%2C%27d%29%20Computation%20-%3E%20%28%27b%2C%27e%29%20Computation%20-%3E%20%28%27c%2C%27f%29%20Computation%20*%29%0Alet%20liftA2%20f%20a%20b%20%3D%20%28f%20%3C%24%3E%20a%29%20%3C*%3E%20b%0A%0A%3B%3B%0A%0A%28%28+%29%20%3C%24%3E%20Ok%203%29%20%3C*%3E%20Ok%205"></iframe></p>
+<h2>RPN Regex parser</h2>
+<p><a href="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20provides%20a%20regular%20expressions%20simple%20matching%20library.%0A%20*%20You%20can%20test%20if%20a%20given%20string%20input%20matches%20the%20regular%20expression.%0A%20*%0A%20*%20Due%20to%20simplicity%20regular%20expressions%20are%20specified%20using%20RPN%20notation%3A%0A%20*%0A%20*%20%20%20%20%20%3Ctoken%3E%20%20-%20Push%20string%20literal%20onto%20stack%0A%20*%20%20%20%20%20*%20%20%20%20%20%20%20%20-%20Take%20a%20Kleene%20star%20of%20top%20element%0A%20*%20%20%20%20%20%7C%20%20%20%20%20%20%20%20-%20Take%20union%20of%20two%20top%20elements%0A%20*%20%20%20%20%20+%20%20%20%20%20%20%20%20-%20Concatenate%20two%20top%20elements%0A%20*%20%20%20%20%20null%20%20%20%20%20-%20Null%20token%0A%20*%20%20%20%20%20eps%20%20%20%20%20%20-%20Epsilon%20string%0A%20*%20%20%20%20%20..%20%20%20%20%20%20%20-%20Space%0A%20*%0A%20*%20%20By%20default%20tokens%20are%20spearated%20by%20spaces%20and%20after%20the%20entire%20RPN%20parsing%20all%0A%20*%20%20left%20tokens%20on%20a%20stack%20are%20glued%20together%20using%20concatenation.%0A%20*%20%20So%20expression%3A%0A%20*%20%20%20%20%20%22abc%20def%22%0A%20*%20%20is%20equivalent%20to%0A%20*%20%20%20%20%20%22abc%20def%20+%22%0A%20*%0A%20*%20%20So%20if%20you%20want%20to%20type%20eps%20as%20literal%20and%20to%20epsilon%20string%20just%20use%20+%20operator%3A%0A%20*%20%20%20%20%20%22ep%20s%20+%22%0A%20*%29%0A%0A%28*%20Regular%20expression%20type%20*%29%0Atype%20Regex%20%3D%0A%20%20%20%20%7C%20Null%0A%20%20%20%20%7C%20Empty%0A%20%20%20%20%7C%20Lit%20of%20String%0A%20%20%20%20%7C%20Union%20of%20Regex%20*%20Regex%0A%20%20%20%20%7C%20Concat%20of%20Regex%20*%20Regex%0A%20%20%20%20%7C%20Star%20of%20Regex%0A%0A%28*%20Pretty%20printer%20for%20regular%20expressions%20*%29%0Alet%20rec%20regex_to_str%20r%20%3D%20match%20r%20with%0A%20%20%20%20%7C%20Null%20-%3E%20%22%22%0A%20%20%20%20%7C%20Empty%20-%3E%20%22eps%22%0A%20%20%20%20%7C%20%28Lit%20str%29%20-%3E%20%22%27%22%20%5E%20str%20%5E%20%22%27%22%0A%20%20%20%20%7C%20%28Union%20%28l%2Cr%29%29%20-%3E%20%22%28%28%22%20%5E%20%28regex_to_str%20l%29%20%5E%20%22%7C%22%20%5E%20%28regex_to_str%20r%29%20%5E%20%22%29%29%22%0A%20%20%20%20%7C%20%28Concat%20%28l%2Cr%29%29%20-%3E%20%22%28%22%20%5E%20%28regex_to_str%20l%29%20%5E%20%22%29%28%22%20%5E%20%28regex_to_str%20r%29%20%5E%20%22%29%22%0A%20%20%20%20%7C%20%28Star%20e%29%20-%3E%20%22%28%22%20%5E%20%28regex_to_str%20e%29%20%5E%20%22%29*%22%0A%0A%28*%20Check%20if%20run%20was%20accepting%20one%20*%29%0Alet%20rec%20is_successful%20arg%20%3D%20match%20arg%20with%0A%20%20%20%20%7C%20Null%20-%3E%20false%0A%20%20%20%20%7C%20Empty%20-%3E%20true%0A%20%20%20%20%7C%20%28Lit%20_%29%20-%3E%20false%0A%20%20%20%20%7C%20%28Union%20%28t1%2C%20t2%29%29%20-%3E%20%28is_successful%20t1%29%20%7C%7C%20%28is_successful%20t2%29%0A%20%20%20%20%7C%20%28Concat%20%28t1%2C%20t2%29%29%20-%3E%20%28is_successful%20t1%29%20%26%26%20%28is_successful%20t2%29%0A%20%20%20%20%7C%20%28Star%20t%29%20-%3E%20true%0A%0A%28*%20Simplifies%20regular%20expression%20*%29%0Alet%20rec%20compile_once%20arg%20%3D%20match%20arg%20with%0A%20%20%20%20%7C%20Null%20-%3E%20Null%0A%20%20%20%20%7C%20Empty%20-%3E%20Empty%0A%20%20%20%20%7C%20%28Lit%20c%29%20-%3E%20Lit%20c%0A%20%20%20%20%7C%20%28Union%20%28Null%2C%20t%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Union%20%28t%2C%20Null%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Union%20%28t%2C%20u%29%29%20-%3E%20if%20t%20%3D%3D%20u%20then%20t%20else%20Union%20%28compile_once%20t%2C%20compile_once%20u%29%0A%20%20%20%20%7C%20%28Concat%20%28Null%2C%20t%29%29%20-%3E%20Null%0A%20%20%20%20%7C%20%28Concat%20%28t%2C%20Null%29%29%20-%3E%20Null%0A%20%20%20%20%7C%20%28Concat%20%28Empty%2C%20t%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Concat%20%28t%2C%20Empty%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Concat%20%28t%2C%20u%29%29%20-%3E%20Concat%20%28compile_once%20t%2C%20compile_once%20u%29%0A%20%20%20%20%7C%20%28Star%20Null%29%20-%3E%20Null%0A%20%20%20%20%7C%20%28Star%20Empty%29%20-%3E%20Empty%0A%20%20%20%20%7C%20%28Star%20t%29%20-%3E%20Star%20%28compile_once%20t%29%0A%0A%28*%20This%20find%20a%20fixpoint%20*%29%0Alet%20rec%20until_stable%20fn%20arg%20%3D%20if%20%28fn%20arg%29%20%3D%3D%20arg%20then%20arg%20else%20until_stable%20fn%20%28fn%20arg%29%0A%0A%28*%20Compile%20input%20regular%20expression%20*%29%0Alet%20rec%20compile%20%3D%20until_stable%20compile_once%0A%0A%28*%20Perform%20single%20step%20of%20automata%20*%29%0Alet%20rec%20step%20t%20c%20%3D%0A%20%20%20%20match%20t%20with%0A%20%20%20%20%7C%20Null%20-%3E%20Null%0A%20%20%20%20%7C%20Empty%20-%3E%20Null%0A%20%20%20%20%7C%20%28Lit%20c2%29%20-%3E%20if%20c%20%3D%3D%20c2%20then%20Empty%20else%20Null%0A%20%20%20%20%7C%20%28Union%20%28u%2C%20w%29%29%20-%3E%20Union%20%28step%20u%20c%2C%20step%20w%20c%29%0A%20%20%20%20%7C%20%28Concat%20%28u%2C%20w%29%29%20-%3E%0A%20%20%20%20%20%20%20%20if%20is_successful%20u%20then%0A%20%20%20%20%20%20%20%20%20%20Union%20%28Concat%20%28step%20u%20c%2C%20w%29%2C%20step%20w%20c%29%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%20%20Concat%20%28step%20u%20c%2C%20w%29%0A%20%20%20%20%7C%20%28Star%20u%29%20-%3E%20Concat%20%28step%20u%20c%2C%20Star%20u%29%0A%0A%28*%20Compile%20once%20and%20proceed%20*%29%0Alet%20rec%20step_and_compile%20t%20c%20%3D%20compile%20%28step%20t%20c%29%0A%0A%28*%20Run%20automata%20on%20a%20given%20input%20*%29%0Alet%20rec%20run%20t%20s%20%3D%20foldl%20step_and_compile%20t%20s%0A%0A%28*%20Check%20if%20automata%20run%20is%20accepting%20*%29%0Alet%20rec%20accepts%20t%20s%20%3D%20is_successful%20%28run%20t%20s%29%0A%0A%28*%20Helper%20to%20evaluate%20RPN%20binary%20actions%20*%29%0Alet%20binop%20op%20%3D%20function%0A%20%20%7C%20b%3A%3Aa%3A%3Ar%20-%3E%20cons%20%28op%20a%20b%29%20r%0A%20%20%7C%20_%20-%3E%20failwith%20%22invalid%20expression%22%0A%0A%28*%20Helper%20to%20evaluate%20RPN%20unary%20actions%20*%29%0Alet%20uniop%20op%20%3D%20function%0A%20%20%7C%20a%3A%3Ar%20-%3E%20cons%20%28op%20a%29%20r%0A%20%20%7C%20_%20-%3E%20failwith%20%22invalid%20expression%22%0A%0A%28*%20Interpret%20RPN%20tokens%20*%29%0Alet%20interp%20s%20%3D%0A%20%20let%20concatOp%20a%20b%20%3D%20Concat%20%28a%2Cb%29%20in%0A%20%20let%20unionOp%20a%20b%20%3D%20Union%20%28a%2Cb%29%20in%0A%20%20let%20starOp%20a%20%3D%20Star%20a%20in%0A%20%20let%20litOp%20a%20%3D%20Lit%20a%20in%0A%20%20let%20createLit%20a%20%3D%20match%20a%20with%0A%20%20%20%20%7C%20%22null%22%20-%3E%20Null%0A%20%20%20%20%7C%20%22eps%22%20-%3E%20Empty%0A%20%20%20%20%7C%20%22..%22%20-%3E%20Lit%20%22%20%22%0A%20%20%20%20%7C%20str%20-%3E%20foldl%20%28concatOp%29%20Empty%20%28map%20litOp%20%28drop%201%20%28string_split%20%22%22%20str%29%29%29%0A%20%20in%20function%0A%20%20%20%20%7C%20%22*%22%20-%3E%20%22star%22%2C%20%20%20%20%20%20uniop%20%28starOp%29%20s%0A%20%20%20%20%7C%20%22+%22%20-%3E%20%22concat%22%2C%20%20%20%20binop%20%28concatOp%29%20s%0A%20%20%20%20%7C%20%22%7C%22%20-%3E%20%22union%22%2C%20%20%20%20%20binop%20%28unionOp%29%20s%0A%20%20%20%20%7C%20str%20-%3E%20%22push%22%2C%20%28cons%20%28createLit%20str%29%20s%29%0A%0A%28*%20Helper%20function%20to%20run%20interp%20function%20*%29%0Alet%20interp_rpn%20s%20inp%20%3D%0A%20%20let%20%28op%2Cs2%29%20%3D%20interp%20s%20inp%20in%20s2%0A%0A%28*%20Parse%20string%20to%20Regex%20object%20*%29%0Alet%20rpn_eval%20str%20%3D%0A%20%20let%20ss%20%3D%20string_split%20%22%20%22%20str%20in%0A%20%20let%20results%20%3D%20foldl%20interp_rpn%20%5B%5D%20ss%20in%0A%20%20let%20final_fold_fn%20acc%20e%20%3D%20match%20acc%20with%0A%20%20%20%20%7C%20Null%20-%3E%20e%0A%20%20%20%20%7C%20sth%20-%3E%20Concat%20%28e%2Csth%29%0A%20%20in%0A%20%20%20%20foldl%20final_fold_fn%20Null%20results%0A%0Alet%20test_cnt%20%3D%20ref%200%0Alet%20regex_matches%20reg%20str%20%3D%20let%20r%20%3D%20rpn_eval%20reg%20in%0A%20%20%20%20let%20result%20%3D%20accepts%20r%20%28drop%201%20%28string_split%20%22%22%20str%29%29%20in%0A%20%20%20%20%20%20%20%20%28test_cnt%20%3A%3D%20%28%21test_cnt%29%20+%201%29%20%7E%0A%20%20%20%20%20%20%20%20printf%20%22Regex%20test%20%25d%20%7C%20%2530s%20%20%20%7C%20%20%2520s%20%20%20%20%20%7C%20%2510s%5Cn%22%20%28%21test_cnt%29%20%28%22%28%22%5Ereg%5E%22%29%22%29%20%28%22%27%22%5Estr%5E%22%27%22%29%20result%20%7E%0A%20%20%20%20%20%20%20%20result%0A%0A%3B%3B%0A%0Aprintf%20%22%5Cn%20%2560s%20%5Cn%22%20%22%3D%3D%3D%3D%3D%3D%20RPN%20REGEX%20TESTING%20%3D%3D%3D%3D%3D%22%20%7E%0A%0A%28*%20This%20is%20equivalent%20to%20/a%28%20z*%7Cq*%20%29/%20*%29%0Aregex_matches%20%22a%20z%20*%20q%20*%20%7C%22%20%22azzzz%22%20%7E%0A%0A%28*%20This%20is%20equivalent%20to%20/%28ala%7Cbartek%29%20ma%20kota/%20*%29%0Aregex_matches%20%22ala%20bartek%20%7C%20..%20ma%20..%20kota%22%20%22ala%20ma%20kota%22%20%7E%0Aregex_matches%20%22ala%20bartek%20%7C%20..%20ma%20..%20kota%22%20%22bartek%20ma%20kota%22%20%7E%0Aregex_matches%20%22ala%20bartek%20%7C%20..%20ma%20..%20kota%22%20%22ala%20makota%22%20%7E%0A%0A%28*%20This%20is%20equivalent%20to%20/%28a%7Cb%29%28%20a*%20%29z/%20*%29%0Aregex_matches%20%22a%20b%20%7C%20a%20*%20+%20z%22%20%22baaaz%22%20%7E%0Aregex_matches%20%22a%20b%20%7C%20a%20*%20+%20z%22%20%22baaabz%22%20%7E%0A%0Aprintf%20%22%5Cn%22%20%7E%0Aignore%20%22%22">Fullscreen playground here</a></p>
+<p><iframe style="border:none; width:100%" src="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20provides%20a%20regular%20expressions%20simple%20matching%20library.%0A%20*%20You%20can%20test%20if%20a%20given%20string%20input%20matches%20the%20regular%20expression.%0A%20*%0A%20*%20Due%20to%20simplicity%20regular%20expressions%20are%20specified%20using%20RPN%20notation%3A%0A%20*%0A%20*%20%20%20%20%20%3Ctoken%3E%20%20-%20Push%20string%20literal%20onto%20stack%0A%20*%20%20%20%20%20*%20%20%20%20%20%20%20%20-%20Take%20a%20Kleene%20star%20of%20top%20element%0A%20*%20%20%20%20%20%7C%20%20%20%20%20%20%20%20-%20Take%20union%20of%20two%20top%20elements%0A%20*%20%20%20%20%20+%20%20%20%20%20%20%20%20-%20Concatenate%20two%20top%20elements%0A%20*%20%20%20%20%20null%20%20%20%20%20-%20Null%20token%0A%20*%20%20%20%20%20eps%20%20%20%20%20%20-%20Epsilon%20string%0A%20*%20%20%20%20%20..%20%20%20%20%20%20%20-%20Space%0A%20*%0A%20*%20%20By%20default%20tokens%20are%20spearated%20by%20spaces%20and%20after%20the%20entire%20RPN%20parsing%20all%0A%20*%20%20left%20tokens%20on%20a%20stack%20are%20glued%20together%20using%20concatenation.%0A%20*%20%20So%20expression%3A%0A%20*%20%20%20%20%20%22abc%20def%22%0A%20*%20%20is%20equivalent%20to%0A%20*%20%20%20%20%20%22abc%20def%20+%22%0A%20*%0A%20*%20%20So%20if%20you%20want%20to%20type%20eps%20as%20literal%20and%20to%20epsilon%20string%20just%20use%20+%20operator%3A%0A%20*%20%20%20%20%20%22ep%20s%20+%22%0A%20*%29%0A%0A%28*%20Regular%20expression%20type%20*%29%0Atype%20Regex%20%3D%0A%20%20%20%20%7C%20Null%0A%20%20%20%20%7C%20Empty%0A%20%20%20%20%7C%20Lit%20of%20String%0A%20%20%20%20%7C%20Union%20of%20Regex%20*%20Regex%0A%20%20%20%20%7C%20Concat%20of%20Regex%20*%20Regex%0A%20%20%20%20%7C%20Star%20of%20Regex%0A%0A%28*%20Pretty%20printer%20for%20regular%20expressions%20*%29%0Alet%20rec%20regex_to_str%20r%20%3D%20match%20r%20with%0A%20%20%20%20%7C%20Null%20-%3E%20%22%22%0A%20%20%20%20%7C%20Empty%20-%3E%20%22eps%22%0A%20%20%20%20%7C%20%28Lit%20str%29%20-%3E%20%22%27%22%20%5E%20str%20%5E%20%22%27%22%0A%20%20%20%20%7C%20%28Union%20%28l%2Cr%29%29%20-%3E%20%22%28%28%22%20%5E%20%28regex_to_str%20l%29%20%5E%20%22%7C%22%20%5E%20%28regex_to_str%20r%29%20%5E%20%22%29%29%22%0A%20%20%20%20%7C%20%28Concat%20%28l%2Cr%29%29%20-%3E%20%22%28%22%20%5E%20%28regex_to_str%20l%29%20%5E%20%22%29%28%22%20%5E%20%28regex_to_str%20r%29%20%5E%20%22%29%22%0A%20%20%20%20%7C%20%28Star%20e%29%20-%3E%20%22%28%22%20%5E%20%28regex_to_str%20e%29%20%5E%20%22%29*%22%0A%0A%28*%20Check%20if%20run%20was%20accepting%20one%20*%29%0Alet%20rec%20is_successful%20arg%20%3D%20match%20arg%20with%0A%20%20%20%20%7C%20Null%20-%3E%20false%0A%20%20%20%20%7C%20Empty%20-%3E%20true%0A%20%20%20%20%7C%20%28Lit%20_%29%20-%3E%20false%0A%20%20%20%20%7C%20%28Union%20%28t1%2C%20t2%29%29%20-%3E%20%28is_successful%20t1%29%20%7C%7C%20%28is_successful%20t2%29%0A%20%20%20%20%7C%20%28Concat%20%28t1%2C%20t2%29%29%20-%3E%20%28is_successful%20t1%29%20%26%26%20%28is_successful%20t2%29%0A%20%20%20%20%7C%20%28Star%20t%29%20-%3E%20true%0A%0A%28*%20Simplifies%20regular%20expression%20*%29%0Alet%20rec%20compile_once%20arg%20%3D%20match%20arg%20with%0A%20%20%20%20%7C%20Null%20-%3E%20Null%0A%20%20%20%20%7C%20Empty%20-%3E%20Empty%0A%20%20%20%20%7C%20%28Lit%20c%29%20-%3E%20Lit%20c%0A%20%20%20%20%7C%20%28Union%20%28Null%2C%20t%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Union%20%28t%2C%20Null%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Union%20%28t%2C%20u%29%29%20-%3E%20if%20t%20%3D%3D%20u%20then%20t%20else%20Union%20%28compile_once%20t%2C%20compile_once%20u%29%0A%20%20%20%20%7C%20%28Concat%20%28Null%2C%20t%29%29%20-%3E%20Null%0A%20%20%20%20%7C%20%28Concat%20%28t%2C%20Null%29%29%20-%3E%20Null%0A%20%20%20%20%7C%20%28Concat%20%28Empty%2C%20t%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Concat%20%28t%2C%20Empty%29%29%20-%3E%20t%0A%20%20%20%20%7C%20%28Concat%20%28t%2C%20u%29%29%20-%3E%20Concat%20%28compile_once%20t%2C%20compile_once%20u%29%0A%20%20%20%20%7C%20%28Star%20Null%29%20-%3E%20Null%0A%20%20%20%20%7C%20%28Star%20Empty%29%20-%3E%20Empty%0A%20%20%20%20%7C%20%28Star%20t%29%20-%3E%20Star%20%28compile_once%20t%29%0A%0A%28*%20This%20find%20a%20fixpoint%20*%29%0Alet%20rec%20until_stable%20fn%20arg%20%3D%20if%20%28fn%20arg%29%20%3D%3D%20arg%20then%20arg%20else%20until_stable%20fn%20%28fn%20arg%29%0A%0A%28*%20Compile%20input%20regular%20expression%20*%29%0Alet%20rec%20compile%20%3D%20until_stable%20compile_once%0A%0A%28*%20Perform%20single%20step%20of%20automata%20*%29%0Alet%20rec%20step%20t%20c%20%3D%0A%20%20%20%20match%20t%20with%0A%20%20%20%20%7C%20Null%20-%3E%20Null%0A%20%20%20%20%7C%20Empty%20-%3E%20Null%0A%20%20%20%20%7C%20%28Lit%20c2%29%20-%3E%20if%20c%20%3D%3D%20c2%20then%20Empty%20else%20Null%0A%20%20%20%20%7C%20%28Union%20%28u%2C%20w%29%29%20-%3E%20Union%20%28step%20u%20c%2C%20step%20w%20c%29%0A%20%20%20%20%7C%20%28Concat%20%28u%2C%20w%29%29%20-%3E%0A%20%20%20%20%20%20%20%20if%20is_successful%20u%20then%0A%20%20%20%20%20%20%20%20%20%20Union%20%28Concat%20%28step%20u%20c%2C%20w%29%2C%20step%20w%20c%29%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%20%20Concat%20%28step%20u%20c%2C%20w%29%0A%20%20%20%20%7C%20%28Star%20u%29%20-%3E%20Concat%20%28step%20u%20c%2C%20Star%20u%29%0A%0A%28*%20Compile%20once%20and%20proceed%20*%29%0Alet%20rec%20step_and_compile%20t%20c%20%3D%20compile%20%28step%20t%20c%29%0A%0A%28*%20Run%20automata%20on%20a%20given%20input%20*%29%0Alet%20rec%20run%20t%20s%20%3D%20foldl%20step_and_compile%20t%20s%0A%0A%28*%20Check%20if%20automata%20run%20is%20accepting%20*%29%0Alet%20rec%20accepts%20t%20s%20%3D%20is_successful%20%28run%20t%20s%29%0A%0A%28*%20Helper%20to%20evaluate%20RPN%20binary%20actions%20*%29%0Alet%20binop%20op%20%3D%20function%0A%20%20%7C%20b%3A%3Aa%3A%3Ar%20-%3E%20cons%20%28op%20a%20b%29%20r%0A%20%20%7C%20_%20-%3E%20failwith%20%22invalid%20expression%22%0A%0A%28*%20Helper%20to%20evaluate%20RPN%20unary%20actions%20*%29%0Alet%20uniop%20op%20%3D%20function%0A%20%20%7C%20a%3A%3Ar%20-%3E%20cons%20%28op%20a%29%20r%0A%20%20%7C%20_%20-%3E%20failwith%20%22invalid%20expression%22%0A%0A%28*%20Interpret%20RPN%20tokens%20*%29%0Alet%20interp%20s%20%3D%0A%20%20let%20concatOp%20a%20b%20%3D%20Concat%20%28a%2Cb%29%20in%0A%20%20let%20unionOp%20a%20b%20%3D%20Union%20%28a%2Cb%29%20in%0A%20%20let%20starOp%20a%20%3D%20Star%20a%20in%0A%20%20let%20litOp%20a%20%3D%20Lit%20a%20in%0A%20%20let%20createLit%20a%20%3D%20match%20a%20with%0A%20%20%20%20%7C%20%22null%22%20-%3E%20Null%0A%20%20%20%20%7C%20%22eps%22%20-%3E%20Empty%0A%20%20%20%20%7C%20%22..%22%20-%3E%20Lit%20%22%20%22%0A%20%20%20%20%7C%20str%20-%3E%20foldl%20%28concatOp%29%20Empty%20%28map%20litOp%20%28drop%201%20%28string_split%20%22%22%20str%29%29%29%0A%20%20in%20function%0A%20%20%20%20%7C%20%22*%22%20-%3E%20%22star%22%2C%20%20%20%20%20%20uniop%20%28starOp%29%20s%0A%20%20%20%20%7C%20%22+%22%20-%3E%20%22concat%22%2C%20%20%20%20binop%20%28concatOp%29%20s%0A%20%20%20%20%7C%20%22%7C%22%20-%3E%20%22union%22%2C%20%20%20%20%20binop%20%28unionOp%29%20s%0A%20%20%20%20%7C%20str%20-%3E%20%22push%22%2C%20%28cons%20%28createLit%20str%29%20s%29%0A%0A%28*%20Helper%20function%20to%20run%20interp%20function%20*%29%0Alet%20interp_rpn%20s%20inp%20%3D%0A%20%20let%20%28op%2Cs2%29%20%3D%20interp%20s%20inp%20in%20s2%0A%0A%28*%20Parse%20string%20to%20Regex%20object%20*%29%0Alet%20rpn_eval%20str%20%3D%0A%20%20let%20ss%20%3D%20string_split%20%22%20%22%20str%20in%0A%20%20let%20results%20%3D%20foldl%20interp_rpn%20%5B%5D%20ss%20in%0A%20%20let%20final_fold_fn%20acc%20e%20%3D%20match%20acc%20with%0A%20%20%20%20%7C%20Null%20-%3E%20e%0A%20%20%20%20%7C%20sth%20-%3E%20Concat%20%28e%2Csth%29%0A%20%20in%0A%20%20%20%20foldl%20final_fold_fn%20Null%20results%0A%0Alet%20test_cnt%20%3D%20ref%200%0Alet%20regex_matches%20reg%20str%20%3D%20let%20r%20%3D%20rpn_eval%20reg%20in%0A%20%20%20%20let%20result%20%3D%20accepts%20r%20%28drop%201%20%28string_split%20%22%22%20str%29%29%20in%0A%20%20%20%20%20%20%20%20%28test_cnt%20%3A%3D%20%28%21test_cnt%29%20+%201%29%20%7E%0A%20%20%20%20%20%20%20%20printf%20%22Regex%20test%20%25d%20%7C%20%2530s%20%20%20%7C%20%20%2520s%20%20%20%20%20%7C%20%2510s%5Cn%22%20%28%21test_cnt%29%20%28%22%28%22%5Ereg%5E%22%29%22%29%20%28%22%27%22%5Estr%5E%22%27%22%29%20result%20%7E%0A%20%20%20%20%20%20%20%20result%0A%0A%3B%3B%0A%0Aprintf%20%22%5Cn%20%2560s%20%5Cn%22%20%22%3D%3D%3D%3D%3D%3D%20RPN%20REGEX%20TESTING%20%3D%3D%3D%3D%3D%22%20%7E%0A%0A%28*%20This%20is%20equivalent%20to%20/a%28%20z*%7Cq*%20%29/%20*%29%0Aregex_matches%20%22a%20z%20*%20q%20*%20%7C%22%20%22azzzz%22%20%7E%0A%0A%28*%20This%20is%20equivalent%20to%20/%28ala%7Cbartek%29%20ma%20kota/%20*%29%0Aregex_matches%20%22ala%20bartek%20%7C%20..%20ma%20..%20kota%22%20%22ala%20ma%20kota%22%20%7E%0Aregex_matches%20%22ala%20bartek%20%7C%20..%20ma%20..%20kota%22%20%22bartek%20ma%20kota%22%20%7E%0Aregex_matches%20%22ala%20bartek%20%7C%20..%20ma%20..%20kota%22%20%22ala%20makota%22%20%7E%0A%0A%28*%20This%20is%20equivalent%20to%20/%28a%7Cb%29%28%20a*%20%29z/%20*%29%0Aregex_matches%20%22a%20b%20%7C%20a%20*%20+%20z%22%20%22baaaz%22%20%7E%0Aregex_matches%20%22a%20b%20%7C%20a%20*%20+%20z%22%20%22baaabz%22%20%7E%0A%0Aprintf%20%22%5Cn%22%20%7E%0Aignore%20%22%22"></iframe></p>
+</div></div></div></div></div></section><div class="tintin-doc-footer clear-fix"><div class="row next-prev"><div class="col-md-4 offset-md-4"><a href="1-Simple Programs.html">&lt; Previous: Simple Programs</a></div></div><div class="float-right"><div style="float: left" class="d-inline"><p class>Site generated with </p></div><a style="float: left" href="https://theam.github.io/tintin"><img src="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/logo.svg" class="filter-gray"></a><div class="clear-fix float-right"><span style="float:left">&mdash; &copy; 2018 </span><a href="http://theam.io" class="float:left"><img src="http://theam.io/logo_theam.png" class="footer-theam"></a></div></div></div></div><script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script><script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/haskell.min.js"></script><script src="https://cdn.rawgit.com/icons8/bower-webicon/v0.10.7/jquery-webicon.min.js"></script><script>hljs.initHighlightingOnLoad()</script><script>$(function () {$("#menu-toggle").click(function(e) {e.preventDefault();$("#wrapper").toggleClass("toggled");$("#menu-toggle img").toggleClass("rotateIn rotateOut");})});</script><script src="https://cdn.jsdelivr.net/npm/katex@0.10.0-alpha/dist/katex.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/contrib/auto-render.min.js"></script><script>renderMathInElement(document.body);</script></body></html>
