@@ -103,6 +103,30 @@ freshTypeVar = do
   put s { count = count s + 1 }
   return $ TypeVar $ TV (letters !! count s)
 
+freshCountInt :: Infer Int
+freshCountInt = do
+  s <- get
+  put s { tCount = tCount s + 1 }
+  return $ tCount s
+
+getTagIndex :: String -> Infer Int
+getTagIndex tagName = do
+  s <- get
+  case Map.lookup tagName (tagMap s) of
+    (Just i) -> return i
+    Nothing -> do
+      c <- freshCountInt
+      s <- get
+      put s { tagMap = Map.insert tagName c (tagMap s) }
+      return c
+
+freshTypeVarPlaceholders :: Int -> Infer [Type]
+freshTypeVarPlaceholders n = do
+  r <- foldrM (\_ acc -> do
+    tv <- freshTypeVar
+    return $ acc ++ [tv]) [] (replicate n 0)
+  return r
+
 -- | Translates AST node representing "rec" keyword into boolean
 isRec :: LetRecKeyword -> Bool
 isRec LetRecYes = True
@@ -158,6 +182,7 @@ normalizeType ord (TypeTuple a b        ) = TypeTuple (normalizeType ord a) (nor
 normalizeType ord (TypeList   a         ) = TypeList (normalizeType ord a)
 normalizeType _ (TypeStatic a         ) = TypeStatic a
 normalizeType ord (TypeComplex name deps) = TypeComplex name $ map (normalizeType ord) deps
+normalizeType ord (TypePoly alternatives) = TypePoly $ map (normalizeType ord) alternatives
 normalizeType ord (TypeVar a            ) = case Prelude.lookup a ord of
   Just x  -> TypeVar x
   Nothing -> error "Type variable does not exist in type signature"

@@ -40,6 +40,7 @@ data Type
   | TypeTuple Type Type
   | TypeUnit
   | TypeComplex String [Type]
+  | TypePoly [Type]
   | TypeAnnotated TypeAnnotation
   deriving (Show, Eq)
 
@@ -52,6 +53,8 @@ getTypeFVNames :: Type -> [String]
 getTypeFVNames (TypeVar  (TV name)) = [name]
 getTypeFVNames (TypeList t        ) = getTypeFVNames t
 getTypeFVNames (TypeArrow a b     ) = (getTypeFVNames a) ++ (getTypeFVNames b)
+getTypeFVNames (TypePoly alternatives) =
+  foldr (\t acc -> acc ++ (getTypeFVNames t)) [] alternatives
 getTypeFVNames (TypeComplex name deps) =
   foldr (\t acc -> acc ++ (getTypeFVNames t)) [] deps
 getTypeFVNames (TypeTuple a b) = (getTypeFVNames a) ++ (getTypeFVNames b)
@@ -68,6 +71,8 @@ remapTypesRec fvMap (TypeArrow a b) =
   TypeArrow (remapTypesRec fvMap a) (remapTypesRec fvMap b)
 remapTypesRec fvMap (TypeComplex name deps) =
   TypeComplex name $ map (remapTypesRec fvMap) deps
+remapTypesRec fvMap (TypePoly alternatives) =
+  TypePoly $ map (remapTypesRec fvMap) alternatives
 remapTypesRec fvMap (TypeTuple a b) =
   TypeTuple (remapTypesRec fvMap a) (remapTypesRec fvMap b)
 remapTypesRec _ v = v
@@ -90,6 +95,10 @@ remapTypes t =
                 $ zip typesLetters fvNames
       in  remapTypesRec fvMap t
 
+isNotPlaceholder :: Type -> Bool
+isNotPlaceholder (TypeVar _) = False
+isNotPlaceholder _ = True
+
 -- | Helper to print types in readable format
 typeToStrRec :: [TypeVar] -> Type -> String
 typeToStrRec vars TypeUnit = "()"
@@ -100,6 +109,18 @@ typeToStrRec vars (TypeArrow a b) =
   "(" ++ (typeToStrRec vars a) ++ ") -> " ++ (typeToStrRec vars b)
 typeToStrRec vars (TypeVar    (TV name)) = name
 typeToStrRec vars (TypeStatic name     ) = name
+typeToStrRec vars (TypePoly alternatives) =
+  "[< "
+    ++ (foldr
+         (\el acc ->
+           acc
+             ++ (if length acc <= 0 then "" else "| ")
+             ++ (typeToStrRec vars el)
+         )
+         ""
+         (filter isNotPlaceholder alternatives)
+       )
+    ++ "]"
 typeToStrRec vars (TypeComplex name deps) =
   name
     ++ " ("

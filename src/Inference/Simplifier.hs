@@ -294,6 +294,9 @@ simplifyList fn (DList elems) = do
   addExprAnnot $ return $ elemsSimpl
 
 simplifyExpression :: InferenceFn -> Expression -> Infer SimplifiedExpr
+simplifyExpression fn (ExprTag name exp) = do
+  simpl <- simplifyExpression fn exp
+  addExprAnnot $ return $ SimplifiedTag name simpl
 simplifyExpression fn (ExprSemi expA expB) = do
   simplA <- simplifyExpression fn expA
   simplB <- simplifyExpression fn expB

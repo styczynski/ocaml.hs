@@ -39,6 +39,7 @@ data SimplifiedExpr
   | SimplifiedConstBool Bool
   | SimplifiedConstInt Integer
   | SimplifiedConstString String
+  | SimplifiedTag Ident SimplifiedExpr
   deriving (Show, Eq)
 
 -- | Binary operation

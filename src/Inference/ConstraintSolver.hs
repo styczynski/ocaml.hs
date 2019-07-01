@@ -96,6 +96,7 @@ instance BindableSolve Type Type where
   (<-$->) (TypeList t1) (TypeList t2) = [t1] <-$-> [t2]
   (<-$->) (TypeTuple t1 t2) (TypeTuple t3 t4) = [t1, t2] <-$-> [t3, t4]
   (<-$->) (TypeArrow t1 t2) (TypeArrow t3 t4) = [t1, t2] <-$-> [t3, t4]
+  (<-$->) t1@(TypePoly alternatives1) t2@(TypePoly alternatives2) = alternatives1 <-$-> alternatives2
   (<-$->) t1@(TypeComplex name1 deps1) t2@(TypeComplex name2 deps2) = do
     payl <- errSolvePayload
     _    <- if not (name1 == name2)

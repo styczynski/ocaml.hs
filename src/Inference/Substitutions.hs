@@ -68,6 +68,7 @@ instance WithFreedom Type TypeVar where
   freeDimensions (TypeVar    a) = Set.singleton a
   freeDimensions (TypeList   a) = freeDimensions a
   freeDimensions (TypeComplex name deps) = foldl (\acc el -> Set.union acc $ freeDimensions el) (Set.empty) deps
+  freeDimensions (TypePoly alt) = foldl (\acc el -> Set.union acc $ freeDimensions el) (Set.empty) alt
   freeDimensions (TypeArrow t1 t2) = Set.union (freeDimensions t1) (freeDimensions t2)
   freeDimensions (TypeTuple t1 t2) = Set.union (freeDimensions t1) (freeDimensions t2)
   freeDimensions TypeUnit          = Set.empty
@@ -84,6 +85,7 @@ instance Substitutable Type TypeVar Type where
   (.>) s         (  TypeList a           ) = TypeList $ s .> a
   (.>) s         TypeUnit                  = TypeUnit
   (.>) s         (TypeAnnotated v)         = (TypeAnnotated v)
+  (.>) s         (TypePoly alt)            = TypePoly $ map (\a -> s .> a) alt
 
 instance WithFreedom Scheme TypeVar where
   freeDimensions (Scheme vars t) = freeDimensions t `Set.difference` Set.fromList vars

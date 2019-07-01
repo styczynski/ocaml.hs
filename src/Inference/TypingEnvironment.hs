@@ -44,7 +44,13 @@ type Unifier = (TypeSubstitution, [TypeConstraint])
 
 -- | Base inference monad and state
 type Infer = StateT (InferState) (ReaderT (TypeEnvironment) (ExceptT TypeError IO))
-data InferState = InferState { count :: Int, inferTrace :: [String], lastInferExpr :: String }
+data InferState = InferState {
+  count :: Int,
+  tCount :: Int,
+  tagMap :: Map.Map String Int,
+  inferTrace :: [String],
+  lastInferExpr :: String
+}
 
 -- | Base typechecking errors
 data TypeError
@@ -58,7 +64,13 @@ data TypeError
 
 -- | Empty inference state
 initInfer :: InferState
-initInfer = InferState { count = 0, inferTrace = [], lastInferExpr = "" }
+initInfer = InferState {
+  count = 0,
+  tCount = 0,
+  tagMap = Map.empty,
+  inferTrace = [],
+  lastInferExpr = ""
+}
 
 -- | Stringify type contraint (for debug purposes)
 constraintToStr :: TypeConstraint -> String
