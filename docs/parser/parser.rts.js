@@ -7796,11 +7796,15 @@ function h$resumeDelayThread() {
   return h$rs(); // stack[h$sp];
 }
 function h$yield() {
-  h$sp += 2;
-  h$stack[h$sp-1] = h$r1;
-  h$stack[h$sp] = h$return;
-  h$currentThread.sp = h$sp;
-  return h$reschedule;
+  if(h$currentThread.isSynchronous) {
+    return h$stack[h$sp];
+  } else {
+    h$sp += 2;
+    h$stack[h$sp-1] = h$r1;
+    h$stack[h$sp] = h$return;
+    h$currentThread.sp = h$sp;
+    return h$reschedule;
+  }
 }
 // raise the async exception in the thread if not masked
 function h$killThread(t, ex) {
@@ -8172,7 +8176,16 @@ function h$startMainLoop() {
             h$mainLoopImmediate = setImmediate(h$mainLoop);
         }
     } else {
-        while(true) h$mainLoop();
+      while(true) {
+        // the try/catch block appears to prevent a crash with
+        // Safari on iOS 10, even though this path is never taken
+        // in a browser.
+        try {
+          h$mainLoop();
+        } catch(e) {
+          throw e;
+        }
+      }
     }
 }
 var h$busyYield = 500;
