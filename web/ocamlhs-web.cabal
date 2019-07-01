@@ -40,4 +40,5 @@ executable ocamlhs-web
                       , para
                       , ghcjs-base
                       , ghcjs-prim
+                      , split
   default-language:    Haskell2010

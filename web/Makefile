@@ -2,6 +2,7 @@ all: copy-root-frontend
 	echo "Web done."
 
 parser-web:
+	stack upgrade --binary-version 1.6.3
 	stack build
 
 copy-root-frontend: frontend

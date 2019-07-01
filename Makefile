@@ -8,7 +8,9 @@ web: interpreter-web
 	echo "Done."
 
 install-deps:
+	stack upgrade --binary-version 2.1.1
 	stack install --only-dependencies
+	stack install happy
 
 parser-src: install-deps
 	stack exec bnfc -- -m -o parser ./grammar/syntax.cf
