@@ -1,3 +1,14 @@
+{-|
+Module      : Lib
+Description : Base interpreter entrypoint
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module is the top one, it provides handful ways to run the parser, interpreter and typechecker.
+-}
 module Lib where
 
 import Control.Monad.Except
@@ -47,7 +58,7 @@ runWith v s env = do
   i <- runTIWith v s env
   (case i of
     (Left e) -> return $ FailedTypechecking e
-    (Right ((Types.Forall _ inferType), initEnv)) -> do
+    (Right ((Types.Scheme _ inferType), initEnv)) -> do
       r <- runIWith v s initEnv
       return $ case r of
         (Executed v _ env) -> Executed v inferType env

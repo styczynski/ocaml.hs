@@ -1,3 +1,14 @@
+{-|
+Module      : Inference.TypeExpressionResolver
+Description : Resolver for type expressions
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module implements utilities to map AST type expressions into Inference.Types values.
+-}
 module Inference.TypeExpressionResolver where
 
 
@@ -23,6 +34,9 @@ import           System.IO.Unsafe
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
 
+
+-- | Extracts free variables from type expression and assigns them to fresh
+--   type variables.
 getTypeSimpleExpressionFV
   :: TypeSimpleExpression -> Infer (Map.Map String TypeVar)
 getTypeSimpleExpressionFV (TypeSExprList listType) =
@@ -30,7 +44,7 @@ getTypeSimpleExpressionFV (TypeSExprList listType) =
 getTypeSimpleExpressionFV (TypeSExprIdent _) = return Map.empty
 getTypeSimpleExpressionFV TypeSExprEmpty = return Map.empty
 getTypeSimpleExpressionFV (TypeSExprAbstract (TypeIdentAbstract name)) = do
-  tvv <- fresh
+  tvv <- freshTypeVar
   return $ let (TypeVar tv) = tvv in Map.singleton name tv
 
 getTypeExpressionFV :: TypeExpression -> Infer (Map.Map String TypeVar)
@@ -58,6 +72,7 @@ getTypeExpressionFV (TypeExprTuple fstEl restEls) = foldlM
   ([fstEl] ++ restEls)
 getTypeExpressionFV _ = return Map.empty
 
+-- | Extracts free variables from type expression
 resolveTypeSimpleExpressionFVNames
   :: TypeSimpleExpression -> Infer (Set.Set String)
 resolveTypeSimpleExpressionFVNames TypeSExprEmpty = return $ Set.empty
@@ -149,9 +164,10 @@ resolveTypeExpressionRec fvs (TypeExprTuple fstEl restEls) = do
     ([fstEl] ++ restEls)
   return tupleT
 
+-- | Entrypoint to resolve type expression
 resolveTypeExpression :: TypeExpression -> Infer Scheme
 resolveTypeExpression exp = do
   fvs  <- getTypeExpressionFV exp
   t    <- resolveTypeExpressionRec fvs exp
   fvsT <- return $ Map.elems fvs
-  return $ Forall fvsT t
+  return $ Scheme fvsT t

@@ -1,3 +1,15 @@
+{-|
+Module      : Interop.Printf
+Description : Variadic printf function
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This file contains definition of printf function that can be used to print values from the insides
+  of the interpreter.
+-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Interop.Printf where
 

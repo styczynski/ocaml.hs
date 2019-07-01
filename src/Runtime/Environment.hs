@@ -1,3 +1,15 @@
+{-|
+Module      : Runtime.Environment
+Description : Environment operation utilities
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This file provides utilities to manage the runtime environment i.e
+  set new veriables, call functions, create references to objects etc.
+-}
 module Runtime.Environment where
 
 import           Control.Monad.Except
@@ -55,10 +67,10 @@ setTypesState e env = env { stypes = e }
 getTypesState :: Environment -> InferState
 getTypesState env = let Environment { stypes = stypes } = env in stypes
 
-setTypesEnv :: Types.Env -> Environment -> Environment
+setTypesEnv :: Types.TypeEnvironment -> Environment -> Environment
 setTypesEnv e env = env { itypes = e }
 
-getTypesEnv :: Environment -> Types.Env
+getTypesEnv :: Environment -> Types.TypeEnvironment
 getTypesEnv env = let Environment { itypes = itypes } = env in itypes
 
 shadowEnv :: Environment -> Environment -> Environment

@@ -1,3 +1,15 @@
+{-|
+Module      : Runtime.Runtime
+Description : base runtime definitions
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module exports base definitions for runtime operations like
+  variable containers, environment and state definitions etc.
+-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Runtime.Runtime where
@@ -26,7 +38,7 @@ data Environment = Environment {
   defs            :: (Map.Map Ident RuntimeDef),
   nextFreeRef     :: Integer,
   nextFreeNameId  :: Integer,
-  itypes           :: Types.Env,
+  itypes           :: Types.TypeEnvironment,
   stypes           :: InferState
 }
 
@@ -195,11 +207,6 @@ refToStr (RfInvalid v) = "<invalid>"
 refToStr (RfVal     v) = "<value>"
 
 envToStr :: Environment -> String
---envToStr env =
---  let Environment { variables = variables } = env in
---    " { " ++ (Map.foldlWithKey (\acc (Ident name) val ->
---       if (acc == "") then name ++ "=" ++ (valueToStr val) else acc ++ "\n " ++ name ++ "=" ++ (valueToStr val)
---     ) "" variables) ++ " }"
 envToStr env =
   let Environment { refs = refs, variables = variables } = env
   in  let strRefs =
@@ -233,15 +240,8 @@ debug ast = do
   env <- ask
   runtimePrint $ "Code: " ++ (treeToStr ast) ++ ", env: " ++ (envToStr env)
 
---proceedD :: (Show a, Print a) => a -> Exec ()
---proceedD a = do
---  --debug a
---  state <- get
---  put $ let InterpreterState { trace = trace } = state in state { lastNodeDetail = (treeToStr a), trace = ([(treeToStr a)] ++ trace) }
-
 proceed :: (Show a, Print a) => a -> Exec ()
 proceed a = do
-  --debug a
   state <- get
   put
     $ let InterpreterState { trace = trace } = state
@@ -256,11 +256,6 @@ unproceed = do
   put
     $ let InterpreterState { trace = trace } = state
       in  state { trace = (drop 1 trace) }
-
---proceedT :: (Show a, Print a) => a -> (Exec (RuntimeValue, Environment)) -> (Exec (RuntimeValue, Environment))
---proceedT a val = do
---  proceed a
---  val
 
 raise :: String -> Exec a
 raise errorText = do

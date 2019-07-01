@@ -1,3 +1,14 @@
+{-|
+Module      : Interpreter.Interpreter
+Description : Base interpreter code
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This file provides base for executing the code.
+-}
 module Interpreter.Interpreter where
 
 import           Runtime.Environment

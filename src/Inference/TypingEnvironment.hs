@@ -1,3 +1,15 @@
+{-|
+Module      : Inference.TypingEnvironment
+Description : All base definitions for inference
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module provides all base data types used by inference modules i.e.
+  substitution mappings, typing environment, base typechecking errors etc.
+-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Inference.TypingEnvironment where
@@ -15,19 +27,25 @@ import           Control.Monad.Identity
 import           Data.Foldable           hiding ( toList )
 import qualified Data.Map                      as Map
 
+-- | Subsitution mapping
 newtype Subst = Subst (Map.Map TypeVar Type) deriving (Eq, Show)
 
+-- | Empty subsitution map that subsitutes nothing
 emptySubst :: Subst
 emptySubst = Subst $ Map.empty
 
+-- | Payload for typechecking errors
 data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
+-- | Type constraints with error payload annotation and unifier for types
 data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Show)
 type Unifier = (Subst, [TypeConstraint])
 
-type Infer = StateT (InferState) (ReaderT (Env) (ExceptT TypeError IO))
+-- | Base inference monad and state
+type Infer = StateT (InferState) (ReaderT (TypeEnvironment) (ExceptT TypeError IO))
 data InferState = InferState { count :: Int, inferTrace :: [String], lastInferExpr :: String }
 
+-- | Base typechecking errors
 data TypeError
   = UnificationFail TypeErrorPayload Type Type
   | InfiniteType TypeErrorPayload TypeVar Type
@@ -37,13 +55,16 @@ data TypeError
   | Debug TypeErrorPayload String
   deriving (Show)
 
+-- | Empty inference state
 initInfer :: InferState
 initInfer = InferState { count = 0, inferTrace = [], lastInferExpr = "" }
 
+-- | Stringify type contraint (for debug purposes)
 constraintToStr :: TypeConstraint -> String
 constraintToStr (TypeConstraint _ (a, b)) =
   (typeToStr [] a) ++ " ~ " ++ (typeToStr [] b)
 
+-- | Stringify type contraints list (for debug purposes)
 constraintsListToStr :: [TypeConstraint] -> String
 constraintsListToStr l =
   "{"
@@ -58,18 +79,23 @@ constraintsListToStr l =
        )
     ++ "}"
 
-empty :: Env
-empty = TypeEnv Map.empty
+-- | Empty typing environment
+empty :: TypeEnvironment
+empty = TypeEnvironment Map.empty
 
-(++>) :: Env -> (Ident, Scheme) -> Env
+-- | Create identificator inside the environment
+(++>) :: TypeEnvironment -> (Ident, Scheme) -> TypeEnvironment
 (++>) env (name, scheme) =
   let newEnv = env { types = Map.insert name scheme (types env) } in newEnv
 
-(-->) :: Env -> Ident -> Env
-(-->) (TypeEnv env) name = TypeEnv (Map.delete name env)
+-- | Remvoe identificator from the environment
+(-->) :: TypeEnvironment -> Ident -> TypeEnvironment
+(-->) (TypeEnvironment env) name = TypeEnvironment (Map.delete name env)
 
+-- | Execute monad in shadowed environment
 (==>) :: (Ident, Scheme) -> Infer a -> Infer a
 (==>) (x, sc) m = local (\env -> (env --> x) ++> (x, sc)) m
 
-(??) :: Env -> Ident -> Maybe Scheme
-(??) (TypeEnv env) name = Map.lookup name env
+-- | Lookup typing environment for the identificator
+(??) :: TypeEnvironment -> Ident -> Maybe Scheme
+(??) (TypeEnvironment env) name = Map.lookup name env

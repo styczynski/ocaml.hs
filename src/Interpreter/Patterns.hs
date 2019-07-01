@@ -1,3 +1,14 @@
+{-|
+Module      : Interpreter.Patterns
+Description : Code to handle destructing patterns
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module exports functions to parse destructing assignments and matching clauses.
+-}
 module Interpreter.Patterns where
 
 import           Control.Monad.Except

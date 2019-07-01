@@ -1,3 +1,14 @@
+{-|
+Module      : Interpreter.Expressions
+Description : Code to handle runtime expressions
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module handles various expressions during runtime.
+-}
 module Interpreter.Expressions where
 
 import           Control.Monad.Except

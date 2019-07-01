@@ -1,3 +1,24 @@
+{-|
+Module      : Interop.ExportUtils
+Description : Export utilities
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module exports all fancy export utilities to map Haskell function onto interpreter functions.
+  It allows you to export everything from functions of various types:
+    * RuntimeValue -> RuntimeValue
+      Polymorphic function
+    * RuntimeValue -> (RuntimeValue, Environment)
+      Function that can change its environment
+    * Integer -> String -> Bool
+      Any base type is supported
+    * String -> IO String
+      IO monad is supported (also with exceptions)
+    * and more...
+-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Interop.ExportUtils where
@@ -35,16 +56,16 @@ setNativeVariable name typeExpr val = do
 exportGlobalVariableType :: String -> String -> Exec (RuntimeValue, Environment)
 exportGlobalVariableType name typeExpr = do
   env          <- ask
-  (envT, envS) <- lift $ lift $ lift $ annotateGlobalVariableTypeEnv
+  (envT, envS) <- lift $ lift $ lift $ annotateGlobalVariableTypeEnvironment
     (getTypesEnv env)
     (getTypesState env)
     name
     typeExpr
   return (REmpty, (setTypesState envS (setTypesEnv envT env)))
 
-annotateGlobalVariableTypeEnv
-  :: Types.Env -> InferState -> String -> String -> IO (Types.Env, InferState)
-annotateGlobalVariableTypeEnv env state name typeExpr =
+annotateGlobalVariableTypeEnvironment
+  :: Types.TypeEnvironment -> InferState -> String -> String -> IO (Types.TypeEnvironment, InferState)
+annotateGlobalVariableTypeEnvironment env state name typeExpr =
   let ts = myLexer typeExpr
   in
     case pTypeExpression ts of

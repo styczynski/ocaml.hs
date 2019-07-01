@@ -1,3 +1,15 @@
+{-|
+Module      : Interop.Startup
+Description : Interpreter initialization code
+Copyright   : (c) Piotr Styczyński, 2019
+License     : MIT
+Maintainer  : piotr@styczynski.in
+Stability   : experimental
+Portability : POSIX
+
+  This module is used to initialize empty interpreter environment before init.ml file is loaded.
+  It adds builtin functions using ExportUtils.
+-}
 module Interop.Startup where
 
 import           Control.Monad.Except
@@ -83,15 +95,15 @@ interpreterStartupFn = do
   (_, e) <- local (\_ -> e)
     $ setNativeVariable "value_not" "Bool -> Bool" valueNot
   (_, e) <- local (\_ -> e)
-    $ setNativeVariable "value_mod" "Int -> Int -> 'a" valueMod
+    $ setNativeVariable "value_mod" "Int -> Int -> Int" valueMod
   (_, e) <- local (\_ -> e)
-    $ setNativeVariable "value_add" "Int -> Int -> 'a" valueAdd
+    $ setNativeVariable "value_add" "Int -> Int -> Int" valueAdd
   (_, e) <- local (\_ -> e)
-    $ setNativeVariable "value_sub" "Int -> Int -> 'a" valueSub
+    $ setNativeVariable "value_sub" "Int -> Int -> Int" valueSub
   (_, e) <- local (\_ -> e)
-    $ setNativeVariable "value_mul" "Int -> Int -> 'a" valueMul
+    $ setNativeVariable "value_mul" "Int -> Int -> Int" valueMul
   (_, e) <- local (\_ -> e)
-    $ setNativeVariable "value_div" "Int -> Int -> 'a" valueDiv
+    $ setNativeVariable "value_div" "Int -> Int -> Int" valueDiv
   (_, e) <- local (\_ -> e) $ setNativeVariable "string_split"
                                                 "String -> String -> [String]"
                                                 valueSplit
