@@ -38,17 +38,13 @@ import           System.IO
 data PrintfArgT = forall a. PrintfArg a => P a
 
 foreign import javascript unsafe "window.logConsole($1)"
-    call_native_printf :: JSVal -> IO JSVal
-
-printIt str =
-  let _ = unsafePerformIO $ call_native_printf $ jsval $ pack str in
-  printf str
+    call_native_printf :: JSVal -> IO ()
 
 browserPrintfa :: PrintfType t => String -> [PrintfArgT] -> t
 browserPrintfa format = browserPrintfa' format . reverse
  where
   browserPrintfa' :: PrintfType t => String -> [PrintfArgT] -> t
-  browserPrintfa' format []         = printIt ((printf format) :: String)
+  browserPrintfa' format []         = printf format
   browserPrintfa' format (P a : as) = browserPrintfa' format as a
 
 browserPrintfUnpack :: RuntimeValue -> PrintfArgT
@@ -62,5 +58,4 @@ browserPrintfVars format vars = browserPrintfa format $ map browserPrintfUnpack 
 
 browser_printf_str :: [RuntimeValue] -> IO ()
 browser_printf_str ((RString format) : args) =
-  --putStrLn $ "format: [" ++ (format) ++ "] args: " ++ (show args)
-  browserPrintfVars format args
+  call_native_printf $ jsval $ pack ((browserPrintfVars format args) :: String)
