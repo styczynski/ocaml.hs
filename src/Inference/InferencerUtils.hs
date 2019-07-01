@@ -165,4 +165,4 @@ normalizeType _ v = v
 
 -- | Normalize type free variables
 normalize :: Scheme -> Scheme
-normalize (Scheme _ body) = Scheme (map snd $ zip (nub $ freeDimensionsList body) (map TV letters)) (normalizeType ord body)
+normalize (Scheme _ body) = let freeVars = (zip (nub $ freeDimensionsList body) (map TV letters)) in Scheme (map snd freeVars) (normalizeType freeVars body)

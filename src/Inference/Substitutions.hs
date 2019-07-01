@@ -41,6 +41,18 @@ class (Ord b) => WithFreedom a b where
   isRecursive ::  b -> a -> Bool
   isRecursive a t = Set.member a $ freeDimensions t
 
+
+class (Ord b, Monad m) => WithFreedomM a b m where
+  freeDimensionsM   :: a -> m (Set.Set b)
+  freeDimensionsListM :: a -> m [b]
+  freeDimensionsListM a = do
+    f <- freeDimensionsM a
+    return $ Set.toList f
+  isRecursiveM ::  b -> a -> m Bool
+  isRecursiveM a t = do
+    f <- freeDimensionsM t
+    return $ Set.member a $ f
+
 -- | Represents type that have entities that can be replaced
 class (WithFreedom a b) => Substitutable a b c where
   (.>)     :: (Substitution b c) -> a -> a
