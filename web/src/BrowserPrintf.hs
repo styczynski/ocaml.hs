@@ -11,6 +11,7 @@ Portability : POSIX
   of the interpreter.
 -}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module BrowserPrintf where
 
 import GHCJS.Prim
@@ -40,6 +41,9 @@ data PrintfArgT = forall a. PrintfArg a => P a
 foreign import javascript unsafe "window.logConsole($1)"
     call_native_printf :: JSVal -> IO ()
 
+foreign import javascript unsafe "window.getlineConsole($1)"
+    call_native_getline :: JSVal -> IO JSVal
+
 browserPrintfa :: PrintfType t => String -> [PrintfArgT] -> t
 browserPrintfa format = browserPrintfa' format . reverse
  where
@@ -55,6 +59,12 @@ browserPrintfUnpack v           = P (valueToStrN v)
 
 browserPrintfVars :: PrintfType t => String -> [RuntimeValue] -> t
 browserPrintfVars format vars = browserPrintfa format $ map browserPrintfUnpack vars
+
+runtimeGetLine :: RuntimeValue -> IO String
+runtimeGetLine (RString greeting) = do
+  val <- call_native_getline (jsval $ pack greeting)
+  (input :: String) <- unpack . fromJust <$> fromJSVal val
+  return $ input
 
 browser_printf_str :: [RuntimeValue] -> IO ()
 browser_printf_str ((RString format) : args) =

@@ -99,7 +99,8 @@ executeCode input env = do
 browserStartupFn :: Exec (RuntimeValue, Environment)
 browserStartupFn = do
   e <- ask
-  (_, e) <- local (\_ -> e) $ setNativeVariable "browser_printf" "String -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> unit" (VarargFun browser_printf_str)
+  (_, e) <- local (\_ -> e) $ setNativeVariable "printf" "String -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> unit" (VarargFun browser_printf_str)
+  (_, e) <- local (\_ -> e) $ setNativeVariable "get_line" "String -> String" runtimeGetLine
   return (REmpty, e)
 
 runBrowserInit :: Environment -> IO Environment

@@ -17,6 +17,10 @@ class App extends Component {
     this.onRun = this.onRun.bind(this);
     this.triggerFocus = this.triggerFocus.bind(this);
 
+    window.getlineConsole = (greeting) => {
+        return prompt(greeting+"", "");
+    };
+
     window.logConsole = (res) => {
         this.console.push({
             command: '',
