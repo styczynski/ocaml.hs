@@ -59,7 +59,7 @@ errSolvePayload = do
   return lastAnnot
 
 -- | Runs solve monad for given contraints
-runSolve :: [TypeConstraint] -> IO (Either TypeError Subst)
+runSolve :: [TypeConstraint] -> IO (Either TypeError TypeSubstitution)
 runSolve cs = do
   r <- runExceptT (runStateT (solver (emptySubst, cs)) emptySolverState)
   case r of
@@ -67,7 +67,7 @@ runSolve cs = do
     Right (s, _) -> return $ Right s
 
 -- | Runs solver to unify all types
-solver :: Unifier -> Solve Subst
+solver :: Unifier -> Solve TypeSubstitution
 solver (su, cs) = case cs of
   [] -> return su
   ((TypeConstraint l (t1, t2)):cs0) -> do
@@ -77,7 +77,7 @@ solver (su, cs) = case cs of
 
 -- | Represents a data type that can bind values of one type to the other one
 class BindableSolve a b where
-  (<-$->) :: a -> b -> Solve Subst
+  (<-$->) :: a -> b -> Solve TypeSubstitution
 
 -- | This instance represents binding type variables to their types (creating contraints)
 instance BindableSolve TypeVar Type where

@@ -19,10 +19,10 @@ class ErrorType extends Component {
     return (
       <ObjectType
         filter={filter}
-        allowOpen={allowOpen}
+        allowOpen={false}
         type="error"
         shallow={shallow}
-        open={open}
+        open={false}
         value={value}
         displayName={sig}
       />

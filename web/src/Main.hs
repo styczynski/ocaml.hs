@@ -2,12 +2,22 @@
 
 import Init
 
+import BrowserPrintf
+
 import Lib
 import Runtime.Runtime
 import Runtime.Environment
 import Syntax.Base
 import Interpreter.Interpreter
+import Interop.ExportUtils
 import qualified Inference.Types as Types
+
+import Control.Monad.Except
+import Control.Monad.State
+import Control.Monad.Identity
+import Control.Monad.Reader
+
+import Inference.Errors
 
 import qualified Data.Text as T
 import System.IO.Unsafe
@@ -50,7 +60,7 @@ runtimeValueToJS :: String -> RuntimeValue -> Environment -> IO JSVal
 runtimeValueToJS t v env = createRuntimeValueWrapper t $ jsval $ pack (valueToStr env v)
 
 resultToJS :: ExecutionResult -> Environment -> IO JSVal
-resultToJS (FailedTypechecking err) _ = return $ jsval $ pack $ show err
+resultToJS (FailedTypechecking err) _ = return $ jsval $ pack $ typeErrorToStr err
 resultToJS (FailedParse err) _ = return $ jsval $ pack $ err
 resultToJS (FailedExecution err) _ = return $ jsval $ pack $ err
 resultToJS (Executed val t _) env = runtimeValueToJS (Types.typeToStr [] t) val env
@@ -86,9 +96,23 @@ executeCode input env = do
   set_callback callback
   return $ jsval o
 
+browserStartupFn :: Exec (RuntimeValue, Environment)
+browserStartupFn = do
+  e <- ask
+  (_, e) <- local (\_ -> e) $ setNativeVariable "browser_printf" "String -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> unit" (VarargFun browser_printf_str)
+  return (REmpty, e)
+
+runBrowserInit :: Environment -> IO Environment
+runBrowserInit env = do
+  result <- runFn browserStartupFn env
+  case result of
+    (Executed _ _ newEnv) -> return newEnv
+    _ -> return env
+
 main :: IO ()
 main = do
-    initEnv0 <- runInitEmpty
+    initEnvBase <- runInitEmpty
+    initEnv0 <- runBrowserInit initEnvBase
     (Executed _ _ initEnv) <- runWith 0 initCode initEnv0
     callback <- syncCallback1' $ \jv -> do
       (input :: String) <- unpack . fromJust <$> fromJSVal jv

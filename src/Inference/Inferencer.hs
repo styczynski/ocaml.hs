@@ -167,7 +167,7 @@ inferVariantOption typeVars typeName (TDefVarSimpl name@(Ident nameStr)) = do
   return r
 inferVariantOption typeVars typeName (TDefVarCompl name@(Ident nameStr) typeExpr)
   = do
-    fvsNames <- resolveTypeExpressionFVNames typeExpr
+    fvsNames <- freeDimensionsM typeExpr
     payl     <- errPayload
     _        <- if fvsNames `Set.isSubsetOf` (Set.fromList typeVars)
       then return 0

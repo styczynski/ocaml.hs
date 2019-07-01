@@ -148,7 +148,7 @@ instantiate (Scheme as t) = do
 -- | Generalization operation for types
 generalize :: TypeEnvironment -> Type -> Scheme
 generalize env t = Scheme as t
-  where as = Set.toList $ free t `Set.difference` free env
+  where as = Set.toList $ freeDimensions t `Set.difference` freeDimensions env
 
 -- | Helper to normalize type free variables
 normalizeType _ TypeUnit                = TypeUnit
@@ -160,22 +160,9 @@ normalizeType _ (TypeStatic a         ) = TypeStatic a
 normalizeType ord (TypeComplex name deps) = TypeComplex name $ map (normalizeType ord) deps
 normalizeType ord (TypeVar a            ) = case Prelude.lookup a ord of
   Just x  -> TypeVar x
-  Nothing -> error "type variable not in signature"
+  Nothing -> error "Type variable does not exist in type signature"
 normalizeType _ v = v
-
--- | Extract free variables from type
-getTypeFreeVariables (TypeVar a    )      = [a]
-getTypeFreeVariables (TypeArrow a b)      = getTypeFreeVariables a ++ getTypeFreeVariables b
-getTypeFreeVariables (TypeList a   )      = getTypeFreeVariables a
-getTypeFreeVariables (TypeTuple a b)      = getTypeFreeVariables a ++ getTypeFreeVariables b
-getTypeFreeVariables TypeUnit             = []
-getTypeFreeVariables (TypeAnnotated _   ) = []
-getTypeFreeVariables (TypeStatic    _   ) = []
-getTypeFreeVariables (TypeComplex _ deps) = foldl (\acc el -> acc ++ (getTypeFreeVariables el)) [] deps
-getTypeFreeVariables _ = []
 
 -- | Normalize type free variables
 normalize :: Scheme -> Scheme
-normalize (Scheme _ body) = Scheme (map snd ord) (normalizeType ord body)
- where
-  ord = zip (nub $ getTypeFreeVariables body) (map TV letters)
+normalize (Scheme _ body) = let freeVars = (zip (nub $ freeDimensionsList body) (map TV letters)) in Scheme (map snd freeVars) (normalizeType freeVars body)
