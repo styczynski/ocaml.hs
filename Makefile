@@ -4,7 +4,13 @@ all: interpreter
 format-code: install-deps
 	stack exec brittany -- --write-mode=inplace ./src/**/*.hs
 
-web: interpreter-web
+tintin:
+	stack upgrade --binary-version 2.1.1
+	stack install --only-dependencies
+	stack install tintin
+	stack exec tintin run
+
+web: tintin interpreter-web
 	echo "Done."
 
 install-deps:
