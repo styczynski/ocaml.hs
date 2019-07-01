@@ -1,4 +1,4 @@
-<!DOCTYPE HTML><html><head><title>ocamlhs - Examples</title><meta charset="utf-8"><meta content="summary" name="twitter:card"><meta content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-blue.png" name="twitter:site"><meta content="ocamlhs - Examples" name="twitter:title"><meta content="Interpreter for Ocaml language subset" name="twitter:description"><meta content="&quot;Piotr Styczyński&quot;" name="twitter:creator"><meta content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-blue.png" name="twitter:image"><meta itemprop="og:type" content="website"><meta itemprop="og:site_name" content="theam"><meta itemprop="og:title" content="ocamlhs - Examples"><meta itemprop="og:url" content="styczynski/ocaml.hs"><meta itemprop="og:image" content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-blue.png"><meta itemprop="og:description" content="Interpreter for Ocaml language subset"><link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans|Montserrat:500" rel="stylesheet"><link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow-night.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css" rel="stylesheet"><link href="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/favicon-blue.ico" rel="shortcut icon"><link href="https://cdn.jsdelivr.net/npm/katex@0.10.0-alpha/dist/katex.min.css" rel="stylesheet"><style>
+<!DOCTYPE HTML><html><head><title>ocaml.hs - Examples</title><meta charset="utf-8"><meta content="summary" name="twitter:card"><meta content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-hexcolor &quot;#ff6602&quot;.png" name="twitter:site"><meta content="ocaml.hs - Examples" name="twitter:title"><meta content="Haskell interpreter for Ocaml language subset" name="twitter:description"><meta content="Piotr Styczyński" name="twitter:creator"><meta content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-hexcolor &quot;#ff6602&quot;.png" name="twitter:image"><meta itemprop="og:type" content="website"><meta itemprop="og:site_name" content="theam"><meta itemprop="og:title" content="ocaml.hs - Examples"><meta itemprop="og:url" content="styczynski/ocaml.hs"><meta itemprop="og:image" content="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/tintin-hexcolor &quot;#ff6602&quot;.png"><meta itemprop="og:description" content="Haskell interpreter for Ocaml language subset"><link href="https://fonts.googleapis.com/css?family=IBM Plex Sans|Montserrat:400" rel="stylesheet"><link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow-night.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css" rel="stylesheet"><link href="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/favicon-custom.ico" rel="shortcut icon"><link href="https://cdn.jsdelivr.net/npm/katex@0.10.0-alpha/dist/katex.min.css" rel="stylesheet"><style>
 html
 {
   height     : 100%;
@@ -9,7 +9,7 @@ body
 {
   height      : 100%;
   min-height  : 100%;
-  font-family : "IBM+Plex+Sans", sans-serif;
+  font-family : "IBM Plex Sans", sans-serif;
   font-size   : 1em;
   overflow-x  : hidden;
 }
@@ -17,21 +17,21 @@ body
 h1
 {
   font-family : "Montserrat", sans-serif;
-  font-weight : 500;
+  font-weight : 400;
   font-size   : 1em;
 }
 
 h2
 {
   font-family : "Montserrat", sans-serif;
-  font-weight : 500;
+  font-weight : 400;
   font-size   : 2.44099em;
 }
 
 h3
 {
   font-family : "Montserrat", sans-serif;
-  font-weight : 500;
+  font-weight : 400;
   font-size   : 5.95848em;
 }
 
@@ -301,7 +301,7 @@ blockquote
   height         : 3rem;
   font-size      : 2rem;
   font-family    : "Montserrat", sans-serif;
-  font-weight    : 500;
+  font-weight    : 400;
   padding-top    : 2.5rem;
   padding-bottom : 2.5rem;
   margin-bottom  : 1.5rem;
@@ -387,14 +387,14 @@ blockquote
   background-color : rgba(255,255,255,0.15);
 }
 
-.tintin-bg-blue
+.tintin-bg-custom
 {
-  background-color : #94c1e8;
+  background-color : #ff6602;
 }
 
-.tintin-fg-blue
+.tintin-fg-custom
 {
-  color : #94c1e8;
+  color : #ff6602;
 }
 
 .tintin-fg-active
@@ -465,7 +465,7 @@ footer
 
 }
 
-/* Generated with Clay, http://fvisser.nl/clay */</style></head><body class="h-100 tintin-fg-black tintin-bg-white"><div id="main-container" class="h-100"><section id="content"><div id="wrapper" class="toggled"><div id="sidebar-wrapper" class="h-100 tintin-bg-blue"><div class="h-100 tintin-bg-70"><p></p></div><ul class="sidebar-nav"><li class="sidebar-brand d-flex tintin-bg-blue"><a href="index.html" class="align-self-center tintin-fg-white">ocamlhs</a></li><li><a href="0-Getting Started.html" class="tintin-fg-disabled">Getting Started</a></li><li><a href="1-Simple Programs.html" class="tintin-fg-disabled">Simple Programs</a></li><li><a href="2-Examples.html" class="tintin-fg-active">Examples</a></li></ul></div><nav class="navbar navbar-expand-lg tintin-doc-topbar tintin-fg-white"><a href="#menu-toggle" id="menu-toggle" class><img src="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/menu.png" class="img-fluid animated rotateOut"><img src="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/close.png" class="img-fluid animated rotateIn"></a></nav><div id="page-content-wrapper"><div class="container"><div class="col"><div class="animated fadeIn"><h1>Examples</h1>
+/* Generated with Clay, http://fvisser.nl/clay */</style></head><body class="h-100 tintin-fg-black tintin-bg-white"><div id="main-container" class="h-100"><section id="content"><div id="wrapper" class="toggled"><div id="sidebar-wrapper" class="h-100 tintin-bg-custom"><div class="h-100 tintin-bg-70"><p></p></div><ul class="sidebar-nav"><li class="sidebar-brand d-flex tintin-bg-custom"><a href="index.html" class="align-self-center tintin-fg-white"><img src="https://github.com/styczynski/ocaml.hs/blob/master/static/logo1.png?raw=true"></a></li><li><a href="0-Getting Started.html" class="tintin-fg-disabled">Getting Started</a></li><li><a href="1-Simple Programs.html" class="tintin-fg-disabled">Simple Programs</a></li><li><a href="2-Examples.html" class="tintin-fg-active">Examples</a></li></ul></div><nav class="navbar navbar-expand-lg tintin-doc-topbar tintin-fg-white"><a href="#menu-toggle" id="menu-toggle" class><img src="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/menu.png" class="img-fluid animated rotateOut"><img src="https://s3-eu-west-1.amazonaws.com/worldwideapps/assets/close.png" class="img-fluid animated rotateIn"></a></nav><div id="page-content-wrapper"><div class="container"><div class="col"><div class="animated fadeIn"><h1>Examples</h1>
 <p>This page provides you with preconfigured interpreter instances for basic and advanced demos delivered in /examples/ directory.</p>
 <h2>Very basic imperative programming</h2>
 <p><a href="http://styczynski.in/ocaml.hs/parser_index.html?%28*%0A%20*%20This%20file%20contains%20example%20of%20very%20basic%20imperative%20programming.%0A%20*%20For%20more%20please%20see%20Sudoku.ml%0A%20*%0A%20*%29%0Alet%20counter%20%3D%20ref%200%20in%0Alet%20counterMax%20%3D%203%20in%0Awhile%20%28%21counter%29%20%3C%20counterMax%20do%0A%20%20%20%20printf%20%22Counter%20%3D%20%25d%20%3C%20%25d%5Cn%22%20%28%21counter%29%20counterMax%20%7E%0A%20%20%20%20counter%20%3A%3D%20%21counter+1%0Adone">Fullscreen playground here</a></p>

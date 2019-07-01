@@ -1,1 +1,10 @@
-color: blue
+name: ocaml.hs
+synopsis: Haskell interpreter for Ocaml language subset
+github: styczynski/ocaml.hs
+author: Piotr Styczyński
+authorWebsite: http://styczynski.in/
+color: #FF6602
+logo: https://github.com/styczynski/ocaml.hs/blob/master/static/logo1.png?raw=true
+titleFont: Montserrat
+titleFontWeight: 400
+bodyFont: IBM Plex Sans
