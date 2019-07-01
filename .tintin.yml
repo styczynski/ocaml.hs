@@ -1,5 +1,5 @@
 name: ocaml.hs
-synopsis: " "
+synopsis: Haskell interpreter for Ocaml language subset with some fancy constructions and type inferencer inside (ready for web also!)
 github: styczynski/ocaml.hs
 author: Piotr Styczyński
 authorWebsite: http://styczynski.in/
