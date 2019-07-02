@@ -150,7 +150,14 @@ simplifyPattern fn recMode (PatAs pat name) letExpr expr = do
                             pat
                             letExpr
                             expr
-  addExprAnnot $ return $ SimplifiedLet name letExpr simpl
+  tv1 <- freshTypeVar
+  tv2 <- freshTypeVar
+  simplR <- simplifyPattern fn
+                              recMode
+                              pat
+                              (SimplifiedTyped $ Scheme [] tv1)
+                              (SimplifiedTyped $ Scheme [] tv2)
+  addExprAnnot $ return $ SimplifiedLetAs name letExpr simpl simplR
 simplifyPattern _ False (PatIdent name) letExpr expr =
   addExprAnnot $ return $ SimplifiedLet name letExpr expr
 simplifyPattern _ True (PatIdent name) letExpr expr =
@@ -235,7 +242,7 @@ simplifyComplexExpression fn ast@(ECMatch expr _ clauses) = do
   markTrace ast
   clausesList <- foldrM
     (\(MatchClause pat clauseExpr) acc -> do
-      r <- return $ ListElement $ ECLet LetRecNo
+      r <- return $ ListElement $ ECLetNS LetRecNo
                                         pat
                                         []
                                         TypeConstrEmpty
@@ -245,7 +252,7 @@ simplifyComplexExpression fn ast@(ECMatch expr _ clauses) = do
     )
     []
     clauses
-  r <- simplifyComplexExpression fn $ ECExpr $ ExprList $ DList clausesList
+  r <- simplifyComplexExpression fn $ ECExpr $ ExprList $ DList $ clausesList
   unmarkTrace ast
   addExprAnnot $ return $ SimplifiedUnaryOp OpHead r
 simplifyComplexExpression fn ast@(ECFunction bPip matchClauses) = do
@@ -283,6 +290,15 @@ simplifyComplexExpression fn (ECLetOperator recK opName patArgs letExpr expr) =
              letExpr
              expr
       )
+simplifyComplexExpression fn ast@(ECLetNS recK pat _ typeAnnot letExpr expr) =
+  do
+    markTrace ast
+    expr      <- withTypeAnnot typeAnnot expr
+    letSimpl  <- simplifyComplexExpression fn letExpr
+    exprSimpl <- simplifyComplexExpression fn expr
+    r         <- simplifyPatternNonStrict fn (isRec recK) pat letSimpl exprSimpl
+    unmarkTrace ast
+    addExprAnnot $ return r
 simplifyComplexExpression fn ast@(ECLet recK pat [] typeAnnot letExpr expr) =
   do
     markTrace ast

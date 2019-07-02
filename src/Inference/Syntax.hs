@@ -27,6 +27,7 @@ data SimplifiedExpr
   | SimplifiedCall SimplifiedExpr SimplifiedExpr
   | SimplifiedFunction Ident SimplifiedExpr
   | SimplifiedLet Ident SimplifiedExpr SimplifiedExpr
+  | SimplifiedLetAs Ident SimplifiedExpr SimplifiedExpr SimplifiedExpr
   | SimplifiedIf SimplifiedExpr SimplifiedExpr SimplifiedExpr
   | SimplifiedFixPoint SimplifiedExpr
   | SimplifiedBinaryOp BinaryOp SimplifiedExpr SimplifiedExpr

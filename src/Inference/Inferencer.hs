@@ -297,6 +297,20 @@ infer (SimplifiedCall e1 e2) = do
   con1     <- t1 <.> (t2 `TypeArrow` tv)
   ac       <- constraintAnnoTypeList [con1]
   return (tv, c1 ++ c2 ++ ac)
+infer (SimplifiedLetAs x e1 _ e2) = do
+  (gt, gc) <- infer (SimplifiedLet x e1 e2)
+  env      <- ask
+  tv <- freshTypeVar
+  (t1, c1) <- infer e1
+  con1 <- gt <.> t1
+  ac       <- constraintAnnoTypeList [con1]
+  s        <- lift $ lift $ lift $ runSolve c1
+  case s of
+    Left  err -> throwError err
+    Right sub -> do
+      let sc = generalize (sub .> env) (sub .> t1)
+      (t2, c2) <- (x, sc) ==> (local (sub .>) (infer (SimplifiedTyped $ Scheme [] tv)))
+      return (t2, ac ++ c1 ++ c2)
 infer (SimplifiedLet x e1 e2) = do
   env      <- ask
   (t1, c1) <- infer e1

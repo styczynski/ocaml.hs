@@ -137,6 +137,7 @@ internal ECExportEnv. ComplexExpression   ::= "%export_env" ;
 ECExpr.              ComplexExpression   ::= Expression ;
 ECTuple.             ComplexExpression   ::= DTuple ;
 ECFun.               ComplexExpression   ::= "fun" SimplePattern [SimplePattern] "->" ComplexExpression ;
+internal ECLetNS.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression "in" ComplexExpression ;
 ECLet.               ComplexExpression   ::= "let" LetRecKeyword SimplePattern [SimplePattern] TypeConstraint "=" ComplexExpression "in" ComplexExpression ;
 ECLetOperator.       ComplexExpression   ::= "let" LetRecKeyword "(" OperatorAny ")" [SimplePattern] "=" ComplexExpression "in" ComplexExpression ;
 ECFunction.          ComplexExpression   ::= "function" PipeKeyword [MatchClause] ;
