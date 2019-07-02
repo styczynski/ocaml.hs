@@ -1,1 +1,6 @@
-https://github.com/styczynski/ocaml.hs/blob/master/static/logo1.png?raw=true
+class (WithFreedom a c, WithFreedom b c) => Generalizable a b c where
+   generalized :: a -> b -> [c]
+
+ instance Generalizable Type TypeEnvironment TypeVar where
+   generalized a b = Set.toList $ (freeDimensions b) `Set.difference` (freeDimensions a)
+

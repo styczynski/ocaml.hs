@@ -18,4 +18,4 @@ let extended_color_to_int = function
 
 ;;
 
-color_to_int (`Basic ((`Black),(`Bold)))
+color_to_int ((`Basic ((`Black),(`Bold))))

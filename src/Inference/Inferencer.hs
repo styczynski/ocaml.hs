@@ -65,7 +65,7 @@ solve r = case r of
       Right subst ->
         return
           $  Right
-          $  (normalize . generalize Inference.TypingEnvironment.empty)
+          $  (normalize . (\l -> Scheme (generalized Inference.TypingEnvironment.empty l) l))
           $  subst
           .> ty
 
@@ -324,7 +324,7 @@ infer (SimplifiedLetAs x e1 _ e2) = do
   case s of
     Left  err -> throwError err
     Right sub -> do
-      let sc = generalize (sub .> env) (sub .> t1)
+      let sc = Scheme (generalized (sub .> env) (sub .> t1)) (sub .> t1)
       (t2, c2) <-
         (x, sc) ==> (local (sub .>) (infer (SimplifiedTyped $ Scheme [] tv)))
       return (t2, ac ++ c1 ++ c2)
@@ -335,7 +335,7 @@ infer (SimplifiedLet x e1 e2) = do
   case s of
     Left  err -> throwError err
     Right sub -> do
-      let sc = generalize (sub .> env) (sub .> t1)
+      let sc = Scheme (generalized (sub .> env) (sub .> t1)) (sub .> t1)
       (t2, c2) <- (x, sc) ==> (local (sub .>) (infer e2))
       return (t2, c1 ++ c2)
 infer (SimplifiedFixPoint e1) = do

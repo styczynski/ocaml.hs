@@ -10,6 +10,8 @@ Portability : POSIX
   This module provides basic utilities like fresh name generator, type normalization,
   and tracing helpers.
 -}
+{-# LANGAUGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Inference.InferencerUtils where
 
 import           Syntax.Base             hiding ( TV
@@ -81,9 +83,9 @@ lookupEnv name = do
     Nothing -> do
       payl <- errPayload
       throwError $ UnboundVariable payl name
-    (Just scheme) -> do
-      t <- instantiate scheme
-      return t
+    (Just (Scheme vars typeScheme)) -> do
+      varsMapped <- mapM (const freshTypeVar) vars
+      return $ (Subst $ Map.fromList $ zip vars varsMapped) .> typeScheme
 
 -- | Generate names for polymoprhic variable names
 letters :: [String]
@@ -177,38 +179,34 @@ geTypeStaticstScheme (CInt    _) = Scheme [] (TypeStatic "Int")
 geTypeStaticstScheme (CBool   _) = Scheme [] (TypeStatic "Bool")
 geTypeStaticstScheme (CString _) = Scheme [] (TypeStatic "String")
 
--- | Instantiation operation for types
-instantiate :: Scheme -> Infer Type
-instantiate (Scheme as t) = do
-  as' <- mapM (const freshTypeVar) as
-  let s = Subst $ Map.fromList $ zip as as'
-  return $ s .> t
+class Normalizable a where
+  normalize :: a -> a
 
--- | Generalization operation for types
-generalize :: TypeEnvironment -> Type -> Scheme
-generalize env t = Scheme as t
-  where as = Set.toList $ freeDimensions t `Set.difference` freeDimensions env
+class NormalizableWith a b where
+  normalizeWith :: [(a,a)] -> b -> b
 
 -- | Helper to normalize type free variables
-normalizeType _ TypeUnit          = TypeUnit
-normalizeType _ (TypeAnnotated v) = (TypeAnnotated v)
-normalizeType ord (TypeArrow a b) =
-  TypeArrow (normalizeType ord a) (normalizeType ord b)
-normalizeType ord (TypeTuple a b) =
-  TypeTuple (normalizeType ord a) (normalizeType ord b)
-normalizeType ord (TypeList   a) = TypeList (normalizeType ord a)
-normalizeType _   (TypeStatic a) = TypeStatic a
-normalizeType ord (TypeComplex name deps) =
-  TypeComplex name $ map (normalizeType ord) deps
-normalizeType ord (TypePoly alternatives) =
-  TypePoly $ map (normalizeType ord) alternatives
-normalizeType ord (TypeVar a) = case Prelude.lookup a ord of
-  Just x  -> TypeVar x
-  Nothing -> error "Type variable does not exist in type signature"
-normalizeType _ v = v
+instance NormalizableWith TypeVar Type where
+  normalizeWith _ TypeUnit          = TypeUnit
+  normalizeWith _ (TypeAnnotated v) = (TypeAnnotated v)
+  normalizeWith ord (TypeArrow a b) =
+    TypeArrow (normalizeWith ord a) (normalizeWith ord b)
+  normalizeWith ord (TypeTuple a b) =
+    TypeTuple (normalizeWith ord a) (normalizeWith ord b)
+  normalizeWith ord (TypeList   a) = TypeList (normalizeWith ord a)
+  normalizeWith _   (TypeStatic a) = TypeStatic a
+  normalizeWith ord (TypeComplex name deps) =
+    TypeComplex name $ map (normalizeWith ord) deps
+  normalizeWith ord (TypePoly alternatives) =
+    TypePoly $ map (normalizeWith ord) alternatives
+  normalizeWith ord (TypeVar a) = case Prelude.lookup a ord of
+    Just x  -> TypeVar x
+    Nothing -> error "Type variable does not exist in type signature"
+  normalizeWith _ v = v
 
 -- | Normalize type free variables
-normalize :: Scheme -> Scheme
-normalize (Scheme _ body) =
-  let freeVars = (zip (nub $ freeDimensionsList body) (map TV letters))
-  in  Scheme (map snd freeVars) (normalizeType freeVars body)
+instance Normalizable Scheme where
+  normalize (Scheme _ body) =
+    let freeVars = (zip (nub $ freeDimensionsList body) (map TV letters))
+    in  Scheme (map snd freeVars) (normalizeWith freeVars body)
+
