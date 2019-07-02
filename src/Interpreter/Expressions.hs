@@ -279,7 +279,10 @@ getOperatorName (OperatorAnyF  (OperatorF name)) = name
 
 
 execExpression :: Expression -> Exec (RuntimeValue, Environment)
-execExpression (ExprTag (Ident name) expr) = do
+execExpression (ExprTag (Ident name) TagExprNone) = do
+  env         <- ask
+  return (RTag name REmpty, env)
+execExpression (ExprTag (Ident name) (TagExprSome expr)) = do
   env         <- ask
   (val, env2) <- shadow env $ execExpression expr
   return (RTag name val, env2)

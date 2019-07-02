@@ -94,8 +94,11 @@ ExprList.            Expression7         ::= DList ;
 ExprRecord.          Expression7         ::= DataRecord ;
 ExprConst.           Expression7         ::= Constant ;
 ExprVar.             Expression7         ::= Ident ;
-ExprTag.             Expression7         ::= "`" Ident Expression7;
+ExprTag.             Expression7         ::= "`" Ident OptionalTagExpr;
 ExprOp.              Expression7         ::= "(" OperatorAny ")" ;
+
+TagExprNone.         OptionalTagExpr     ::= "" ;
+TagExprSome.         OptionalTagExpr     ::= Expression7 ;
 
 ExprCall.            Expression6       ::= Expression7 SimpleExpression [SimpleExpression] ;
 

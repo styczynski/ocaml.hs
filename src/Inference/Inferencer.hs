@@ -343,6 +343,16 @@ infer (SimplifiedIf cond tr fl) = do
   con2     <- (t2 <.> t3)
   ac       <- constraintAnnoTypeList [con1, con2]
   return (t2, c1 ++ c2 ++ c3 ++ ac)
+infer (SimplifiedTag (Ident name) SimplifiedSkip) = do
+  u1       <- freshTypeVar
+  p1       <- return $ TypeUnit
+  polyC    <- getTagIndex name
+  polyV1   <- freshTypeVarPlaceholders (polyC+1)
+  polyV2   <- freshTypeVarPlaceholders (9-polyC)
+  u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
+  con1     <- u1 <.> u2
+  ac       <- constraintAnnoTypeList [con1]
+  return (u1, ac)
 infer (SimplifiedTag (Ident name) exp) = do
   (t1, c1) <- infer exp
   tv       <- freshTypeVar
