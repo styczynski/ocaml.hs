@@ -280,7 +280,6 @@ simplifyComplexExpression fn ast@(ECFun pat argsPat expr) = do
   addExprAnnot $ return r
 simplifyComplexExpression fn (ECLetOperator recK opName patArgs letExpr expr) =
   do
-  --Ident $ getOperatorName opName
     addExprAnnot $ simplifyComplexExpression
       fn
       (ECLet recK

@@ -40,7 +40,7 @@ data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
 -- | Type constraints with error payload annotation and unifier for types
 data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Show)
-type Unifier = (TypeSubstitution, [TypeConstraint])
+data Unifier = NoUnifier | Unifier ([TypeConstraint], TypeSubstitution)
 
 -- | Base inference monad and state
 type Infer
@@ -101,7 +101,7 @@ empty = TypeEnvironment Map.empty
 (++>) env (name, scheme) =
   let newEnv = env { types = Map.insert name scheme (types env) } in newEnv
 
--- | Remvoe identificator from the environment
+-- | Remove identificator from the environment
 (-->) :: TypeEnvironment -> Ident -> TypeEnvironment
 (-->) (TypeEnvironment env) name = TypeEnvironment (Map.delete name env)
 

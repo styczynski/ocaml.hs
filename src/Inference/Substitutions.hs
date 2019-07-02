@@ -124,9 +124,16 @@ instance WithFreedom TypeEnvironment TypeVar where
 instance Substitutable TypeEnvironment TypeVar Type where
   (.>) s (TypeEnvironment env) = TypeEnvironment $ Map.map (s .>) env
 
+class (WithFreedom a c, WithFreedom b c) => Generalizable a b c where
+   generalized :: a -> b -> [c]
+
+instance Generalizable Type TypeEnvironment TypeVar where
+   generalized a b = Set.toList $ (freeDimensions b) `Set.difference` (freeDimensions a)
+
 (+>)
   :: (Ord a, Substitutable b a b)
   => (Substitution a b)
   -> (Substitution a b)
   -> Substitution a b
 (+>) (Subst s1) (Subst s2) = Subst $ Map.map ((Subst s1) .>) s2 `Map.union` s1
+

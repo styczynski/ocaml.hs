@@ -61,19 +61,19 @@ errSolvePayload = do
 -- | Runs solve monad for given contraints
 runSolve :: [TypeConstraint] -> IO (Either TypeError TypeSubstitution)
 runSolve cs = do
-  r <- runExceptT (runStateT (solver (emptySubst, cs)) emptySolverState)
+  r <- runExceptT (runStateT (solver $ Unifier (cs, emptySubst)) emptySolverState)
   case r of
     Left  e      -> return $ Left e
     Right (s, _) -> return $ Right s
 
 -- | Runs solver to unify all types
 solver :: Unifier -> Solve TypeSubstitution
-solver (su, cs) = case cs of
-  [] -> return su
-  ((TypeConstraint l (t1, t2)) : cs0) -> do
-    checkpointAnnotSolve (TypeConstraint l (t1, t2))
-    su1 <- t1 <-$-> t2
-    solver (su1 +> su, su1 .> cs0)
+solver (Unifier (typeContraints, typeSubstitution)) = case typeContraints of
+  [] -> return typeSubstitution
+  ((TypeConstraint l (type1, type2)) : typeContraints0) -> do
+    checkpointAnnotSolve (TypeConstraint l (type1, type2))
+    typeSubstitution1 <- type1 <-$-> type2
+    solver $ Unifier (typeSubstitution1 .> typeContraints0, typeSubstitution1 +> typeSubstitution)
 
 -- | Represents a data type that can bind values of one type to the other one
 class BindableSolve a b where
@@ -90,32 +90,34 @@ instance BindableSolve TypeVar Type where
 
 -- | This instance represents binding type to type (unification)
 instance BindableSolve Type Type where
-  (<-$->) t1 t2 | t1 == t2                    = return emptySubst
+  (<-$->) type1 type2 | type1 == type2                    = return emptySubst
   (<-$->) (TypeVar v)       t                 = v <-$-> t
   (<-$->) t                 (TypeVar  v     ) = v <-$-> t
-  (<-$->) (TypeList t1    ) (TypeList t2    ) = [t1] <-$-> [t2]
-  (<-$->) (TypeTuple t1 t2) (TypeTuple t3 t4) = [t1, t2] <-$-> [t3, t4]
-  (<-$->) (TypeArrow t1 t2) (TypeArrow t3 t4) = [t1, t2] <-$-> [t3, t4]
-  (<-$->) t1@(TypePoly alternatives1) t2@(TypePoly alternatives2) =
+  (<-$->) (TypeList type1    ) (TypeList type2    ) = [type1] <-$-> [type2]
+  (<-$->) (TypeTuple type1 type2) (TypeTuple t3 t4) = [type1, type2] <-$-> [t3, t4]
+  (<-$->) (TypeArrow type1 type2) (TypeArrow t3 t4) = [type1, type2] <-$-> [t3, t4]
+  (<-$->) type1@(TypePoly alternatives1) type2@(TypePoly alternatives2) =
     alternatives1 <-$-> alternatives2
-  (<-$->) t1@(TypeComplex name1 deps1) t2@(TypeComplex name2 deps2) = do
+  (<-$->) type1@(TypeComplex name1 deps1) type2@(TypeComplex name2 deps2) = do
     payl <- errSolvePayload
     _    <- if not (name1 == name2)
-      then throwError $ UnificationMismatch payl [t1] [t2]
+      then throwError $ UnificationMismatch payl [type1] [type2]
       else return 0
     deps1 <-$-> deps2
-  (<-$->) t1 t2 = do
+  (<-$->) type1 type2 = do
     payl <- errSolvePayload
-    throwError $ UnificationFail payl t1 t2
+    throwError $ UnificationFail payl type1 type2
 
 -- | It's useful to bind multiple types at the same time
 instance BindableSolve [Type] [Type] where
   (<-$->) []        []        = return emptySubst
-  (<-$->) (h1 : t1) (h2 : t2) = do
-    uni1 <- h1 <-$-> h2
-    uni2 <- (uni1 .> t1) <-$-> (uni1 .> t2)
-    return $ uni2 +> uni1
-  (<-$->) t1 t2 = do
+  (<-$->) (typeH1:type1) (typeH2:type2) = do
+    unificatedA <- typeH1 <-$-> typeH2
+    a <- return $ unificatedA .> type1
+    b <- return $ unificatedA .> type2
+    unificatedB <- a <-$-> b
+    return $ unificatedB +> unificatedA
+  (<-$->) type1 type2 = do
     payl <- errSolvePayload
-    throwError $ UnificationMismatch payl t1 t2
+    throwError $ UnificationMismatch payl type1 type2
 
