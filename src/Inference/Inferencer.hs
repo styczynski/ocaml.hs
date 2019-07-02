@@ -279,7 +279,7 @@ inferE expr = do
 
 -- | Create constraint for two types (these two types will be unified by solver)
 (<.>) :: Type -> Type -> Infer TypeConstraint
-(<.>) t1 t2 = return $ TypeConstraint EmptyPayload (t1, t2)
+(<.>) type1 type2 = return $ TypeConstraint EmptyPayload (type1, type2)
 
 infer :: SimplifiedExpr -> Infer (Type, [TypeConstraint])
 infer SimplifiedSkip            = return ((TypeStatic "Int"), [])
@@ -295,195 +295,195 @@ infer (SimplifiedExportEnv         ) = do
   env <- ask
   return (TypeAnnotated (AnnotationEnv env), [])
 infer (SimplifiedCheck e (Scheme _ t)) = do
-  (t1, c1) <- infer e
-  con1     <- t1 <.> t
-  ac       <- constraintAnnoTypeList [con1]
-  return (t1, c1 ++ ac)
+  (type1, constraintype1) <- infer e
+  bindExpr1     <- type1 <.> t
+  ac       <- constraintAnnoTypeList [bindExpr1]
+  return (type1, constraintype1 ++ ac)
 infer (SimplifiedVariable x) = do
   t <- lookupEnv x
   return (t, [])
 infer (SimplifiedFunction x e) = do
-  tv     <- freshTypeVar
-  (t, c) <- (x, Scheme [] tv) ==> (infer e)
-  return (tv `TypeArrow` t, c)
+  typeVar     <- freshTypeVar
+  (t, c) <- (x, Scheme [] typeVar) ==> (infer e)
+  return (typeVar `TypeArrow` t, c)
 infer (SimplifiedCall e1 e2) = do
-  (t1, c1) <- infer e1
-  (t2, c2) <- infer e2
-  tv       <- freshTypeVar
-  con1     <- t1 <.> (t2 `TypeArrow` tv)
-  ac       <- constraintAnnoTypeList [con1]
-  return (tv, c1 ++ c2 ++ ac)
+  (type1, constraintype1) <- infer e1
+  (type2, constraintype2) <- infer e2
+  typeVar       <- freshTypeVar
+  bindExpr1     <- type1 <.> (type2 `TypeArrow` typeVar)
+  ac       <- constraintAnnoTypeList [bindExpr1]
+  return (typeVar, constraintype1 ++ constraintype2 ++ ac)
 infer (SimplifiedLetAs x e1 _ e2) = do
   (gt, gc) <- infer (SimplifiedLet x e1 e2)
   env      <- ask
-  tv       <- freshTypeVar
-  (t1, c1) <- infer e1
-  con1     <- gt <.> t1
-  ac       <- constraintAnnoTypeList [con1]
-  s        <- lift $ lift $ lift $ runSolve c1
+  typeVar       <- freshTypeVar
+  (type1, constraintype1) <- infer e1
+  bindExpr1     <- gt <.> type1
+  ac       <- constraintAnnoTypeList [bindExpr1]
+  s        <- lift $ lift $ lift $ runSolve constraintype1
   case s of
     Left  err -> throwError err
     Right sub -> do
-      let sc = Scheme (generalized (sub .> env) (sub .> t1)) (sub .> t1)
-      (t2, c2) <-
-        (x, sc) ==> (local (sub .>) (infer (SimplifiedTyped $ Scheme [] tv)))
-      return (t2, ac ++ c1 ++ c2)
+      let sc = Scheme (generalized (sub .> env) (sub .> type1)) (sub .> type1)
+      (type2, constraintype2) <-
+        (x, sc) ==> (local (sub .>) (infer (SimplifiedTyped $ Scheme [] typeVar)))
+      return (type2, ac ++ constraintype1 ++ constraintype2)
 infer (SimplifiedLet x e1 e2) = do
   env      <- ask
-  (t1, c1) <- infer e1
-  s        <- lift $ lift $ lift $ runSolve c1
+  (type1, constraintype1) <- infer e1
+  s        <- lift $ lift $ lift $ runSolve constraintype1
   case s of
     Left  err -> throwError err
     Right sub -> do
-      let sc = Scheme (generalized (sub .> env) (sub .> t1)) (sub .> t1)
-      (t2, c2) <- (x, sc) ==> (local (sub .>) (infer e2))
-      return (t2, c1 ++ c2)
+      let sc = Scheme (generalized (sub .> env) (sub .> type1)) (sub .> type1)
+      (type2, constraintype2) <- (x, sc) ==> (local (sub .>) (infer e2))
+      return (type2, constraintype1 ++ constraintype2)
 infer (SimplifiedFixPoint e1) = do
-  (t1, c1) <- infer e1
-  tv       <- freshTypeVar
-  con1     <- (tv `TypeArrow` tv) <.> t1
-  ac       <- constraintAnnoTypeList [con1]
-  return (tv, c1 ++ ac)
+  (type1, constraintype1) <- infer e1
+  typeVar       <- freshTypeVar
+  bindExpr1     <- (typeVar `TypeArrow` typeVar) <.> type1
+  ac       <- constraintAnnoTypeList [bindExpr1]
+  return (typeVar, constraintype1 ++ ac)
 infer (SimplifiedUnaryOp (OpCustomUni name) e1) = do
   infer (SimplifiedCall (SimplifiedVariable $ Ident name) e1)
 infer (SimplifiedUnaryOp op e1) = do
-  (t1, c1) <- infer e1
-  tv       <- freshTypeVar
-  u1       <- return $ t1 `TypeArrow` tv
-  u2       <- inferUnaryOperation op
-  con1     <- u1 <.> u2
-  ac       <- constraintAnnoTypeList [con1]
-  return (tv, c1 ++ ac)
+  (type1, constraintype1) <- infer e1
+  typeVar       <- freshTypeVar
+  absType1       <- return $ type1 `TypeArrow` typeVar
+  absType2       <- inferUnaryOperation op
+  bindExpr1     <- absType1 <.> absType2
+  ac       <- constraintAnnoTypeList [bindExpr1]
+  return (typeVar, constraintype1 ++ ac)
 infer (SimplifiedBinaryOp (OpCustom name) e1 e2) = do
   infer
     (SimplifiedCall (SimplifiedCall (SimplifiedVariable $ Ident name) e1) e2)
 infer (SimplifiedBinaryOp op e1 e2) = do
-  (t1, c1) <- infer e1
-  (t2, c2) <- infer e2
-  tv       <- freshTypeVar
-  u1       <- return $ t1 `TypeArrow` (t2 `TypeArrow` tv)
-  u2       <- inferBinaryOperation op
-  con1     <- u1 <.> u2
-  ac       <- constraintAnnoTypeList [con1]
-  return (tv, c1 ++ c2 ++ ac)
+  (type1, constraintype1) <- infer e1
+  (type2, constraintype2) <- infer e2
+  typeVar       <- freshTypeVar
+  absType1       <- return $ type1 `TypeArrow` (type2 `TypeArrow` typeVar)
+  absType2       <- inferBinaryOperation op
+  bindExpr1     <- absType1 <.> absType2
+  ac       <- constraintAnnoTypeList [bindExpr1]
+  return (typeVar, constraintype1 ++ constraintype2 ++ ac)
 infer (SimplifiedIf cond tr fl) = do
-  (t1, c1) <- infer cond
-  (t2, c2) <- infer tr
-  (t3, c3) <- infer fl
-  con1     <- t1 <.> (TypeStatic "Bool")
-  con2     <- (t2 <.> t3)
-  ac       <- constraintAnnoTypeList [con1, con2]
-  return (t2, c1 ++ c2 ++ c3 ++ ac)
+  (type1, constraintype1) <- infer cond
+  (type2, constraintype2) <- infer tr
+  (type3, constraint3) <- infer fl
+  bindExpr1     <- type1 <.> (TypeStatic "Bool")
+  bindExpr2     <- (type2 <.> type3)
+  ac       <- constraintAnnoTypeList [bindExpr1, bindExpr2]
+  return (type2, constraintype1 ++ constraintype2 ++ constraint3 ++ ac)
 infer (SimplifiedAlternatives exps) = do
-  tv <- freshTypeVar
+  typeVar <- freshTypeVar
   foldrM
     (\exp (tAcc, cAcc) -> do
       (tExp, cExp) <- infer exp
-      con1         <- tv <.> tExp
-      ac           <- constraintAnnoTypeList [con1]
+      bindExpr1         <- typeVar <.> tExp
+      ac           <- constraintAnnoTypeList [bindExpr1]
       return (tExp, cAcc ++ cExp ++ ac)
     )
-    (tv, [])
+    (typeVar, [])
     exps
 infer (SimplifiedTagUnpack (Ident name) exp) = do
-  (t1, c1) <- infer exp
-  tv       <- freshTypeVar
-  u1       <- return $ t1 `TypeArrow` tv
-  p1       <- freshTypeVar
+  (type1, constraintype1) <- infer exp
+  typeVar       <- freshTypeVar
+  absType1       <- return $ type1 `TypeArrow` typeVar
+  polyTypeVar       <- freshTypeVar
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholdersLock (polyC + 1)
   polyV2   <- freshTypeVarPlaceholdersLock (50 - polyC)
-  u2       <-
+  absType2       <-
     return
-    $           (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
-    `TypeArrow` p1
-  con1 <- u1 <.> u2
-  ac   <- constraintAnnoTypeList [con1]
-  return (tv, c1 ++ ac)
+    $           (TypePoly $ polyV1 ++ [TypeComplex name [polyTypeVar]] ++ polyV2)
+    `TypeArrow` polyTypeVar
+  bindExpr1 <- absType1 <.> absType2
+  ac   <- constraintAnnoTypeList [bindExpr1]
+  return (typeVar, constraintype1 ++ ac)
 infer (SimplifiedTagUnpackNonStrict (Ident name) exp) = do
-  (t1, c1) <- infer exp
-  tv       <- freshTypeVar
-  u1       <- return $ t1 `TypeArrow` tv
-  p1       <- freshTypeVar
+  (type1, constraintype1) <- infer exp
+  typeVar       <- freshTypeVar
+  absType1       <- return $ type1 `TypeArrow` typeVar
+  polyTypeVar       <- freshTypeVar
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholders (polyC + 1)
   polyV2   <- freshTypeVarPlaceholders (50 - polyC)
-  u2       <-
+  absType2       <-
     return
-    $           (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
-    `TypeArrow` p1
-  con1 <- u1 <.> u2
-  ac   <- constraintAnnoTypeList [con1]
-  return (tv, c1 ++ ac)
+    $           (TypePoly $ polyV1 ++ [TypeComplex name [polyTypeVar]] ++ polyV2)
+    `TypeArrow` polyTypeVar
+  bindExpr1 <- absType1 <.> absType2
+  ac   <- constraintAnnoTypeList [bindExpr1]
+  return (typeVar, constraintype1 ++ ac)
 infer (SimplifiedTag (Ident name) SimplifiedSkip) = do
-  u1     <- freshTypeVar
-  p1     <- return $ TypeUnit
+  absType1     <- freshTypeVar
+  polyTypeVar     <- return $ TypeUnit
   polyC  <- getTagIndex name
   polyV1 <- freshTypeVarPlaceholders (polyC + 1)
   polyV2 <- freshTypeVarPlaceholders (50 - polyC)
-  u2     <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
-  con1   <- u1 <.> u2
-  ac     <- constraintAnnoTypeList [con1]
-  return (u1, ac)
+  absType2     <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [polyTypeVar]] ++ polyV2)
+  bindExpr1   <- absType1 <.> absType2
+  ac     <- constraintAnnoTypeList [bindExpr1]
+  return (absType1, ac)
 infer (SimplifiedTag (Ident name) exp) = do
-  (t1, c1) <- infer exp
-  tv       <- freshTypeVar
-  u1       <- return $ t1 `TypeArrow` tv
-  p1       <- freshTypeVar
+  (type1, constraintype1) <- infer exp
+  typeVar       <- freshTypeVar
+  absType1       <- return $ type1 `TypeArrow` typeVar
+  polyTypeVar       <- freshTypeVar
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholders (polyC + 1)
   polyV2   <- freshTypeVarPlaceholders (50 - polyC)
-  u2       <-
+  absType2       <-
     return
-    $           p1
-    `TypeArrow` (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
-  con1 <- u1 <.> u2
-  ac   <- constraintAnnoTypeList [con1]
-  return (tv, c1 ++ ac)
+    $           polyTypeVar
+    `TypeArrow` (TypePoly $ polyV1 ++ [TypeComplex name [polyTypeVar]] ++ polyV2)
+  bindExpr1 <- absType1 <.> absType2
+  ac   <- constraintAnnoTypeList [bindExpr1]
+  return (typeVar, constraintype1 ++ ac)
 
 inferBinaryOperation :: BinaryOp -> Infer Type
 inferBinaryOperation OpSemicolon = do
-  tv1 <- freshTypeVar
-  tv2 <- freshTypeVar
-  return $ tv1 `TypeArrow` (tv2 `TypeArrow` tv2)
+  typeVar1 <- freshTypeVar
+  typeVar2 <- freshTypeVar
+  return $ typeVar1 `TypeArrow` (typeVar2 `TypeArrow` typeVar2)
 inferBinaryOperation OpSame = do
-  tv <- freshTypeVar
-  return $ tv `TypeArrow` (tv `TypeArrow` tv)
+  typeVar <- freshTypeVar
+  return $ typeVar `TypeArrow` (typeVar `TypeArrow` typeVar)
 inferBinaryOperation OpCons = do
-  tv <- freshTypeVar
-  return $ (tv) `TypeArrow` ((TypeList tv) `TypeArrow` (TypeList tv))
+  typeVar <- freshTypeVar
+  return $ (typeVar) `TypeArrow` ((TypeList typeVar) `TypeArrow` (TypeList typeVar))
 inferBinaryOperation OpTupleCons = do
-  tv  <- freshTypeVar
-  tv2 <- freshTypeVar
-  tv3 <- freshTypeVar
+  typeVar  <- freshTypeVar
+  typeVar2 <- freshTypeVar
+  typeVar3 <- freshTypeVar
   return
-    $           (tv)
-    `TypeArrow` (           (TypeTuple tv2 tv3)
-                `TypeArrow` (TypeTuple tv (TypeTuple tv2 tv3))
+    $           (typeVar)
+    `TypeArrow` (           (TypeTuple typeVar2 typeVar3)
+                `TypeArrow` (TypeTuple typeVar (TypeTuple typeVar2 typeVar3))
                 )
 
 inferUnaryOperation :: UnaryOp -> Infer Type
 inferUnaryOperation OpHead = do
-  tv <- freshTypeVar
-  return $ (TypeList tv) `TypeArrow` (tv)
+  typeVar <- freshTypeVar
+  return $ (TypeList typeVar) `TypeArrow` (typeVar)
 inferUnaryOperation OpTails = do
-  tv <- freshTypeVar
-  return $ (TypeList tv) `TypeArrow` (TypeList tv)
+  typeVar <- freshTypeVar
+  return $ (TypeList typeVar) `TypeArrow` (TypeList typeVar)
 inferUnaryOperation OpEmptyList = do
-  tv  <- freshTypeVar
-  tv2 <- freshTypeVar
-  return $ tv `TypeArrow` (TypeList tv2)
+  typeVar  <- freshTypeVar
+  typeVar2 <- freshTypeVar
+  return $ typeVar `TypeArrow` (TypeList typeVar2)
 inferUnaryOperation OpEmptyTuple = do
-  tv <- freshTypeVar
-  return $ tv `TypeArrow` (TypeTuple TypeUnit TypeUnit)
+  typeVar <- freshTypeVar
+  return $ typeVar `TypeArrow` (TypeTuple TypeUnit TypeUnit)
 inferUnaryOperation OpListNth = do
-  tv <- freshTypeVar
-  return $ (TypeList tv) `TypeArrow` tv
+  typeVar <- freshTypeVar
+  return $ (TypeList typeVar) `TypeArrow` typeVar
 inferUnaryOperation (OpTupleNth index len) = do
   (tupleType, elsTypes) <- foldrM
-    (\_ (tup, tvs) -> do
-      tv <- freshTypeVar
-      return $ ((TypeTuple tv tup), [tv] ++ tvs)
+    (\_ (tup, typeVars) -> do
+      typeVar <- freshTypeVar
+      return $ ((TypeTuple typeVar tup), [typeVar] ++ typeVars)
     )
     ((TypeTuple TypeUnit TypeUnit), [])
     (replicate len 0)
