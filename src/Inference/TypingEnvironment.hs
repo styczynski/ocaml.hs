@@ -40,7 +40,7 @@ data TypeErrorPayload = EmptyPayload | TypeErrorPayload String deriving (Show)
 
 -- | Type constraints with error payload annotation and unifier for types
 data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Show)
-type Unifier = (TypeSubstitution, [TypeConstraint])
+data TypeUnifier = NoUnifier | TypeUnifier [TypeConstraint] TypeSubstitution
 
 -- | Base inference monad and state
 type Infer

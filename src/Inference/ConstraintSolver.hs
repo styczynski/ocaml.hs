@@ -61,19 +61,19 @@ errSolvePayload = do
 -- | Runs solve monad for given contraints
 runSolve :: [TypeConstraint] -> IO (Either TypeError TypeSubstitution)
 runSolve cs = do
-  r <- runExceptT (runStateT (solver (emptySubst, cs)) emptySolverState)
+  r <- runExceptT (runStateT (solver (TypeUnifier cs emptySubst)) emptySolverState)
   case r of
     Left  e      -> return $ Left e
     Right (s, _) -> return $ Right s
 
 -- | Runs solver to unify all types
-solver :: Unifier -> Solve TypeSubstitution
-solver (su, cs) = case cs of
+solver :: TypeUnifier -> Solve TypeSubstitution
+solver (TypeUnifier cs su) = case cs of
   [] -> return su
   ((TypeConstraint l (t1, t2)) : cs0) -> do
     checkpointAnnotSolve (TypeConstraint l (t1, t2))
     su1 <- t1 <-$-> t2
-    solver (su1 +> su, su1 .> cs0)
+    solver $ TypeUnifier (su1 .> cs0) (su1 +> su)
 
 -- | Represents a data type that can bind values of one type to the other one
 class BindableSolve a b where
