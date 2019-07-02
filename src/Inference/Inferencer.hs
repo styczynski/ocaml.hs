@@ -343,6 +343,13 @@ infer (SimplifiedIf cond tr fl) = do
   con2     <- (t2 <.> t3)
   ac       <- constraintAnnoTypeList [con1, con2]
   return (t2, c1 ++ c2 ++ c3 ++ ac)
+infer (SimplifiedAlternatives exps) = do
+  tv       <- freshTypeVar
+  foldrM (\exp (tAcc, cAcc) -> do
+    (tExp, cExp) <- infer exp
+    con1     <- tv <.> tExp
+    ac       <- constraintAnnoTypeList [con1]
+    return (tExp, cAcc ++ cExp ++ ac)) (tv, []) exps
 infer (SimplifiedTagUnpack (Ident name) exp) = do
   (t1, c1) <- infer exp
   tv       <- freshTypeVar
@@ -351,6 +358,18 @@ infer (SimplifiedTagUnpack (Ident name) exp) = do
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholdersLock (polyC+1)
   polyV2   <- freshTypeVarPlaceholdersLock (9-polyC)
+  u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2) `TypeArrow` p1
+  con1     <- u1 <.> u2
+  ac       <- constraintAnnoTypeList [con1]
+  return (tv, c1 ++ ac)
+infer (SimplifiedTagUnpackNonStrict (Ident name) exp) = do
+  (t1, c1) <- infer exp
+  tv       <- freshTypeVar
+  u1       <- return $ t1 `TypeArrow` tv
+  p1       <- freshTypeVar
+  polyC    <- getTagIndex name
+  polyV1   <- freshTypeVarPlaceholders (polyC+1)
+  polyV2   <- freshTypeVarPlaceholders (9-polyC)
   u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2) `TypeArrow` p1
   con1     <- u1 <.> u2
   ac       <- constraintAnnoTypeList [con1]

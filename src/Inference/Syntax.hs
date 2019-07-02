@@ -41,6 +41,8 @@ data SimplifiedExpr
   | SimplifiedConstString String
   | SimplifiedTag Ident SimplifiedExpr
   | SimplifiedTagUnpack Ident SimplifiedExpr
+  | SimplifiedTagUnpackNonStrict Ident SimplifiedExpr
+  | SimplifiedAlternatives [SimplifiedExpr]
   deriving (Show, Eq)
 
 -- | Binary operation

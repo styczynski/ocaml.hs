@@ -63,6 +63,10 @@ separator nonempty   PTupleElement       "," ;
 TagPatNone.         OptionalTagPat     ::= "" ;
 TagPatSome.         OptionalTagPat     ::= SimplePattern2 ;
 
+PatOrExpr.          PatOrExpr          ::= SimplePattern2 ;
+separator nonempty PatOrExpr      "|" ;
+
+PatOr.               SimplePattern2      ::= "(" PatOrExpr "|" [PatOrExpr] ")" ;
 PatConstr.           SimplePattern2      ::= "(" Ident SimplePattern2 ")" ;
 PatTag.              SimplePattern2      ::= "(" "`" Ident OptionalTagPat ")" ;
 PatList.             SimplePattern2      ::= PList ;

@@ -59,6 +59,8 @@ getPatternExportNames (PatTuple (PTuple firstElement tupleElements)) = do
         []
         ([firstElement] ++ tupleElements)
 getPatternExportNames (PatIdent (Ident name)) = [name]
+getPatternExportNames (PatOr firstAlt restAlts) = do
+  foldr (\(PatOrExpr pat) acc -> (getPatternExportNames pat) ++ acc) [] ([firstAlt] ++ restAlts)
 getPatternExportNames (PatTag _ (TagPatSome patternOption)) =
   getPatternExportNames patternOption
 getPatternExportNames (PatTag _ TagPatNone) = []
@@ -149,6 +151,17 @@ getPatternMapping (PatConstr typeConstr patternOption) val@(RVariant optionVar o
             ++ ("")
             ++ " with value of type "
             ++ (show val)
+getPatternMapping (PatOr firstAlt restAlts) val = do
+  mapping <- foldrM
+      (\(PatOrExpr pat) retMap ->
+        do
+            t <- getPatternMapping pat val
+            return t
+          `catchError` (\err -> return retMap)
+      )
+      (Map.empty)
+      ([firstAlt] ++ restAlts)
+  return mapping
 getPatternMapping (PatTag (Ident name) (TagPatSome patternOption)) val@(RTag tagName tagVal)
   = if (name == tagName)
       then getPatternMapping patternOption tagVal

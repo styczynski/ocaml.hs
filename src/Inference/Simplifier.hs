@@ -51,6 +51,22 @@ getOperatorName (OperatorAnyF  (OperatorF name)) = name
 --        Simplification for various types of AST nodes         --
 ------------------------------------------------------------------
 
+simplifyPatternNonStrict
+  :: InferenceFn
+  -> Bool
+  -> SimplePattern
+  -> SimplifiedExpr
+  -> SimplifiedExpr
+  -> Infer SimplifiedExpr
+simplifyPatternNonStrict fn recMode (PatTag name (TagPatSome pat)) letExpr expr = do
+  addExprAnnot $ simplifyPattern
+    fn
+    recMode
+    pat
+    (SimplifiedTagUnpackNonStrict name letExpr
+    )
+    expr
+simplifyPatternNonStrict fn recMode pat letExpr expr = simplifyPattern fn recMode pat letExpr expr
 
 simplifyPattern
   :: InferenceFn
@@ -60,6 +76,11 @@ simplifyPattern
   -> SimplifiedExpr
   -> Infer SimplifiedExpr
 simplifyPattern _ _ PatNone _ expr = addExprAnnot $ return expr
+simplifyPattern fn recMode (PatOr altFirst restAlts) letExpr expr = do
+  simplList <- foldrM (\(PatOrExpr pat) acc -> do
+    r <- simplifyPatternNonStrict fn recMode pat letExpr expr
+    return $ [r] ++ acc) [] $ [altFirst] ++ restAlts
+  return $ SimplifiedAlternatives simplList
 simplifyPattern fn recMode (PatTag name (TagPatSome pat)) letExpr expr = do
   addExprAnnot $ simplifyPattern
     fn

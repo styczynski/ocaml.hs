@@ -6,4 +6,6 @@ let g = [tree; four; uni]
 
 ;;
 
-let [(`Int x)] = g in x
+match tree with
+    | ((`Int x) | (`Float x)) -> x
+    | _ -> 0
