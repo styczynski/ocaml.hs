@@ -97,7 +97,7 @@ remapTypes t =
 
 isNotPlaceholder :: Type -> Bool
 isNotPlaceholder (TypeVar _) = False
-isNotPlaceholder _ = True
+isNotPlaceholder _           = True
 
 -- | Helper to print types in readable format
 typeToStrRec :: [TypeVar] -> Type -> String

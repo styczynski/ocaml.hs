@@ -64,7 +64,11 @@ exportGlobalVariableType name typeExpr = do
   return (REmpty, (setTypesState envS (setTypesEnv envT env)))
 
 annotateGlobalVariableTypeEnvironment
-  :: Types.TypeEnvironment -> InferState -> String -> String -> IO (Types.TypeEnvironment, InferState)
+  :: Types.TypeEnvironment
+  -> InferState
+  -> String
+  -> String
+  -> IO (Types.TypeEnvironment, InferState)
 annotateGlobalVariableTypeEnvironment env state name typeExpr =
   let ts = myLexer typeExpr
   in

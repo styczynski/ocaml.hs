@@ -145,11 +145,11 @@ instance UnpackableValue Bool where
 
 getType :: (RuntimeValue, Environment) -> RuntimeType
 getType (REmpty          , _  ) = TEmpty
-getType ((RExport _)     , _  ) = TEmpty
-getType ((RInt    _)     , _  ) = TInt
+getType ((RExport _  )   , _  ) = TEmpty
+getType ((RInt    _  )   , _  ) = TInt
 getType ((RTag name v)   , env) = TTag name $ getType (v, env)
-getType ((RString _)     , _  ) = TString
-getType ((RBool   _)     , _  ) = TBool
+getType ((RString _  )   , _  ) = TString
+getType ((RBool   _  )   , _  ) = TBool
 getType (RInvalid        , _  ) = TInvalid
 getType ((RRecord name _), env) = TRecord name
 getType ((RVariant name option val), env) =
@@ -171,7 +171,7 @@ typeToStr TInt                        = "int"
 typeToStr TString                     = "string"
 typeToStr TBool                       = "bool"
 typeToStr TInvalid                    = "invalid"
-typeToStr (TTag name v)               = "`" ++ name ++ " " ++ (typeToStr v)
+typeToStr (TTag name v              ) = "`" ++ name ++ " " ++ (typeToStr v)
 typeToStr (TRef    v                ) = "ref " ++ (typeToStr v)
 typeToStr (TRecord (Ident name)     ) = name
 typeToStr (TVariant (Ident name) _ _) = name
@@ -301,7 +301,8 @@ valueToStrRec env REmpty        = "()"
 valueToStrRec env (RExport _  ) = "%export"
 valueToStrRec env (RInt    val) = show val
 valueToStrRec env (RString val) = show val
-valueToStrRec env (RTag name val) = "`" ++ name ++ " " ++ (valueToStrRec env val)
+valueToStrRec env (RTag name val) =
+  "`" ++ name ++ " " ++ (valueToStrRec env val)
 valueToStrRec env (RVariant _ (Ident option) val) =
   option ++ " " ++ (valueToStrRec env val)
 valueToStrRec env (RBool  val) = show val

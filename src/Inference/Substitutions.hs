@@ -67,13 +67,17 @@ instance WithFreedom Type TypeVar where
   freeDimensions (TypeStatic a) = Set.empty
   freeDimensions (TypeVar    a) = Set.singleton a
   freeDimensions (TypeList   a) = freeDimensions a
-  freeDimensions (TypeComplex name deps) = foldl (\acc el -> Set.union acc $ freeDimensions el) (Set.empty) deps
-  freeDimensions (TypePoly alt) = foldl (\acc el -> Set.union acc $ freeDimensions el) (Set.empty) alt
-  freeDimensions (TypeArrow t1 t2) = Set.union (freeDimensions t1) (freeDimensions t2)
-  freeDimensions (TypeTuple t1 t2) = Set.union (freeDimensions t1) (freeDimensions t2)
+  freeDimensions (TypeComplex name deps) =
+    foldl (\acc el -> Set.union acc $ freeDimensions el) (Set.empty) deps
+  freeDimensions (TypePoly alt) =
+    foldl (\acc el -> Set.union acc $ freeDimensions el) (Set.empty) alt
+  freeDimensions (TypeArrow t1 t2) =
+    Set.union (freeDimensions t1) (freeDimensions t2)
+  freeDimensions (TypeTuple t1 t2) =
+    Set.union (freeDimensions t1) (freeDimensions t2)
   freeDimensions TypeUnit          = Set.empty
   freeDimensions (TypeAnnotated _) = Set.empty
-  freeDimensions _ = Set.empty
+  freeDimensions _                 = Set.empty
 
 -- | This is used to replace type variables within types
 instance Substitutable Type TypeVar Type where
@@ -84,11 +88,12 @@ instance Substitutable Type TypeVar Type where
   (.>) s         (  t1 `TypeTuple` t2    ) = TypeTuple (s .> t1) (s .> t2)
   (.>) s         (  TypeList a           ) = TypeList $ s .> a
   (.>) s         TypeUnit                  = TypeUnit
-  (.>) s         (TypeAnnotated v)         = (TypeAnnotated v)
-  (.>) s         (TypePoly alt)            = TypePoly $ map (\a -> s .> a) alt
+  (.>) s         (TypeAnnotated v  )       = (TypeAnnotated v)
+  (.>) s         (TypePoly      alt)       = TypePoly $ map (\a -> s .> a) alt
 
 instance WithFreedom Scheme TypeVar where
-  freeDimensions (Scheme vars t) = freeDimensions t `Set.difference` Set.fromList vars
+  freeDimensions (Scheme vars t) =
+    freeDimensions t `Set.difference` Set.fromList vars
 
 -- | This is used to replace type variables within types
 instance Substitutable Scheme TypeVar Type where
@@ -96,7 +101,8 @@ instance Substitutable Scheme TypeVar Type where
     Scheme vars $ (Subst $ foldr Map.delete s vars) .> t
 
 instance WithFreedom TypeConstraint TypeVar where
-  freeDimensions (TypeConstraint _ (t1, t2)) = freeDimensions t1 `Set.union` freeDimensions t2
+  freeDimensions (TypeConstraint _ (t1, t2)) =
+    freeDimensions t1 `Set.union` freeDimensions t2
 
 -- | This is used to replace type variables within types
 instance Substitutable TypeConstraint TypeVar Type where
@@ -104,7 +110,8 @@ instance Substitutable TypeConstraint TypeVar Type where
     TypeConstraint EmptyPayload (s .> t1, s .> t2)
 
 instance (WithFreedom a b) => WithFreedom [a] b where
-  freeDimensions s = foldr (\el acc -> (freeDimensions el) `Set.union` acc) Set.empty s
+  freeDimensions s =
+    foldr (\el acc -> (freeDimensions el) `Set.union` acc) Set.empty s
 
 -- | This is used to replace type variables within types
 instance (Substitutable a b c) => Substitutable [a] b c where
@@ -117,5 +124,9 @@ instance WithFreedom TypeEnvironment TypeVar where
 instance Substitutable TypeEnvironment TypeVar Type where
   (.>) s (TypeEnvironment env) = TypeEnvironment $ Map.map (s .>) env
 
-(+>) :: (Ord a, Substitutable b a b) => (Substitution a b) -> (Substitution a b) -> Substitution a b
+(+>)
+  :: (Ord a, Substitutable b a b)
+  => (Substitution a b)
+  -> (Substitution a b)
+  -> Substitution a b
 (+>) (Subst s1) (Subst s2) = Subst $ Map.map ((Subst s1) .>) s2 `Map.union` s1

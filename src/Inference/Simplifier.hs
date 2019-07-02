@@ -58,15 +58,15 @@ simplifyPatternNonStrict
   -> SimplifiedExpr
   -> SimplifiedExpr
   -> Infer SimplifiedExpr
-simplifyPatternNonStrict fn recMode (PatTag name (TagPatSome pat)) letExpr expr = do
-  addExprAnnot $ simplifyPattern
-    fn
-    recMode
-    pat
-    (SimplifiedTagUnpackNonStrict name letExpr
-    )
-    expr
-simplifyPatternNonStrict fn recMode pat letExpr expr = simplifyPattern fn recMode pat letExpr expr
+simplifyPatternNonStrict fn recMode (PatTag name (TagPatSome pat)) letExpr expr
+  = do
+    addExprAnnot $ simplifyPattern fn
+                                   recMode
+                                   pat
+                                   (SimplifiedTagUnpackNonStrict name letExpr)
+                                   expr
+simplifyPatternNonStrict fn recMode pat letExpr expr =
+  simplifyPattern fn recMode pat letExpr expr
 
 simplifyPattern
   :: InferenceFn
@@ -77,25 +77,29 @@ simplifyPattern
   -> Infer SimplifiedExpr
 simplifyPattern _ _ PatNone _ expr = addExprAnnot $ return expr
 simplifyPattern fn recMode (PatOr altFirst restAlts) letExpr expr = do
-  simplList <- foldrM (\(PatOrExpr pat) acc -> do
-    r <- simplifyPatternNonStrict fn recMode pat letExpr expr
-    return $ [r] ++ acc) [] $ [altFirst] ++ restAlts
+  simplList <-
+    foldrM
+      (\(PatOrExpr pat) acc -> do
+        r <- simplifyPatternNonStrict fn recMode pat letExpr expr
+        return $ [r] ++ acc
+      )
+      []
+    $  [altFirst]
+    ++ restAlts
   return $ SimplifiedAlternatives simplList
 simplifyPattern fn recMode (PatTag name (TagPatSome pat)) letExpr expr = do
-  addExprAnnot $ simplifyPattern
-    fn
-    recMode
-    pat
-    (SimplifiedTagUnpack name letExpr
-    )
-    expr
+  addExprAnnot
+    $ simplifyPattern fn recMode pat (SimplifiedTagUnpack name letExpr) expr
 simplifyPattern fn recMode (PatTag (Ident name) TagPatNone) letExpr expr = do
-  polyC    <- getTagIndex name
-  polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (50-polyC)
-  tv       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [TypeUnit]] ++ polyV2)
-  id <- freshIdent
-  addExprAnnot $ return $ SimplifiedLet id (SimplifiedCheck letExpr $ Scheme [] tv) expr
+  polyC  <- getTagIndex name
+  polyV1 <- freshTypeVarPlaceholders (polyC + 1)
+  polyV2 <- freshTypeVarPlaceholders (50 - polyC)
+  tv <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [TypeUnit]] ++ polyV2)
+  id     <- freshIdent
+  addExprAnnot $ return $ SimplifiedLet
+    id
+    (SimplifiedCheck letExpr $ Scheme [] tv)
+    expr
 simplifyPattern fn _ ast@(PatList (PList [])) letExpr expr = do
   markTrace ast
   scheme <- fn
@@ -145,18 +149,14 @@ simplifyPattern fn recMode (PatCheck name typeExpr) letExpr expr = do
                                  (SimplifiedCheck letExpr scheme)
                                  expr
 simplifyPattern fn recMode (PatAs pat name) letExpr expr = do
-  simpl <- simplifyPattern fn
+  simpl  <- simplifyPattern fn recMode pat letExpr expr
+  tv1    <- freshTypeVar
+  tv2    <- freshTypeVar
+  simplR <- simplifyPattern fn
                             recMode
                             pat
-                            letExpr
-                            expr
-  tv1 <- freshTypeVar
-  tv2 <- freshTypeVar
-  simplR <- simplifyPattern fn
-                              recMode
-                              pat
-                              (SimplifiedTyped $ Scheme [] tv1)
-                              (SimplifiedTyped $ Scheme [] tv2)
+                            (SimplifiedTyped $ Scheme [] tv1)
+                            (SimplifiedTyped $ Scheme [] tv2)
   addExprAnnot $ return $ SimplifiedLetAs name letExpr simpl simplR
 simplifyPattern _ False (PatIdent name) letExpr expr =
   addExprAnnot $ return $ SimplifiedLet name letExpr expr
@@ -243,11 +243,11 @@ simplifyComplexExpression fn ast@(ECMatch expr _ clauses) = do
   clausesList <- foldrM
     (\(MatchClause pat clauseExpr) acc -> do
       r <- return $ ListElement $ ECLetNS LetRecNo
-                                        pat
-                                        []
-                                        TypeConstrEmpty
-                                        expr
-                                        clauseExpr
+                                          pat
+                                          []
+                                          TypeConstrEmpty
+                                          expr
+                                          clauseExpr
       return $ [r] ++ acc
     )
     []

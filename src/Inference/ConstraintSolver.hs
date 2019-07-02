@@ -70,7 +70,7 @@ runSolve cs = do
 solver :: Unifier -> Solve TypeSubstitution
 solver (su, cs) = case cs of
   [] -> return su
-  ((TypeConstraint l (t1, t2)):cs0) -> do
+  ((TypeConstraint l (t1, t2)) : cs0) -> do
     checkpointAnnotSolve (TypeConstraint l (t1, t2))
     su1 <- t1 <-$-> t2
     solver (su1 +> su, su1 .> cs0)
@@ -90,13 +90,14 @@ instance BindableSolve TypeVar Type where
 
 -- | This instance represents binding type to type (unification)
 instance BindableSolve Type Type where
-  (<-$->) t1 t2 | t1 == t2 = return emptySubst
-  (<-$->) (TypeVar v)                  t                            = v <-$-> t
-  (<-$->) t                            (   TypeVar  v             ) = v <-$-> t
-  (<-$->) (TypeList t1) (TypeList t2) = [t1] <-$-> [t2]
+  (<-$->) t1 t2 | t1 == t2                    = return emptySubst
+  (<-$->) (TypeVar v)       t                 = v <-$-> t
+  (<-$->) t                 (TypeVar  v     ) = v <-$-> t
+  (<-$->) (TypeList t1    ) (TypeList t2    ) = [t1] <-$-> [t2]
   (<-$->) (TypeTuple t1 t2) (TypeTuple t3 t4) = [t1, t2] <-$-> [t3, t4]
   (<-$->) (TypeArrow t1 t2) (TypeArrow t3 t4) = [t1, t2] <-$-> [t3, t4]
-  (<-$->) t1@(TypePoly alternatives1) t2@(TypePoly alternatives2) = alternatives1 <-$-> alternatives2
+  (<-$->) t1@(TypePoly alternatives1) t2@(TypePoly alternatives2) =
+    alternatives1 <-$-> alternatives2
   (<-$->) t1@(TypeComplex name1 deps1) t2@(TypeComplex name2 deps2) = do
     payl <- errSolvePayload
     _    <- if not (name1 == name2)

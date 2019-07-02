@@ -43,7 +43,8 @@ data TypeConstraint = TypeConstraint TypeErrorPayload (Type, Type) deriving (Sho
 type Unifier = (TypeSubstitution, [TypeConstraint])
 
 -- | Base inference monad and state
-type Infer = StateT (InferState) (ReaderT (TypeEnvironment) (ExceptT TypeError IO))
+type Infer
+  = StateT (InferState) (ReaderT (TypeEnvironment) (ExceptT TypeError IO))
 data InferState = InferState {
   count :: Int,
   tCount :: Int,
@@ -64,13 +65,12 @@ data TypeError
 
 -- | Empty inference state
 initInfer :: InferState
-initInfer = InferState {
-  count = 0,
-  tCount = 0,
-  tagMap = Map.empty,
-  inferTrace = [],
-  lastInferExpr = ""
-}
+initInfer = InferState { count         = 0
+                       , tCount        = 0
+                       , tagMap        = Map.empty
+                       , inferTrace    = []
+                       , lastInferExpr = ""
+                       }
 
 -- | Stringify type contraint (for debug purposes)
 constraintToStr :: TypeConstraint -> String

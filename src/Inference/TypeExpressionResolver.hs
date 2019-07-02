@@ -77,27 +77,24 @@ getTypeExpressionFV _ = return Map.empty
 
 -- | Extracts free variables from type expression
 instance WithFreedomM TypeSimpleExpression String Infer where
-  freeDimensionsM TypeSExprEmpty = return $ Set.empty
-  freeDimensionsM (TypeSExprList expr) =
-    freeDimensionsM expr
-  freeDimensionsM (TypeSExprAbstract (TypeIdentAbstract name))
-    = return $ Set.singleton name
+  freeDimensionsM TypeSExprEmpty       = return $ Set.empty
+  freeDimensionsM (TypeSExprList expr) = freeDimensionsM expr
+  freeDimensionsM (TypeSExprAbstract (TypeIdentAbstract name)) =
+    return $ Set.singleton name
   freeDimensionsM (TypeSExprIdent _) = return $ Set.empty
 
 instance WithFreedomM TypeExpression String Infer where
-  freeDimensionsM (TypeExprSimple simpl) =
-    freeDimensionsM simpl
+  freeDimensionsM (TypeExprSimple simpl) = freeDimensionsM simpl
   freeDimensionsM (TypeExprIdent (TypeArgJustOne simpl) _) =
     freeDimensionsM simpl
-  freeDimensionsM (TypeExprIdent (TypeArgJust firstParam restParams) _)
-    = do
-      foldlM
-        (\acc (TypeArgEl el) -> do
-          r <- freeDimensionsM el
-          return $ acc `Set.union` r
-        )
-        Set.empty
-        ([firstParam] ++ restParams)
+  freeDimensionsM (TypeExprIdent (TypeArgJust firstParam restParams) _) = do
+    foldlM
+      (\acc (TypeArgEl el) -> do
+        r <- freeDimensionsM el
+        return $ acc `Set.union` r
+      )
+      Set.empty
+      ([firstParam] ++ restParams)
   freeDimensionsM (TypeFun a b) = do
     x <- freeDimensionsM a
     y <- freeDimensionsM b

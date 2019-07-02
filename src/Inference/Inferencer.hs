@@ -42,7 +42,11 @@ runInfer
   :: TypeEnvironment
   -> InferState
   -> Infer (TypeEnvironment, Type, [TypeConstraint])
-  -> IO (Either TypeError ((TypeEnvironment, Type, [TypeConstraint]), InferState))
+  -> IO
+       ( Either
+           TypeError
+           ((TypeEnvironment, Type, [TypeConstraint]), InferState)
+       )
 runInfer env state fn = do
   v <- runExceptT (runReaderT (runStateT fn (state)) (env))
   case v of
@@ -57,8 +61,13 @@ solve r = case r of
   Right (ty, cs) -> do
     s <- runSolve cs
     case s of
-      Left  err   -> return $ Left err
-      Right subst -> return $ Right $ (normalize . generalize Inference.TypingEnvironment.empty) $ subst .> ty
+      Left err -> return $ Left err
+      Right subst ->
+        return
+          $  Right
+          $  (normalize . generalize Inference.TypingEnvironment.empty)
+          $  subst
+          .> ty
 
 -- | Helper to remove state and env from inference monad output
 unpackEnvTypeContraints
@@ -69,13 +78,15 @@ unpackEnvTypeContraints (Right ((_, t, c), _)) = Right (t, c)
 
 -- | Helper to extract environment from inference monad output
 retrieveEnv
-  :: Either TypeError ((TypeEnvironment, Type, [TypeConstraint]), InferState) -> TypeEnvironment
+  :: Either TypeError ((TypeEnvironment, Type, [TypeConstraint]), InferState)
+  -> TypeEnvironment
 retrieveEnv (Left  r             ) = empty
 retrieveEnv (Right ((e, _, _), _)) = e
 
 -- | Helper to extract inferencer state from inference monad output
 retrieveState
-  :: Either TypeError ((TypeEnvironment, Type, [TypeConstraint]), InferState) -> InferState
+  :: Either TypeError ((TypeEnvironment, Type, [TypeConstraint]), InferState)
+  -> InferState
 retrieveState (Left  r         ) = initInfer
 retrieveState (Right (_, state)) = state
 
@@ -95,7 +106,8 @@ inferAST env state ex = do
     Right s -> return $ Right (s, env, state)
 
 -- | Get type contraints for given implementation node in AST
-inferImplementation :: Implementation -> Infer (TypeEnvironment, Type, [TypeConstraint])
+inferImplementation
+  :: Implementation -> Infer (TypeEnvironment, Type, [TypeConstraint])
 inferImplementation ast@(IRoot cores) = do
   markTrace ast
   env <- ask
@@ -147,7 +159,10 @@ createTypeExpressionAbstractArgConstructor typeName names@(hNames : tNames) =
 
 -- | Infers type for variant option
 inferVariantOption
-  :: [String] -> Ident -> TDefVariant -> Infer (TypeEnvironment, Type, [TypeConstraint])
+  :: [String]
+  -> Ident
+  -> TDefVariant
+  -> Infer (TypeEnvironment, Type, [TypeConstraint])
 inferVariantOption typeVars typeName (TDefVarSimpl name@(Ident nameStr)) = do
   retType <- return
     $ createTypeExpressionAbstractArgConstructor typeName typeVars
@@ -233,7 +248,8 @@ inferTypeDef ast@(TypeDefVarP typeParams name options) = do
   unmarkTrace ast
   return r
 
-inferImplementationPhrase :: ImplPhrase -> Infer (TypeEnvironment, Type, [TypeConstraint])
+inferImplementationPhrase
+  :: ImplPhrase -> Infer (TypeEnvironment, Type, [TypeConstraint])
 inferImplementationPhrase (IGlobalLetOperator recK opName restPatterns letExpr)
   = do
     (t, c) <- inferComplexExpression
@@ -300,16 +316,17 @@ infer (SimplifiedCall e1 e2) = do
 infer (SimplifiedLetAs x e1 _ e2) = do
   (gt, gc) <- infer (SimplifiedLet x e1 e2)
   env      <- ask
-  tv <- freshTypeVar
+  tv       <- freshTypeVar
   (t1, c1) <- infer e1
-  con1 <- gt <.> t1
+  con1     <- gt <.> t1
   ac       <- constraintAnnoTypeList [con1]
   s        <- lift $ lift $ lift $ runSolve c1
   case s of
     Left  err -> throwError err
     Right sub -> do
       let sc = generalize (sub .> env) (sub .> t1)
-      (t2, c2) <- (x, sc) ==> (local (sub .>) (infer (SimplifiedTyped $ Scheme [] tv)))
+      (t2, c2) <-
+        (x, sc) ==> (local (sub .>) (infer (SimplifiedTyped $ Scheme [] tv)))
       return (t2, ac ++ c1 ++ c2)
 infer (SimplifiedLet x e1 e2) = do
   env      <- ask
@@ -358,23 +375,30 @@ infer (SimplifiedIf cond tr fl) = do
   ac       <- constraintAnnoTypeList [con1, con2]
   return (t2, c1 ++ c2 ++ c3 ++ ac)
 infer (SimplifiedAlternatives exps) = do
-  tv       <- freshTypeVar
-  foldrM (\exp (tAcc, cAcc) -> do
-    (tExp, cExp) <- infer exp
-    con1     <- tv <.> tExp
-    ac       <- constraintAnnoTypeList [con1]
-    return (tExp, cAcc ++ cExp ++ ac)) (tv, []) exps
+  tv <- freshTypeVar
+  foldrM
+    (\exp (tAcc, cAcc) -> do
+      (tExp, cExp) <- infer exp
+      con1         <- tv <.> tExp
+      ac           <- constraintAnnoTypeList [con1]
+      return (tExp, cAcc ++ cExp ++ ac)
+    )
+    (tv, [])
+    exps
 infer (SimplifiedTagUnpack (Ident name) exp) = do
   (t1, c1) <- infer exp
   tv       <- freshTypeVar
   u1       <- return $ t1 `TypeArrow` tv
   p1       <- freshTypeVar
   polyC    <- getTagIndex name
-  polyV1   <- freshTypeVarPlaceholdersLock (polyC+1)
-  polyV2   <- freshTypeVarPlaceholdersLock (50-polyC)
-  u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2) `TypeArrow` p1
-  con1     <- u1 <.> u2
-  ac       <- constraintAnnoTypeList [con1]
+  polyV1   <- freshTypeVarPlaceholdersLock (polyC + 1)
+  polyV2   <- freshTypeVarPlaceholdersLock (50 - polyC)
+  u2       <-
+    return
+    $           (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
+    `TypeArrow` p1
+  con1 <- u1 <.> u2
+  ac   <- constraintAnnoTypeList [con1]
   return (tv, c1 ++ ac)
 infer (SimplifiedTagUnpackNonStrict (Ident name) exp) = do
   (t1, c1) <- infer exp
@@ -382,21 +406,24 @@ infer (SimplifiedTagUnpackNonStrict (Ident name) exp) = do
   u1       <- return $ t1 `TypeArrow` tv
   p1       <- freshTypeVar
   polyC    <- getTagIndex name
-  polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (50-polyC)
-  u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2) `TypeArrow` p1
-  con1     <- u1 <.> u2
-  ac       <- constraintAnnoTypeList [con1]
+  polyV1   <- freshTypeVarPlaceholders (polyC + 1)
+  polyV2   <- freshTypeVarPlaceholders (50 - polyC)
+  u2       <-
+    return
+    $           (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
+    `TypeArrow` p1
+  con1 <- u1 <.> u2
+  ac   <- constraintAnnoTypeList [con1]
   return (tv, c1 ++ ac)
 infer (SimplifiedTag (Ident name) SimplifiedSkip) = do
-  u1       <- freshTypeVar
-  p1       <- return $ TypeUnit
-  polyC    <- getTagIndex name
-  polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (50-polyC)
-  u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
-  con1     <- u1 <.> u2
-  ac       <- constraintAnnoTypeList [con1]
+  u1     <- freshTypeVar
+  p1     <- return $ TypeUnit
+  polyC  <- getTagIndex name
+  polyV1 <- freshTypeVarPlaceholders (polyC + 1)
+  polyV2 <- freshTypeVarPlaceholders (50 - polyC)
+  u2     <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
+  con1   <- u1 <.> u2
+  ac     <- constraintAnnoTypeList [con1]
   return (u1, ac)
 infer (SimplifiedTag (Ident name) exp) = do
   (t1, c1) <- infer exp
@@ -404,11 +431,14 @@ infer (SimplifiedTag (Ident name) exp) = do
   u1       <- return $ t1 `TypeArrow` tv
   p1       <- freshTypeVar
   polyC    <- getTagIndex name
-  polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (50-polyC)
-  u2       <- return $ p1 `TypeArrow` (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
-  con1     <- u1 <.> u2
-  ac       <- constraintAnnoTypeList [con1]
+  polyV1   <- freshTypeVarPlaceholders (polyC + 1)
+  polyV2   <- freshTypeVarPlaceholders (50 - polyC)
+  u2       <-
+    return
+    $           p1
+    `TypeArrow` (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
+  con1 <- u1 <.> u2
+  ac   <- constraintAnnoTypeList [con1]
   return (tv, c1 ++ ac)
 
 inferBinaryOperation :: BinaryOp -> Infer Type

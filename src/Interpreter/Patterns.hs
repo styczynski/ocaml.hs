@@ -59,9 +59,12 @@ getPatternExportNames (PatTuple (PTuple firstElement tupleElements)) = do
         []
         ([firstElement] ++ tupleElements)
 getPatternExportNames (PatIdent (Ident name)) = [name]
-getPatternExportNames (PatAs pat (Ident name)) = [name] ++ (getPatternExportNames pat)
+getPatternExportNames (PatAs pat (Ident name)) =
+  [name] ++ (getPatternExportNames pat)
 getPatternExportNames (PatOr firstAlt restAlts) = do
-  foldr (\(PatOrExpr pat) acc -> (getPatternExportNames pat) ++ acc) [] ([firstAlt] ++ restAlts)
+  foldr (\(PatOrExpr pat) acc -> (getPatternExportNames pat) ++ acc)
+        []
+        ([firstAlt] ++ restAlts)
 getPatternExportNames (PatTag _ (TagPatSome patternOption)) =
   getPatternExportNames patternOption
 getPatternExportNames (PatTag _ TagPatNone) = []
@@ -158,31 +161,32 @@ getPatternMapping (PatConstr typeConstr patternOption) val@(RVariant optionVar o
             ++ (show val)
 getPatternMapping (PatOr firstAlt restAlts) val = do
   mapping <- foldrM
-      (\(PatOrExpr pat) retMap ->
-        do
-            t <- getPatternMapping pat val
-            return t
-          `catchError` (\err -> return retMap)
-      )
-      (Map.empty)
-      ([firstAlt] ++ restAlts)
+    (\(PatOrExpr pat) retMap ->
+      do
+          t <- getPatternMapping pat val
+          return t
+        `catchError` (\err -> return retMap)
+    )
+    (Map.empty)
+    ([firstAlt] ++ restAlts)
   return mapping
-getPatternMapping (PatTag (Ident name) TagPatNone) val@(RTag tagName tagVal) = do
-  r    <- return $ RTag name REmpty
-  isEq <- valueEq r val
-  _    <- if isEq
-    then return REmpty
-    else raise $ "Matching failed. Value is not equal to the given tag"
-  return Map.empty
+getPatternMapping (PatTag (Ident name) TagPatNone) val@(RTag tagName tagVal) =
+  do
+    r    <- return $ RTag name REmpty
+    isEq <- valueEq r val
+    _    <- if isEq
+      then return REmpty
+      else raise $ "Matching failed. Value is not equal to the given tag"
+    return Map.empty
 getPatternMapping (PatTag (Ident name) (TagPatSome patternOption)) val@(RTag tagName tagVal)
   = if (name == tagName)
-      then getPatternMapping patternOption tagVal
-      else
-        raise
-        $  "Tag match failed. Tried to match "
-        ++ ("")
-        ++ " with value of type "
-        ++ (show val)
+    then getPatternMapping patternOption tagVal
+    else
+      raise
+      $  "Tag match failed. Tried to match "
+      ++ ("")
+      ++ " with value of type "
+      ++ (show val)
 getPatternMapping (PatList (PList elems)) (RList vals) = do
   _ <- if (length vals) == (length elems)
     then return REmpty

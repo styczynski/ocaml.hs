@@ -114,7 +114,7 @@ getTagIndex tagName = do
   s <- get
   case Map.lookup tagName (tagMap s) of
     (Just i) -> return i
-    Nothing -> do
+    Nothing  -> do
       c <- freshCountInt
       s <- get
       put s { tagMap = Map.insert tagName c (tagMap s) }
@@ -122,16 +122,24 @@ getTagIndex tagName = do
 
 freshTypeVarPlaceholders :: Int -> Infer [Type]
 freshTypeVarPlaceholders n = do
-  r <- foldrM (\_ acc -> do
-    tv <- freshTypeVar
-    return $ acc ++ [tv]) [] (replicate n 0)
+  r <- foldrM
+    (\_ acc -> do
+      tv <- freshTypeVar
+      return $ acc ++ [tv]
+    )
+    []
+    (replicate n 0)
   return r
 
 freshTypeVarPlaceholdersLock :: Int -> Infer [Type]
 freshTypeVarPlaceholdersLock n = do
-  r <- foldrM (\_ acc -> do
-    tv <- return $ TypeUnit
-    return $ acc ++ [tv]) [] (replicate n 0)
+  r <- foldrM
+    (\_ acc -> do
+      tv <- return $ TypeUnit
+      return $ acc ++ [tv]
+    )
+    []
+    (replicate n 0)
   return r
 
 -- | Translates AST node representing "rec" keyword into boolean
@@ -182,19 +190,25 @@ generalize env t = Scheme as t
   where as = Set.toList $ freeDimensions t `Set.difference` freeDimensions env
 
 -- | Helper to normalize type free variables
-normalizeType _ TypeUnit                = TypeUnit
-normalizeType _ (TypeAnnotated v      ) = (TypeAnnotated v)
-normalizeType ord (TypeArrow a b        ) = TypeArrow (normalizeType ord a) (normalizeType ord b)
-normalizeType ord (TypeTuple a b        ) = TypeTuple (normalizeType ord a) (normalizeType ord b)
-normalizeType ord (TypeList   a         ) = TypeList (normalizeType ord a)
-normalizeType _ (TypeStatic a         ) = TypeStatic a
-normalizeType ord (TypeComplex name deps) = TypeComplex name $ map (normalizeType ord) deps
-normalizeType ord (TypePoly alternatives) = TypePoly $ map (normalizeType ord) alternatives
-normalizeType ord (TypeVar a            ) = case Prelude.lookup a ord of
+normalizeType _ TypeUnit          = TypeUnit
+normalizeType _ (TypeAnnotated v) = (TypeAnnotated v)
+normalizeType ord (TypeArrow a b) =
+  TypeArrow (normalizeType ord a) (normalizeType ord b)
+normalizeType ord (TypeTuple a b) =
+  TypeTuple (normalizeType ord a) (normalizeType ord b)
+normalizeType ord (TypeList   a) = TypeList (normalizeType ord a)
+normalizeType _   (TypeStatic a) = TypeStatic a
+normalizeType ord (TypeComplex name deps) =
+  TypeComplex name $ map (normalizeType ord) deps
+normalizeType ord (TypePoly alternatives) =
+  TypePoly $ map (normalizeType ord) alternatives
+normalizeType ord (TypeVar a) = case Prelude.lookup a ord of
   Just x  -> TypeVar x
   Nothing -> error "Type variable does not exist in type signature"
 normalizeType _ v = v
 
 -- | Normalize type free variables
 normalize :: Scheme -> Scheme
-normalize (Scheme _ body) = let freeVars = (zip (nub $ freeDimensionsList body) (map TV letters)) in Scheme (map snd freeVars) (normalizeType freeVars body)
+normalize (Scheme _ body) =
+  let freeVars = (zip (nub $ freeDimensionsList body) (map TV letters))
+  in  Scheme (map snd freeVars) (normalizeType freeVars body)
