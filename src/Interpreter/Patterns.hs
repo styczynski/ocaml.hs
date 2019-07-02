@@ -59,6 +59,9 @@ getPatternExportNames (PatTuple (PTuple firstElement tupleElements)) = do
         []
         ([firstElement] ++ tupleElements)
 getPatternExportNames (PatIdent (Ident name)) = [name]
+getPatternExportNames (PatTag _ (TagPatSome patternOption)) =
+  getPatternExportNames patternOption
+getPatternExportNames (PatTag _ TagPatNone) = []
 getPatternExportNames (PatConstr typeConstr patternOption) =
   getPatternExportNames patternOption
 getPatternExportNames (PatList (PList elems)) = do
@@ -146,6 +149,15 @@ getPatternMapping (PatConstr typeConstr patternOption) val@(RVariant optionVar o
             ++ ("")
             ++ " with value of type "
             ++ (show val)
+getPatternMapping (PatTag (Ident name) (TagPatSome patternOption)) val@(RTag tagName tagVal)
+  = if (name == tagName)
+      then getPatternMapping patternOption tagVal
+      else
+        raise
+        $  "Tag match failed. Tried to match "
+        ++ ("")
+        ++ " with value of type "
+        ++ (show val)
 getPatternMapping (PatList (PList elems)) (RList vals) = do
   _ <- if (length vals) == (length elems)
     then return REmpty

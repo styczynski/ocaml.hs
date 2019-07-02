@@ -60,6 +60,14 @@ simplifyPattern
   -> SimplifiedExpr
   -> Infer SimplifiedExpr
 simplifyPattern _ _ PatNone _ expr = addExprAnnot $ return expr
+simplifyPattern fn recMode (PatTag name (TagPatSome pat)) letExpr expr = do
+  addExprAnnot $ simplifyPattern
+    fn
+    recMode
+    pat
+    (SimplifiedTagUnpack name letExpr
+    )
+    expr
 simplifyPattern fn _ ast@(PatList (PList [])) letExpr expr = do
   markTrace ast
   scheme <- fn

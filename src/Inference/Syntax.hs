@@ -40,6 +40,7 @@ data SimplifiedExpr
   | SimplifiedConstInt Integer
   | SimplifiedConstString String
   | SimplifiedTag Ident SimplifiedExpr
+  | SimplifiedTagUnpack Ident SimplifiedExpr
   deriving (Show, Eq)
 
 -- | Binary operation

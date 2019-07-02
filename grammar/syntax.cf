@@ -60,7 +60,11 @@ PTuple.              PTuple              ::= PTupleElement "," [PTupleElement] ;
 PTupleElement.       PTupleElement       ::= SimplePattern1 ;
 separator nonempty   PTupleElement       "," ;
 
+TagPatNone.         OptionalTagPat     ::= "" ;
+TagPatSome.         OptionalTagPat     ::= SimplePattern2 ;
+
 PatConstr.           SimplePattern2      ::= "(" Ident SimplePattern2 ")" ;
+PatTag.              SimplePattern2      ::= "(" "`" Ident OptionalTagPat ")" ;
 PatList.             SimplePattern2      ::= PList ;
 PatNone.             SimplePattern2      ::= "_" ;
 PatIdent.            SimplePattern2      ::= Ident ;

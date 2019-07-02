@@ -127,6 +127,13 @@ freshTypeVarPlaceholders n = do
     return $ acc ++ [tv]) [] (replicate n 0)
   return r
 
+freshTypeVarPlaceholdersLock :: Int -> Infer [Type]
+freshTypeVarPlaceholdersLock n = do
+  r <- foldrM (\_ acc -> do
+    tv <- return $ TypeUnit
+    return $ acc ++ [tv]) [] (replicate n 0)
+  return r
+
 -- | Translates AST node representing "rec" keyword into boolean
 isRec :: LetRecKeyword -> Bool
 isRec LetRecYes = True
