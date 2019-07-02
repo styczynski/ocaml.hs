@@ -371,7 +371,7 @@ infer (SimplifiedTagUnpack (Ident name) exp) = do
   p1       <- freshTypeVar
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholdersLock (polyC+1)
-  polyV2   <- freshTypeVarPlaceholdersLock (9-polyC)
+  polyV2   <- freshTypeVarPlaceholdersLock (50-polyC)
   u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2) `TypeArrow` p1
   con1     <- u1 <.> u2
   ac       <- constraintAnnoTypeList [con1]
@@ -383,7 +383,7 @@ infer (SimplifiedTagUnpackNonStrict (Ident name) exp) = do
   p1       <- freshTypeVar
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (9-polyC)
+  polyV2   <- freshTypeVarPlaceholders (50-polyC)
   u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2) `TypeArrow` p1
   con1     <- u1 <.> u2
   ac       <- constraintAnnoTypeList [con1]
@@ -393,7 +393,7 @@ infer (SimplifiedTag (Ident name) SimplifiedSkip) = do
   p1       <- return $ TypeUnit
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (9-polyC)
+  polyV2   <- freshTypeVarPlaceholders (50-polyC)
   u2       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
   con1     <- u1 <.> u2
   ac       <- constraintAnnoTypeList [con1]
@@ -405,7 +405,7 @@ infer (SimplifiedTag (Ident name) exp) = do
   p1       <- freshTypeVar
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (9-polyC)
+  polyV2   <- freshTypeVarPlaceholders (50-polyC)
   u2       <- return $ p1 `TypeArrow` (TypePoly $ polyV1 ++ [TypeComplex name [p1]] ++ polyV2)
   con1     <- u1 <.> u2
   ac       <- constraintAnnoTypeList [con1]

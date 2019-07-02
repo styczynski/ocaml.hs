@@ -92,7 +92,7 @@ simplifyPattern fn recMode (PatTag name (TagPatSome pat)) letExpr expr = do
 simplifyPattern fn recMode (PatTag (Ident name) TagPatNone) letExpr expr = do
   polyC    <- getTagIndex name
   polyV1   <- freshTypeVarPlaceholders (polyC+1)
-  polyV2   <- freshTypeVarPlaceholders (9-polyC)
+  polyV2   <- freshTypeVarPlaceholders (50-polyC)
   tv       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [TypeUnit]] ++ polyV2)
   id <- freshIdent
   addExprAnnot $ return $ SimplifiedLet id (SimplifiedCheck letExpr $ Scheme [] tv) expr
