@@ -61,7 +61,7 @@ PTupleElement.       PTupleElement       ::= SimplePattern1 ;
 separator nonempty   PTupleElement       "," ;
 
 TagPatNone.         OptionalTagPat     ::= "" ;
-TagPatSome.         OptionalTagPat     ::= SimplePattern2 ;
+TagPatSome.         OptionalTagPat     ::= SimplePattern ;
 
 PatOrExpr.          PatOrExpr          ::= SimplePattern2 ;
 separator nonempty PatOrExpr      "|" ;
@@ -76,6 +76,7 @@ internal PatCheck.            SimplePattern2      ::= Ident ":" TypeExpression;
 PatConst.            SimplePattern2      ::= Constant ;
 PatCons.             SimplePattern1      ::= SimplePattern2 "::" SimplePattern1 ;
 PatTuple.            SimplePattern       ::= PTuple ;
+PatAs.               SimplePattern       ::= SimplePattern1 "as" Ident;
 
 coercions            SimplePattern       2 ;
 separator            SimplePattern       "" ;

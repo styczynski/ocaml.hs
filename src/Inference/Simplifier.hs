@@ -89,6 +89,13 @@ simplifyPattern fn recMode (PatTag name (TagPatSome pat)) letExpr expr = do
     (SimplifiedTagUnpack name letExpr
     )
     expr
+simplifyPattern fn recMode (PatTag (Ident name) TagPatNone) letExpr expr = do
+  polyC    <- getTagIndex name
+  polyV1   <- freshTypeVarPlaceholders (polyC+1)
+  polyV2   <- freshTypeVarPlaceholders (9-polyC)
+  tv       <- return $ (TypePoly $ polyV1 ++ [TypeComplex name [TypeUnit]] ++ polyV2)
+  id <- freshIdent
+  addExprAnnot $ return $ SimplifiedLet id (SimplifiedCheck letExpr $ Scheme [] tv) expr
 simplifyPattern fn _ ast@(PatList (PList [])) letExpr expr = do
   markTrace ast
   scheme <- fn
@@ -137,6 +144,13 @@ simplifyPattern fn recMode (PatCheck name typeExpr) letExpr expr = do
                                  (PatIdent name)
                                  (SimplifiedCheck letExpr scheme)
                                  expr
+simplifyPattern fn recMode (PatAs pat name) letExpr expr = do
+  simpl <- simplifyPattern fn
+                            recMode
+                            pat
+                            letExpr
+                            expr
+  addExprAnnot $ return $ SimplifiedLet name letExpr simpl
 simplifyPattern _ False (PatIdent name) letExpr expr =
   addExprAnnot $ return $ SimplifiedLet name letExpr expr
 simplifyPattern _ True (PatIdent name) letExpr expr =

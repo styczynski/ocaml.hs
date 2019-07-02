@@ -41,6 +41,9 @@ valueEq (RInt    a) (RInt    b) = return $ a == b
 valueEq (RString a) (RString b) = return $ a == b
 valueEq (RBool   a) (RBool   b) = return $ a == b
 valueEq (RRef    a) (RRef    b) = return $ a == b
+valueEq (RTag name1 a) (RTag name2 b) = do
+  innerEq <- valueEq a b
+  return $ innerEq && (name1 == name2)
 valueEq (RTuple  a) (RTuple  b) = do
   lenA        <- return $ length a
   lenB        <- return $ length b

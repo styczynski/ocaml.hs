@@ -59,6 +59,7 @@ getPatternExportNames (PatTuple (PTuple firstElement tupleElements)) = do
         []
         ([firstElement] ++ tupleElements)
 getPatternExportNames (PatIdent (Ident name)) = [name]
+getPatternExportNames (PatAs pat (Ident name)) = [name] ++ (getPatternExportNames pat)
 getPatternExportNames (PatOr firstAlt restAlts) = do
   foldr (\(PatOrExpr pat) acc -> (getPatternExportNames pat) ++ acc) [] ([firstAlt] ++ restAlts)
 getPatternExportNames (PatTag _ (TagPatSome patternOption)) =
@@ -118,6 +119,10 @@ getPatternMapping (PatTuple (PTuple firstElement tupleElements)) (RTuple vals)
       (Map.empty, vals)
       (firstElement : tupleElements)
     return newEnv
+getPatternMapping (PatAs pat name) val = do
+  m1 <- getPatternMapping pat val
+  m2 <- getPatternMapping (PatIdent name) val
+  return $ m1 `Map.union` m2
 getPatternMapping (PatIdent name) val = do
   env     <- ask
   nameDef <- return $ getDef name env
@@ -162,6 +167,13 @@ getPatternMapping (PatOr firstAlt restAlts) val = do
       (Map.empty)
       ([firstAlt] ++ restAlts)
   return mapping
+getPatternMapping (PatTag (Ident name) TagPatNone) val@(RTag tagName tagVal) = do
+  r    <- return $ RTag name REmpty
+  isEq <- valueEq r val
+  _    <- if isEq
+    then return REmpty
+    else raise $ "Matching failed. Value is not equal to the given tag"
+  return Map.empty
 getPatternMapping (PatTag (Ident name) (TagPatSome patternOption)) val@(RTag tagName tagVal)
   = if (name == tagName)
       then getPatternMapping patternOption tagVal
