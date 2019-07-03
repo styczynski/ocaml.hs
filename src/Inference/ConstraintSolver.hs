@@ -70,9 +70,9 @@ runSolve cs = do
 solver :: TypeUnifier -> Solve TypeSubstitution
 solver (TypeUnifier cs su) = case cs of
   [] -> return su
-  ((TypeConstraint l (t1, t2)) : cs0) -> do
-    checkpointAnnotSolve (TypeConstraint l (t1, t2))
-    su1 <- t1 <-$-> t2
+  ((TypeConstraint l (typeArgA, typeArgB)) : cs0) -> do
+    checkpointAnnotSolve (TypeConstraint l (typeArgA, typeArgB))
+    su1 <- typeArgA <-$-> typeArgB
     solver $ TypeUnifier (su1 .> cs0) (su1 +> su)
 
 -- | Represents a data type that can bind values of one type to the other one
@@ -90,32 +90,32 @@ instance BindableSolve TypeVar Type where
 
 -- | This instance represents binding type to type (unification)
 instance BindableSolve Type Type where
-  (<-$->) t1 t2 | t1 == t2                    = return emptySubst
+  (<-$->) typeArgA typeArgB | typeArgA == typeArgB                    = return emptySubst
   (<-$->) (TypeVar v)       t                 = v <-$-> t
   (<-$->) t                 (TypeVar  v     ) = v <-$-> t
-  (<-$->) (TypeList t1    ) (TypeList t2    ) = [t1] <-$-> [t2]
-  (<-$->) (TypeTuple t1 t2) (TypeTuple t3 t4) = [t1, t2] <-$-> [t3, t4]
-  (<-$->) (TypeArrow t1 t2) (TypeArrow t3 t4) = [t1, t2] <-$-> [t3, t4]
-  (<-$->) t1@(TypePoly alternatives1) t2@(TypePoly alternatives2) =
+  (<-$->) (TypeList typeArgA    ) (TypeList typeArgB    ) = [typeArgA] <-$-> [typeArgB]
+  (<-$->) (TypeTuple typeArgA typeArgB) (TypeTuple typeArgC typeArgD) = [typeArgA, typeArgB] <-$-> [typeArgC, typeArgD]
+  (<-$->) (TypeArrow typeArgA typeArgB) (TypeArrow typeArgC typeArgD) = [typeArgA, typeArgB] <-$-> [typeArgC, typeArgD]
+  (<-$->) typeArgA@(TypePoly alternatives1) typeArgB@(TypePoly alternatives2) =
     alternatives1 <-$-> alternatives2
-  (<-$->) t1@(TypeComplex name1 deps1) t2@(TypeComplex name2 deps2) = do
+  (<-$->) typeArgA@(TypeComplex name1 deps1) typeArgB@(TypeComplex name2 deps2) = do
     payl <- errSolvePayload
     _    <- if not (name1 == name2)
-      then throwError $ UnificationMismatch payl [t1] [t2]
+      then throwError $ UnificationMismatch payl [typeArgA] [typeArgB]
       else return 0
     deps1 <-$-> deps2
-  (<-$->) t1 t2 = do
+  (<-$->) typeArgA typeArgB = do
     payl <- errSolvePayload
-    throwError $ UnificationFail payl t1 t2
+    throwError $ UnificationFail payl typeArgA typeArgB
 
 -- | It's useful to bind multiple types at the same time
 instance BindableSolve [Type] [Type] where
   (<-$->) []        []        = return emptySubst
-  (<-$->) (h1 : t1) (h2 : t2) = do
+  (<-$->) (h1 : typeArgA) (h2 : typeArgB) = do
     uni1 <- h1 <-$-> h2
-    uni2 <- (uni1 .> t1) <-$-> (uni1 .> t2)
+    uni2 <- (uni1 .> typeArgA) <-$-> (uni1 .> typeArgB)
     return $ uni2 +> uni1
-  (<-$->) t1 t2 = do
+  (<-$->) typeArgA typeArgB = do
     payl <- errSolvePayload
-    throwError $ UnificationMismatch payl t1 t2
+    throwError $ UnificationMismatch payl typeArgA typeArgB
 

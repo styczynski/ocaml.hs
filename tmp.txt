@@ -1,6 +1,21 @@
-class (WithFreedom a c, WithFreedom b c) => Generalizable a b c where
-   generalized :: a -> b -> [c]
+(*
+ * Usage of Ocaml-like polymorphic variant types.
+ *)
 
- instance Generalizable Type TypeEnvironment TypeVar where
-   generalized a b = Set.toList $ (freeDimensions b) `Set.difference` (freeDimensions a)
+let basic_color_to_int = function
+  | (`Black) -> 0 | (`Red)     -> 1 | (`Green) -> 2 | (`Yellow) -> 3
+  | (`Blue)  -> 4 | (`Magenta) -> 5 | (`Cyan)  -> 6 | (`White)  -> 7
 
+let color_to_int = function
+  | (`Basic (basic_color, weight)) ->
+    let base = (match weight with (`Bold) -> 8 | (`Regular) -> 0) in
+    base + basic_color_to_int basic_color
+  | (`RGB (r,g,b)) -> 16 + b + g * 6 + r * 36
+
+let extended_color_to_int = function
+  | (`RGBA (r,g,b,a)) -> 256 + a + b * 6 + g * 36 + r * 216
+  | ((`Basic _) | (`RGB _)) as col -> color_to_int col
+
+;;
+
+color_to_int ((`Basic ((`Black),(`Bold))))

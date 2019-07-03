@@ -53,7 +53,3 @@ data BinaryOp = OpSemicolon | OpSame | OpCustom String | OpCons | OpTupleCons
 -- | Unary operation
 data UnaryOp = OpCustomUni String | OpHead | OpTails | OpEmptyList | OpEmptyTuple | OpTupleNth Int Int | OpListNth
   deriving (Eq, Ord, Show)
-
--- | Top level definitions
-data Program = Program [Decl] SimplifiedExpr deriving Eq
-type Decl = (String, SimplifiedExpr)
