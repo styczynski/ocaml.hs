@@ -5,35 +5,35 @@ format-code: install-deps
 	stack exec brittany -- --write-mode=inplace ./src/**/*.hs
 
 tintin:
-	stack upgrade --binary-version 2.1.1
-	stack install --only-dependencies
-	stack install tintin
-	stack exec tintin run
+	stack upgrade --allow-different-user --binary-version 2.1.1
+	stack install --allow-different-user --only-dependencies
+	stack install --allow-different-user tintin
+	stack exec --allow-different-user tintin run
 
 web: tintin interpreter-web
 	echo "Done."
 
 install-deps:
-	stack upgrade --binary-version 2.1.1
-	stack install --only-dependencies
-	stack install happy
+	stack upgrade --allow-different-user --binary-version 2.1.1
+	stack install --allow-different-user --only-dependencies
+	stack install --allow-different-user happy
 
 parser-src: install-deps
-	stack exec bnfc -- -m -o parser ./grammar/syntax.cf
+	stack exec --allow-different-user bnfc -- -m -o parser ./grammar/syntax.cf
 	sed -i -e 's/module Main where/module TestSyntax where/g' ./parser/TestSyntax.hs
-	cd parser && stack exec happy -- -gca ParSyntax.y && stack exec alex -- -g LexSyntax.x && cd ..
+	cd parser && stack exec --allow-different-user happy -- -gca ParSyntax.y && stack exec --allow-different-user alex -- -g LexSyntax.x && cd ..
 	rm -f ocamlhs.cabal
 	rm -r -f -d parser/*.x
 	rm -r -f -d parser/*.y
 
 interpreter: install-deps parser-src
-	stack build
+	stack build --allow-different-user
 
 interpreter-web:
 	cd ./web && make all
 
 test: interpreter generate-tests
-	stack test :ocamlhs-test --no-terminal --coverage
+	stack test --allow-different-user :ocamlhs-test --no-terminal --coverage
 
 clean-tests:
 	rm -r -f -d test/Generated
@@ -46,7 +46,7 @@ generate-tests-good: $(wildcard examples/good/*.ml) $(subst .ml,GoodSpec.hs,$(su
 
 %GoodSpec.hs: examples/good/%.ml
 	@mkdir -p test/Generated > /dev/null 2> /dev/null
-	cat $< | stack exec interpreter -- -g > $@.tmp
+	cat $< | stack exec --allow-different-user interpreter -- -g > $@.tmp
 	$(eval NAME:=$(shell basename -s ".ml" "$<"))
 	sed -i -e "s/module MainSpec/module Generated.$(NAME)GoodSpec/g" $@.tmp
 	mv $@.tmp test/Generated/$@
