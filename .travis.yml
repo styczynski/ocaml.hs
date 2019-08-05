@@ -4,7 +4,10 @@ sudo: false
 # Caching so the next build will be fast too.
 cache:
   directories:
+  - $HOME/.ghc
+  - $HOME/.cabal
   - $HOME/.stack
+  - $TRAVIS_BUILD_DIR/.stack-work
 
 before_install:
   # Download and unpack the stack executable
