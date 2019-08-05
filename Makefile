@@ -1,4 +1,4 @@
-all: interpreter
+all: interpreter web
 	echo "Done."
 
 format-code: install-deps
