@@ -11,6 +11,6 @@ copy-root-frontend: frontend
 
 frontend: parser-web
 	cd frontend && ./get_parser_sources.sh
-	cd frontend && npm run build
+	cd frontend && npm install && npm run build
 	mv ./frontend/build/index.html ./frontend/build/parser_index.html
 	cp ../.stack-work/tintin/rendered/* ./frontend/build/
