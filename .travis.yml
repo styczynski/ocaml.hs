@@ -8,6 +8,10 @@ cache:
   - $HOME/.cabal
   - $HOME/.stack
   - $HOME/.cache
+  - $HOME/boot
+  - $HOME/ghcjs
+  - $HOME/.ghcjs
+  - $HOME/../ghcjs-th
   - $TRAVIS_BUILD_DIR/.stack-work
 
 before_install:
