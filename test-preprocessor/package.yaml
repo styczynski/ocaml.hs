@@ -1,0 +1,32 @@
+name:                test-preprocessor
+version:             0.1.0.0
+github:              "styczynski/ocaml.hs"
+license:             MIT
+author:              "Piotr Styczyński"
+maintainer:          "piotr@styczynski.in"
+copyright:           "2019 Piotr Styczyński"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+synopsis:            Interpreter for Ocaml language subset
+category:            Interpreter
+
+description:         Please see the README on GitHub at <https://github.com/styczynski/ocaml.hs#readme>
+
+build-type: Custom
+
+dependencies:
+- base >= 4.7 && < 5
+- heterocephalus >= 1.0.5.3
+
+executables:
+  interpreter:
+    main:                Main.hs
+    source-dirs:
+    - src
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
