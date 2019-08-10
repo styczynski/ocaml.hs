@@ -20,9 +20,10 @@ build-type: Custom
 dependencies:
 - base >= 4.7 && < 5
 - heterocephalus >= 1.0.5.3
+- optparse-applicative >= 0.14.3.0
 
 executables:
-  interpreter:
+  test-preprocessor:
     main:                Main.hs
     source-dirs:
     - src

@@ -39,6 +39,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - heterocephalus-1.0.5.3
+  - optparse-applicative-0.14.3.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
