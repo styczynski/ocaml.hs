@@ -33,6 +33,7 @@ dependencies:
 - brittany >= 0.12.0.0
 - deque >= 0.4.2.3
 - strict-list >= 0.1.4
+- QuickCheck >= 2.12.6.1
 
 library:
   source-dirs:
@@ -63,3 +64,4 @@ tests:
     defaults: hspec/hspec@master
     dependencies:
     - ocamlhs
+    - regex-tdfa >= 1.2.3.2

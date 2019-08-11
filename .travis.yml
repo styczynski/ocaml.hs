@@ -29,6 +29,7 @@ addons:
       - ghc-7.10.2
 
 script:
+  - make test-ci
   - make all
   
 after_script:

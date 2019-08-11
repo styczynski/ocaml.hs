@@ -116,6 +116,20 @@ packages:
       sha256: 1fe2c5947db887175c819c3a0a55d9dcbb5823d28d0a5f588ea1db2d370bd1e1
   original:
     hackage: require-0.4.2
+- completed:
+    hackage: QuickCheck-2.12.6.1@sha256:ce974f511174fbc3102bccb13d6d45781d327194f0311790b9f8db6a7cb1bab3,6336
+    pantry-tree:
+      size: 2046
+      sha256: 1b9bf780a91762f07a63698d656234de0b68f5c8de760cc90153c01888730eb5
+  original:
+    hackage: QuickCheck-2.12.6.1
+- completed:
+    hackage: regex-tdfa-1.2.3.2@sha256:f0447c34dc42fcbee1461cdf1e8c5be3d8ac6ba9964247606008f434d77ac9a8,3777
+    pantry-tree:
+      size: 1745
+      sha256: 9d4ec9e7c10bd10960436883f3af02f2fd02a64293dac9d10d323fbfdcd28c2f
+  original:
+    hackage: regex-tdfa-1.2.3.2
 snapshots:
 - completed:
     size: 498180

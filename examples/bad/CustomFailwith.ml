@@ -1,3 +1,7 @@
+(**   Test: Custom failwith failure                                **)
+(**   Describe: should throw custom error                          **)
+(**   Throws:  .*Custom error:.*                                   **)
+
 (*
  * Note that failwith is just a IO monad exported using setNativeVariable
  * So you can create native Haskell IO monads that throw errors and they will be
