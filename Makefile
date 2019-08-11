@@ -45,7 +45,7 @@ test-preprocessor:
 	cd test-preprocessor && stack build
 
 generate-tests: clean-tests test-preprocessor
-	cd test-preprocessor && stack exec --allow-different-user test-preprocessor -- -i ../examples -o ../test/Generated -p Generated.
+	cd test-preprocessor && stack build && stack exec --allow-different-user test-preprocessor -- -i ../examples -o ../test/Generated -p Generated.
 
 %GoodSpec.hs: examples/good/%.ml
 	@mkdir -p test/Generated > /dev/null 2> /dev/null
