@@ -20,37 +20,39 @@ import Control.Monad
 
 type Verbosity = Int
 
-preprocessDirectory :: FilePath -> IO ()
-preprocessDirectory dir = do
+preprocessDirectory :: String -> FilePath -> FilePath -> IO ()
+preprocessDirectory prefix out dir = do
     _ <- putStrLn $ "Scan dir " ++ dir
     fileNames <- getDirectoryContents dir
     entriesNames <- filterM (\input -> return $ input `notElem` [".",".."]) fileNames
     entries <- return $ map (\name -> dir </> name) entriesNames
     fineFiles <- filterM (\input -> doesFileExist input) entries
     fineDirs <- filterM (\input -> doesDirectoryExist input) entries
-    _ <- mapM preprocessDirectory fineDirs
-    mapM preprocessFile fineFiles >>= \_ -> return ()
+    _ <- mapM (preprocessDirectory prefix out) fineDirs
+    mapM (preprocessFile prefix out) fineFiles >>= \_ -> return ()
 
-preprocessFile :: FilePath -> IO ()
-preprocessFile file = do
+preprocessFile :: String -> FilePath -> FilePath -> IO ()
+preprocessFile prefix outPath file = do
     z <- putStrLn $ "Open file " ++ file
     name <- return $ takeBaseName file
     specName <- return $ name ++ "Spec"
     specNameFile <- return $ specName ++ ".hs"
-    testName <- return $ "test" </> specNameFile
+    testName <- return $ outPath </> specNameFile
     fileContent <- readFile file
-    out <- preprocessTest specName fileContent
-    createDirectoryIfMissing True "test"
+    out <- preprocessTest prefix specName fileContent
+    createDirectoryIfMissing True outPath
     writeFile testName out
 
-preprocessTest :: String -> String -> IO String
-preprocessTest specName input = do
+preprocessTest :: String -> String -> String -> IO String
+preprocessTest prefix specName input = do
     (SourceMetadata { testDescription = testDescription, testName = testName }) <- extractTestMetadata input
+    multilineStringStart <- return "[r|"
+    multilineStringEnd <- return "|]"
     indentedInput <- return $ intercalate "\n" $ filter (\line -> length (unpack $ strip $ pack line) > 0) $ map (\line -> removeAllTags $ "         " ++ (unpack $ strip $ pack line)) $ lines input
     return $ toString $ renderMarkup $
       [compileText|
 {-# LANGUAGE QuasiQuotes #-}
-module #{specName} where
+module #{prefix}#{specName} where
 import Text.RawString.QQ
 
 import Test.Hspec
@@ -62,8 +64,8 @@ import Lib
 spec = do
   describe "#{specName}: #{testName}" $ do
     it "#{testDescription}" $ do
-      c <- isExecutionSuccessful $ runWithPrelude 0 "./init/init.ml" \[r|
+      c <- isExecutionSuccessful $ runWithPrelude 0 "./init/init.ml" #{multilineStringStart}
 #{indentedInput}
-      |\]
+      #{multilineStringEnd}
       c `shouldBe` True
       |]

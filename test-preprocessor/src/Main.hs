@@ -6,7 +6,9 @@ import Preprocessor
 
 data MainArgs = MainArgs
   { verbosity :: Int
-  , inputDirectory :: String }
+  , inputDirectory :: String
+  , outputDirectory :: String
+  , testPrefix :: String }
 
 parseMainArgs :: Parser MainArgs
 parseMainArgs = MainArgs
@@ -18,11 +20,25 @@ parseMainArgs = MainArgs
     <> metavar "INT" )
   <*> strOption
       ( long "inputDirectory"
-      <> short 'd'
+      <> short 'i'
       <> showDefault
       <> value "examples"
       <> help "Direcotry to look for tests input code"
       <> metavar "INPUT_DIRECTORY" )
+  <*> strOption
+        ( long "outputDirectory"
+        <> short 'o'
+        <> showDefault
+        <> value "test"
+        <> help "Direcotry to look for tests input code"
+        <> metavar "OUTPUT_DIRECTORY" )
+  <*> strOption
+          ( long "testPrefix"
+          <> short 'p'
+          <> showDefault
+          <> value ""
+          <> help "Direcotry to look for tests input code"
+          <> metavar "TEST_PREFIX" )
 
 main :: IO ()
 main = mainEntry =<< execParser opts
@@ -33,6 +49,6 @@ main = mainEntry =<< execParser opts
       <> header "Piotr Styczynski 2019" )
 
 mainEntry :: MainArgs -> IO ()
-mainEntry (MainArgs verbosity file) = case (verbosity, file) of
-  (v, dir) -> preprocessDirectory dir
+mainEntry (MainArgs verbosity file out prefix) = case (verbosity, file, out, prefix) of
+  (v, dir, out, prefix) -> preprocessDirectory prefix out dir
 mainEntry _ = return ()

@@ -32,17 +32,20 @@ interpreter: install-deps parser-src
 interpreter-web:
 	cd ./web && make all
 
-test: interpreter generate-tests
+test-ci: generate-tests
 	stack test --allow-different-user :ocamlhs-test --no-terminal --coverage
 
+test: generate-tests
+	stack test --allow-different-user :ocamlhs-test
+
 clean-tests:
-	rm -r -f -d test/*
+	rm -r -f -d test/Generated/*
 
 test-preprocessor:
 	cd test-preprocessor && stack build
 
 generate-tests: clean-tests test-preprocessor
-	stack exec test-preprocessor
+	cd test-preprocessor && stack exec --allow-different-user test-preprocessor -- -i ../examples -o ../test/Generated -p Generated.
 
 %GoodSpec.hs: examples/good/%.ml
 	@mkdir -p test/Generated > /dev/null 2> /dev/null
