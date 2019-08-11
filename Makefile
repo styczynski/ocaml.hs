@@ -36,13 +36,13 @@ test: interpreter generate-tests
 	stack test --allow-different-user :ocamlhs-test --no-terminal --coverage
 
 clean-tests:
-	rm -r -f -d test/Generated
+	rm -r -f -d test/*
 
-generate-tests: clean-tests generate-tests-good
-	echo "Done. Generated all tests from examples."
+test-preprocessor:
+	cd test-preprocessor && stack build
 
-generate-tests-good: $(wildcard examples/good/*.ml) $(subst .ml,GoodSpec.hs,$(subst examples/good/,,$(wildcard examples/good/*.ml)))
-	echo "Generated tests from examples/good."
+generate-tests: clean-tests test-preprocessor
+	stack exec test-preprocessor
 
 %GoodSpec.hs: examples/good/%.ml
 	@mkdir -p test/Generated > /dev/null 2> /dev/null
