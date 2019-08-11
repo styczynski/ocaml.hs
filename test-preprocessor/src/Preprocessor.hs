@@ -45,7 +45,8 @@ preprocessFile prefix outPath file = do
 
 preprocessTest :: String -> String -> String -> IO String
 preprocessTest prefix specName input = do
-    (SourceMetadata { testDescription = testDescription, testName = testName }) <- extractTestMetadata input
+    (SourceMetadata { testDescription = testDescription, testName = testName, errorRegex = errorRegex, shouldSkip = shouldSkip }) <- extractTestMetadata input
+    errorRegexStr <- return $ maybe "" (\x -> x) errorRegex
     multilineStringStart <- return "[r|"
     multilineStringEnd <- return "|]"
     indentedInput <- return $ intercalate "\n" $ filter (\line -> length (unpack $ strip $ pack line) > 0) $ map (\line -> removeAllTags $ "         " ++ (unpack $ strip $ pack line)) $ lines input
@@ -55,6 +56,10 @@ preprocessTest prefix specName input = do
 module #{prefix}#{specName} where
 import Text.RawString.QQ
 
+%{ if (not (errorRegex == Nothing)) }
+import Text.Regex.TDFA
+%{ endif }
+
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (evaluate)
@@ -63,9 +68,14 @@ import Lib
 
 spec = do
   describe "#{specName}: #{testName}" $ do
-    it "#{testDescription}" $ do
+    %{ if (shouldSkip) } xit %{ else } it %{ endif }"#{testDescription}" $ do
       c <- extractExecutionErrors $ runWithPrelude 0 "./init/init.ml" #{multilineStringStart}
 #{indentedInput}
       #{multilineStringEnd}
-      c `shouldBe` Nothing
+   %{ if (errorRegex == Nothing) }
+   c `shouldBe` Nothing
+   %{ else }
+   (Just errorString) <- return c
+      (errorString =~ "#{errorRegexStr}" :: Bool) `shouldBe` True
+   %{ endif }
       |]

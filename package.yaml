@@ -64,3 +64,4 @@ tests:
     defaults: hspec/hspec@master
     dependencies:
     - ocamlhs
+    - regex-tdfa >= 1.2.3.2

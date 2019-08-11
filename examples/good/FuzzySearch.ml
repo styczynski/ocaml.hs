@@ -1,3 +1,5 @@
+(** Skip: Yes **)
+
 (*
  * Implementation of Levenstein distance along with few other utilities like
  * custom sorting function.
