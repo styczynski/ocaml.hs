@@ -64,8 +64,8 @@ import Lib
 spec = do
   describe "#{specName}: #{testName}" $ do
     it "#{testDescription}" $ do
-      c <- isExecutionSuccessful $ runWithPrelude 0 "./init/init.ml" #{multilineStringStart}
+      c <- extractExecutionErrors $ runWithPrelude 0 "./init/init.ml" #{multilineStringStart}
 #{indentedInput}
       #{multilineStringEnd}
-      c `shouldBe` True
+      c `shouldBe` Nothing
       |]

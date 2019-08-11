@@ -84,9 +84,10 @@ runWithPrelude v preludeFile input = do
     result <- runWith v input initEnv
     return $ result
 
-isExecutionSuccessful :: IO ExecutionResult -> IO Bool
-isExecutionSuccessful e = do
-    r <- e >>= \result -> case result of
-        Executed _ _ _ -> return $ True
-        _ -> return $ False
-    return r
+extractExecutionErrors :: IO ExecutionResult -> IO (Maybe String)
+extractExecutionErrors e = do
+    e >>= \result -> case result of
+        Executed _ _ _ -> return $ Nothing
+        FailedTypechecking s -> return $ Just $ typeErrorToStr s
+        FailedExecution s -> return $ Just s
+        FailedParse s -> return $ Just s
