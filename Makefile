@@ -32,10 +32,10 @@ interpreter: install-deps parser-src
 interpreter-web:
 	cd ./web && make all
 
-test-ci: generate-tests
+test-ci: interpreter generate-tests
 	stack test --allow-different-user :ocamlhs-test --no-terminal --coverage
 
-test: generate-tests
+test: interpreter generate-tests
 	stack test --allow-different-user :ocamlhs-test
 
 clean-tests:
