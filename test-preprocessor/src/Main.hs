@@ -4,20 +4,9 @@ import Options.Applicative
 import Data.Semigroup ((<>))
 import Preprocessor
 
-runFile :: Verbosity -> FilePath -> IO ()
-runFile v f = putStrLn f >> readFile f >>= runBlock v
-
-runBlockI :: Verbosity -> String -> IO ()
-runBlockI v s = do
-  putStrLn "Hello man!"
-
-runBlock = runBlockI
-
-execContents v = getContents >>= runBlock v
-
 data MainArgs = MainArgs
   { verbosity :: Int
-  , file :: String }
+  , inputDirectory :: String }
 
 parseMainArgs :: Parser MainArgs
 parseMainArgs = MainArgs
@@ -28,12 +17,12 @@ parseMainArgs = MainArgs
     <> value 1
     <> metavar "INT" )
   <*> strOption
-      ( long "file"
-      <> short 'f'
+      ( long "inputDirectory"
+      <> short 'd'
       <> showDefault
-      <> value "stdin"
-      <> help "File to load or stdin to load standard input"
-      <> metavar "FILENAME" )
+      <> value "examples"
+      <> help "Direcotry to look for tests input code"
+      <> metavar "INPUT_DIRECTORY" )
 
 main :: IO ()
 main = mainEntry =<< execParser opts
@@ -45,6 +34,5 @@ main = mainEntry =<< execParser opts
 
 mainEntry :: MainArgs -> IO ()
 mainEntry (MainArgs verbosity file) = case (verbosity, file) of
-  (v, "stdin") -> execContents v
-  (v, src) -> runFile v src
+  (v, dir) -> preprocessDirectory dir
 mainEntry _ = return ()

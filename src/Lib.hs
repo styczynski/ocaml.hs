@@ -75,3 +75,18 @@ run :: Verbosity -> String -> IO ExecutionResult
 run v s = do
   initEnv <- runInitEmpty
   runWith v s initEnv
+
+runWithPrelude :: Verbosity -> String -> String -> IO ExecutionResult
+runWithPrelude v preludeFile input = do
+    initEnv0 <- runInitEmpty
+    stdlibStr <- readFile preludeFile
+    (Executed _ _ initEnv) <- runWith v stdlibStr initEnv0
+    result <- runWith v input initEnv
+    return $ result
+
+isExecutionSuccessful :: IO ExecutionResult -> IO Bool
+isExecutionSuccessful e = do
+    r <- e >>= \result -> case result of
+        Executed _ _ _ -> return $ True
+        _ -> return $ False
+    return r
