@@ -137,6 +137,20 @@ packages:
       sha256: 330ac9678b22f6921b6e58ad336e7e219edfbd22a04b3597080d406aaf9654e5
   original:
     hackage: system-filepath-0.4.14
+- completed:
+    hackage: Glob-0.10.0@sha256:bbccaf21bff9071dcf369f55cc1a07250bdc84c432bdf4277ed53e5e2327cd7d,2947
+    pantry-tree:
+      size: 1432
+      sha256: 2b14578b5cf51af20efeaf332a1e1ea0c9c24fe2fcb2afba64f77d9249395844
+  original:
+    hackage: Glob-0.10.0
+- completed:
+    hackage: shelly-1.8.1@sha256:e043ee55fb6d1cd060c28bd0b2a127b8284770ba622b5b9c397ef27340052e33,5206
+    pantry-tree:
+      size: 2314
+      sha256: 31ec7cb98db424c23d7c2cf9caa80c1246d8bdc75e3c07e40131fb8e61b55c8a
+  original:
+    hackage: shelly-1.8.1
 snapshots:
 - completed:
     size: 498180

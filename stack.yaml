@@ -57,6 +57,8 @@ extra-deps:
   - QuickCheck-2.12.6.1
   - regex-tdfa-1.2.3.2
   - system-filepath-0.4.14
+  - Glob-0.10.0
+  - shelly-1.8.1
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

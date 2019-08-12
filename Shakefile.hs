@@ -6,6 +6,8 @@ import Development.Shake.Util
 import Shelly (run, liftIO, Sh, shelly, silently, cd, rm_rf, cp)
 import Data.Text (pack, unpack)
 
+import System.FilePath.Glob
+
 import Filesystem.Path.CurrentOS (decodeString)
 import Text.Regex.TDFA
 
@@ -19,7 +21,7 @@ grepShCommand command args regex = do
     return result
 
 executeCommand :: String -> [String] -> String -> IO String
-executeCommand command args cwd = shelly $ silently $ do
+executeCommand command args cwd = shelly $ do
     cd $ decodeString cwd
     result <- run (decodeString command) $ map pack args
     return $ unpack result
@@ -42,9 +44,10 @@ mainFn = do
             _ <- liftIO $ executeCommand "sed" ["-i", "-e", "s/module Main where/module TestSyntax where/g", "parser/TestSyntax.hs"] "."
             _ <- liftIO $ executeCommandStack ["exec", "happy", "--", "-gca", "ParSyntax.y"] "./parser"
             _ <- liftIO $ executeCommandStack ["exec", "alex", "--", "-g", "LexSyntax.x"] "./parser"
-            _ <- liftIO $ executeCommand "rm" ["-r", "-f", "-d", "ocamlhs.cabal"] "."
-            _ <- liftIO $ executeCommand "rm" ["-r", "-f", "-d", "parser/*.x"] "."
-            _ <- liftIO $ executeCommand "rm" ["-r", "-f", "-d", "parser/*.y"] "."
+            filesXToRemove <- liftIO $ glob "parser/*.x"
+            filesYToRemove <- liftIO $ glob "parser/*.y"
+            filesCabalToRemove <- liftIO $ glob "ocamlhs.cabal"
+            _ <- liftIO $ executeCommand "rm" (["-r", "-f", "-d"] ++ filesXToRemove ++ filesYToRemove ++ filesCabalToRemove) "."
             liftIO $ putStrLn "Done!"
 
         "_build/interpreter" <.> exe %> \out -> do
@@ -52,6 +55,10 @@ mainFn = do
             _ <- liftIO $ executeCommandStack ["install", "--only-dependencies"] "."
             _ <- liftIO $ executeCommandStack ["install", "happy"] "."
             need ["parser/TestSyntax.hs"]
+            srcFiles <- liftIO $ glob "src/**/*.hs"
+            appFiles <- liftIO $ glob "app/**/*.hs"
+            grammarFiles <- liftIO $ glob "grammar/**/*.cf"
+            need $ srcFiles ++ appFiles ++ grammarFiles
             _ <- liftIO $ executeCommandStack ["build"] "."
             _ <- liftIO $ shelly $ cp (decodeString $ stackPath </> "bin" </> "interpreter") (decodeString "_build/interpreter")
             return ()
