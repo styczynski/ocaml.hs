@@ -130,6 +130,13 @@ packages:
       sha256: 9d4ec9e7c10bd10960436883f3af02f2fd02a64293dac9d10d323fbfdcd28c2f
   original:
     hackage: regex-tdfa-1.2.3.2
+- completed:
+    hackage: system-filepath-0.4.14@sha256:e8ce7d24d7008a825e5d03aa672950a0e8178ac54c3de7134f36c3a7e37694a2,1631
+    pantry-tree:
+      size: 614
+      sha256: 330ac9678b22f6921b6e58ad336e7e219edfbd22a04b3597080d406aaf9654e5
+  original:
+    hackage: system-filepath-0.4.14
 snapshots:
 - completed:
     size: 498180
