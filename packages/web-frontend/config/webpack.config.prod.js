@@ -3,6 +3,7 @@
 const autoprefixer = require('autoprefixer');
 const path = require('path');
 const webpack = require('webpack');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
@@ -174,7 +175,7 @@ module.exports = {
       // tags. If you use code splitting, however, any async bundles will still
       // use the "style" loader inside the async code so CSS from them won't be
       // in the main CSS file.
-      {
+      /*{
         test: /\.css$/,
         loader: ExtractTextPlugin.extract(
           Object.assign(
@@ -215,6 +216,15 @@ module.exports = {
           )
         ),
         // Note: this won't work without `new ExtractTextPlugin()` in `plugins`.
+      },*/
+      {
+        test: /\.css$/,
+        use: [
+           {
+              loader: MiniCssExtractPlugin.loader,
+           },
+           "css-loader"
+        ]
       },
       // ** STOP ** Are you adding a new loader?
       // Remember to add the new extension(s) to the "file" loader exclusion list.
@@ -226,7 +236,7 @@ module.exports = {
     // <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
     // In production, it will be an empty string unless you specify "homepage"
     // in `package.json`, in which case it will be the pathname of that URL.
-    new InterpolateHtmlPlugin(env.raw),
+    new InterpolateHtmlPlugin(HtmlWebpackPlugin, env.raw),
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,
@@ -251,7 +261,7 @@ module.exports = {
     new webpack.DefinePlugin(env.stringified),
     // Minify the code.
     // Note: this won't work without ExtractTextPlugin.extract(..) in `loaders`.
-    new ExtractTextPlugin({
+    new MiniCssExtractPlugin({
       filename: cssFilename,
     }),
     // Generate a manifest file which contains a mapping of all asset filenames
