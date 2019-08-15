@@ -29,8 +29,7 @@ addons:
       - ghc-7.10.2
 
 script:
-  - make test-ci
-  - make all
+  - stack exec --allow-different-user -- shake
   
 after_script:
   - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar -xj
