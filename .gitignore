@@ -6,6 +6,8 @@ _old/
 .idea/**
 _build/
 _build/**
+Modules/Parser/parser/
+Modules/Interpreter/test/Generated/
 
 *.tmp
 
@@ -16,7 +18,6 @@ web/frontend/node_modules/
 
 test/Generated/
 test/Generated/**
-parser/
 
 dist
 dist-*
