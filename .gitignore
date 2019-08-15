@@ -6,8 +6,8 @@ _old/
 .idea/**
 _build/
 _build/**
-Modules/Parser/parser/
-Modules/Interpreter/test/Generated/
+packages/parser/parser/
+packages/interpreter/test/Generated/
 
 *.tmp
 
