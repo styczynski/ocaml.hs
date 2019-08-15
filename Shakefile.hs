@@ -11,12 +11,14 @@ main = do
 
         "test.lock" %> \out -> do
             alwaysRerun
+            executeCommandStack ["upgrade", "--binary-version", "2.1.1"] "."
             success <- executeStackBuild ["test", "--no-terminal", "--coverage"] "."
             _ <- liftIO $ if success then return () else ioError $ userError "Fail."
             executeCommand "touch" [out] "."
             return ()
 
         ["_build/cli"] &%> \[ouths] -> do
+            executeCommandStack ["upgrade", "--binary-version", "2.1.1"] "."
             success <- executeStackBuild ["build"] "."
             _ <- liftIO $ if success then return () else ioError $ userError "Fail."
             executeCommand "cp" ([(stackDir </> "bin" </> "interpreter"), ("_build/cli" <.> exe)]) "."
