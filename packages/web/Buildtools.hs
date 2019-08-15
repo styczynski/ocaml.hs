@@ -40,12 +40,12 @@ import System.IO.Error
 
 import Control.Exception.Base
 
-executeStackBuild :: [String] -> String -> Action Bool
-executeStackBuild cmd path = do
-    t <- executeCommandStackX cmd path
+executeStackBuild :: [String] -> Action Bool
+executeStackBuild cmd = do
+    t <- executeCommandStackX cmd "."
     r <- (case t of
         Just s -> return $ if s == "ERROR" then False else True
-        Nothing -> executeStackBuild cmd path)
+        Nothing -> executeStackBuild cmd)
     return r
 
 handleStackBuildOutput :: String -> IO (Maybe String)

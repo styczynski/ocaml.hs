@@ -1,4 +1,4 @@
-name:                ocamlhs-docs
+name:                ocamlhs-web-frontend
 version:             0.1.0.0
 github:              "styczynski/ocaml.hs"
 license:             MIT
@@ -41,8 +41,7 @@ dependencies:
 - system-filepath >= 0.4.14
 - regex-tdfa >= 1.2.3.2
 - tintin >= 1.10.0
+- ocamlhs-docs
 
-library:
-  source-dirs:
-  - lib
+library: {}
 executables: {}
