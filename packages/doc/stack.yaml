@@ -34,11 +34,6 @@ resolver: lts-13.21
 #  - wai
 packages:
 - .
-- packages/cli
-- packages/test-preprocessor
-- packages/interpreter
-- packages/parser
-- packages/doc
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
