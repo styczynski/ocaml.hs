@@ -8,6 +8,7 @@ _build/
 _build/**
 packages/parser/parser/
 packages/interpreter/test/Generated/
+test.lock
 
 *.tmp
 
