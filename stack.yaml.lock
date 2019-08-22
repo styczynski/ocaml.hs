@@ -61,10 +61,10 @@ packages:
   original:
     hackage: text-1.2.3.1
 - completed:
-    hackage: split-0.2.3.3@sha256:f1c7b12865e38d1e241ceef74c85eb81d82301022fea1a5012d8d9803af5e26f,2614
+    hackage: split-0.2.3.3@sha256:64c8e45b8f74dc16b6329d99d9d9b1c47d6abae146d7d7e3ec3317dcb5660bb1,2615
     pantry-tree:
       size: 439
-      sha256: 848511e5b76e7c7d0f4f9afa1bae2a956a9c97d74029698afc4fb93b235df145
+      sha256: ff3e20c0927928739a86e15f9b2c160353a4c4d57ca336b9630e31e7e617e2a8
   original:
     hackage: split-0.2.3.3
 - completed:
