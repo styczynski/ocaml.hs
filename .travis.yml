@@ -21,7 +21,9 @@ before_install:
   - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
   - export PATH=/opt/ghc/7.10.2/bin:$PATH
   - sudo apt-get install curl
-  - stack install --only-dependencies
+  - stack upgrade --allow-different-user --binary-version 2.1.1
+  - stack install --only-dependencies --allow-different-user
+  - stack install shake --allow-different-user
 
 addons:
   apt:
@@ -31,8 +33,7 @@ addons:
       - ghc-7.10.2
 
 script:
-  - stack install shake
-  - stack upgrade --allow-different-user --binary-version 2.1.1 && stack exec --allow-different-user -- shake
+  - stack exec --allow-different-user -- shake
   
 after_script:
   - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar -xj
