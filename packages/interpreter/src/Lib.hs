@@ -11,6 +11,8 @@ Portability : POSIX
 -}
 module Lib where
 
+import System.Directory
+
 import Control.Monad.Except
 import Control.Monad.State
 import Control.Monad.Identity

@@ -35,6 +35,7 @@ dependencies:
 - strict-list >= 0.1.4
 - QuickCheck >= 2.12.6.1
 - Glob >= 0.10.0
+- directory >= 1.3.4.0
 - ocamlhs-parser
 - test-preprocessor
 
