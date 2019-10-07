@@ -13,7 +13,7 @@ main = do
             need [("_build/cli" <.> exe)]
             alwaysRerun
             executeCommandStack ["upgrade", "--binary-version", "2.1.3"] "."
-            success <- executeStackBuild ["test", "--no-terminal", "--coverage", "--enable-tests"] "."
+            success <- executeStackBuild ["test", "--no-terminal", "--coverage", "--reconfigure"] "."
             _ <- liftIO $ if success then return () else ioError $ userError "Fail."
             executeCommand "touch" [out] "."
             return ()
