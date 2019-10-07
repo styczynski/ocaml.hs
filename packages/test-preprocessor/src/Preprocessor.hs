@@ -69,7 +69,7 @@ import Lib
 spec = do
   describe "#{specName}: #{testName}" $ do
     %{ if (shouldSkip) } xit %{ else } it %{ endif }"#{testDescription}" $ do
-      c <- extractExecutionErrors $ runWithPrelude 0 "../../../Init/init.ml" #{multilineStringStart}
+      c <- extractExecutionErrors $ runWithPrelude 0 "../../../init/init.ml" #{multilineStringStart}
 #{indentedInput}
       #{multilineStringEnd}
    %{ if (errorRegex == Nothing) }
