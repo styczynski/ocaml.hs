@@ -80,7 +80,7 @@ runWithPrelude :: Verbosity -> String -> String -> IO ExecutionResult
 runWithPrelude v preludeFile input = do
     initEnv0 <- runInitEmpty
     files <- getDirectoryContents "."
-    putStrlLn "RUN WITH PRELUDE DEBUG_INFO_OCAMLHS:"
+    putStrLn "RUN WITH PRELUDE DEBUG_INFO_OCAMLHS:"
     print files
     stdlibStr <- readFile preludeFile
     (Executed _ _ initEnv) <- runWith v stdlibStr initEnv0
