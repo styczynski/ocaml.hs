@@ -11,6 +11,7 @@ module Buildtools (
     , executeCommand
     , executeCommandStack
     , executeCommandX
+    , executeCommandXEnv
     , executeCommandStackX
     , glob
     , finish
@@ -18,6 +19,7 @@ module Buildtools (
     , message
     , executeTasks
     , executeStackBuild
+    , executeSubTask
 ) where
 
 import Distribution.Simple
@@ -28,7 +30,7 @@ import Development.Shake hiding (getEnv)
 import Development.Shake.Command
 import Development.Shake.FilePath
 import Development.Shake.Util
-import Shelly (run, liftIO, Sh, shelly, silently, cd, rm_rf, catchany)
+import Shelly (run, liftIO, Sh, shelly, silently, cd, rm_rf, catchany, setenv)
 import qualified Shelly as Shelly
 import Data.Text (pack, unpack)
 import qualified System.FilePath.Glob as Glob
@@ -89,6 +91,18 @@ executeCommandX command args cwd = liftIO $ catchany (shelly $ do
     result <- run (decodeString command) $ map pack args
     return $ Just $ unpack result) (\(e :: SomeException) -> do
         handleStackBuildOutput $ show e)
+
+executeCommandXEnv :: String -> [String] -> String -> [(String, String)] -> Action (Maybe String)
+executeCommandXEnv command args cwd env = liftIO $ catchany (shelly $ do
+    cd $ decodeString cwd
+    mapM (\(name, value) -> setenv (pack name) (pack value)) env
+    result <- run (decodeString command) $ map pack args
+    return $ Just $ unpack result) (\(e :: SomeException) -> do
+        handleStackBuildOutput $ show e)
+
+executeSubTask :: String -> String -> Action (Maybe String)
+executeSubTask stackVersion path = do
+  executeCommandXEnv "bash" ["-c", "unset GHC_PACKAGE_PATH && unset HASKELL_PACKAGE_SANDBOX && unset GHC_ENVIRONMENT && unset HASKELL_DIST_DIR && unset HASKELL_PACKAGE_SANDBOXES && printenv && stack upgrade --binary-version " ++ stackVersion ++ " && stack exec -- shake"] path []
 
 executeCommandStackX :: [String] -> String -> Action (Maybe String)
 executeCommandStackX args = executeCommandX "stack" (["--allow-different-user"] ++ args)

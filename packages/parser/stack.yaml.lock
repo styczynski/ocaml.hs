@@ -61,17 +61,17 @@ packages:
   original:
     hackage: text-1.2.3.1
 - completed:
-    hackage: split-0.2.3.3@sha256:f1c7b12865e38d1e241ceef74c85eb81d82301022fea1a5012d8d9803af5e26f,2614
+    hackage: split-0.2.3.3@sha256:64c8e45b8f74dc16b6329d99d9d9b1c47d6abae146d7d7e3ec3317dcb5660bb1,2615
     pantry-tree:
       size: 439
-      sha256: 848511e5b76e7c7d0f4f9afa1bae2a956a9c97d74029698afc4fb93b235df145
+      sha256: ff3e20c0927928739a86e15f9b2c160353a4c4d57ca336b9630e31e7e617e2a8
   original:
     hackage: split-0.2.3.3
 - completed:
-    hackage: butcher-1.3.2.3@sha256:a3628cf0a41f2fec4e5cd128dd900f4608119f203385373cf0bf65c60291c396,3113
+    hackage: butcher-1.3.2.3@sha256:1b8040eddb6da2a05426bf9f6c56b078e629228d64d7d61fb3daa88802487e1b,3262
     pantry-tree:
       size: 1197
-      sha256: 5e230dd54452e9bd3bca7900092e3522c94781490a31ce935d4c8bb7586f5a9c
+      sha256: 6bf3a318bd8689bd1fa7a8084c0d96372768d2dc3e30d9aa58d07741ed6816e6
   original:
     hackage: butcher-1.3.2.3
 - completed:
@@ -124,10 +124,10 @@ packages:
   original:
     hackage: QuickCheck-2.12.6.1
 - completed:
-    hackage: regex-tdfa-1.2.3.2@sha256:f0447c34dc42fcbee1461cdf1e8c5be3d8ac6ba9964247606008f434d77ac9a8,3777
+    hackage: regex-tdfa-1.2.3.2@sha256:b154ece2c3a2efe088fb7d3ff76ca9607127b58795755b79f3a6f9376f95e50f,3850
     pantry-tree:
       size: 1745
-      sha256: 9d4ec9e7c10bd10960436883f3af02f2fd02a64293dac9d10d323fbfdcd28c2f
+      sha256: 4759fcd89a97707592f51529e5acea9f9da620e2344dfcf799277995f0ecfaed
   original:
     hackage: regex-tdfa-1.2.3.2
 - completed:
