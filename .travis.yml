@@ -12,6 +12,16 @@ cache:
   - $HOME/ghcjs
   - $HOME/.ghcjs
   - $HOME/../ghcjs-th
+  - $HOME/packages/web/.ghc
+  - $HOME/packages/web/.cabal
+  - $HOME/packages/web/.stack
+  - $HOME/packages/web/.cache
+  - $HOME/packages/web/boot
+  - $HOME/packages/web/ghcjs
+  - $HOME/packages/web/.ghcjs
+  - $HOME/packages/web/ghcjs-th
+  - $HOME/packages/ghcjs-th
+  - $HOME/../ghcjs-th
   - $TRAVIS_BUILD_DIR/.stack-work
 
 before_install:
