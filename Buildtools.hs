@@ -102,7 +102,7 @@ executeCommandXEnv command args cwd env = liftIO $ catchany (shelly $ do
 
 executeSubTask :: String -> String -> Action (Maybe String)
 executeSubTask stackVersion path = do
-  executeCommandXEnv "bash" ["-c", "unset GHC_PACKAGE_PATH && unset HASKELL_PACKAGE_SANDBOX && unset GHC_ENVIRONMENT && unset HASKELL_DIST_DIR && unset HASKELL_PACKAGE_SANDBOXES && printenv && stack upgrade --binary-version " ++ stackVersion ++ " && stack exec -- shake"] path []
+  executeCommandXEnv "bash" ["-c", "unset GHC_PACKAGE_PATH && unset HASKELL_PACKAGE_SANDBOX && unset GHC_ENVIRONMENT && unset HASKELL_DIST_DIR && unset HASKELL_PACKAGE_SANDBOXES && printenv && stack upgrade --binary-version " ++ stackVersion ++ " && stack install shake --allow-different-user && stack exec -- shake"] path []
 
 executeCommandStackX :: [String] -> String -> Action (Maybe String)
 executeCommandStackX args = executeCommandX "stack" (["--allow-different-user"] ++ args)
