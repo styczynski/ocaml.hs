@@ -102,7 +102,9 @@ executeCommandXEnv command args cwd env = liftIO $ catchany (shelly $ do
 
 executeSubTask :: String -> String -> Action (Maybe String)
 executeSubTask stackVersion path = do
-  executeCommandXEnv "bash" ["-c", "unset GHC_PACKAGE_PATH && unset HASKELL_PACKAGE_SANDBOX && unset GHC_ENVIRONMENT && unset HASKELL_DIST_DIR && unset HASKELL_PACKAGE_SANDBOXES && printenv && stack upgrade --binary-version " ++ stackVersion] path []
+  --liftIO $ putStrLn "[!!!] install stack"
+  --executeCommandXEnv "bash" ["-c", "unset GHC_PACKAGE_PATH && unset HASKELL_PACKAGE_SANDBOX && unset GHC_ENVIRONMENT && unset HASKELL_DIST_DIR && unset HASKELL_PACKAGE_SANDBOXES && printenv && stack upgrade --binary-version " ++ stackVersion] path []
+  liftIO $ putStrLn "[!!!] execute shake subtask"
   executeCommandXEnv "bash" ["-c", "unset GHC_PACKAGE_PATH && unset HASKELL_PACKAGE_SANDBOX && unset GHC_ENVIRONMENT && unset HASKELL_DIST_DIR && unset HASKELL_PACKAGE_SANDBOXES && stack exec --cwd " ++ path ++ " -- shake "] "." []
 
 
